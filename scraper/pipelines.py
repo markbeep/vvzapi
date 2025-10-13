@@ -1,13 +1,16 @@
-# Define your item pipelines here
-#
-# Don't forget to add your pipeline to the ITEM_PIPELINES setting
-# See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
+from typing import Any
+from scrapy import Spider
+
+from api.models import Lecturer, TeachingUnit
 
 
-# useful for handling different item types with a single interface
-from itemadapter import ItemAdapter
+class DatabasePipeline:
+    def process_item(self, item: Any, spider: Spider):
+        if isinstance(item, TeachingUnit):
+            ...
+        elif isinstance(item, Lecturer):
+            ...
+        else:
+            return None
 
-
-class TutorialPipeline:
-    def process_item(self, item, spider):
-        return item
+        return item.model_dump()
