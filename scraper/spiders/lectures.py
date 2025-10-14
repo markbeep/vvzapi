@@ -1,4 +1,5 @@
 import re
+from typing import Any, Generator
 from urllib.parse import urljoin
 import scrapy
 from scrapy.http import Response
@@ -6,10 +7,15 @@ from scrapy.http import Response
 from api.models import (
     CatalogueData,
     Course,
+    CourseLecturerRelations,
+    CourseSlot,
+    CourseTypeEnum,
+    ExamLecturerRelations,
     Lecturer,
     PerformanceAssessment,
     SemesterEnum,
     TeachingUnit,
+    WeekdayEnum,
 )
 from scraper.util.progress import create_progress
 from scraper.util.table import TableExtractor, TableRows
@@ -87,6 +93,7 @@ class LecturesSpider(scrapy.Spider):
             lerneinheitId = "unknown"
         else:
             lerneinheitId = lerneinheitId.group(1)
+        lerneinheitId = int(lerneinheitId)
 
         lang = re_lang.search(response.url)
         if not lang:
@@ -95,14 +102,20 @@ class LecturesSpider(scrapy.Spider):
             lang = lang.group(1)
 
         # courses
-        courses = self.get_courses(response)
+        for item in self.get_courses(response, lerneinheitId):
+            yield item
         # catalogue data
         catalogue_data = self.get_catalogue_data(response)
         # performance assessment
         performance_assessment = self.get_performance_assessments(response)
 
+        for examiner_id in performance_assessment.examiner_ids:
+            yield ExamLecturerRelations(
+                teaching_unit_id=lerneinheitId, lecturer_id=examiner_id
+            )
+
         yield TeachingUnit(
-            id=int(lerneinheitId),
+            id=lerneinheitId,
             number=course_number,
             year=int(semkez[:4]),
             name=course_name,
@@ -136,19 +149,75 @@ class LecturesSpider(scrapy.Spider):
             golden_owl=golden_owl,
         )
 
-    def get_courses(self, response: Response) -> list[Course]:
+    def get_courses(
+        self, response: Response, teaching_unit_id: int
+    ) -> Generator[Course | CourseLecturerRelations, Any, None]:
         table = TableExtractor(response, ["Courses", "Lehrveranstaltungen"])
         part = table.get_parts()[0]
         # print(part.table.css("tr").getall())
         rows = part.table.css("tr:not(:has(> td.td-small))")
         for x in rows:
-            number = x.re(r"\d{3}-\d{4}-\d{2}\xa0\w")
+            number = x.re_first(r"\d{3}-\d{4}-\d{2}\xa0\w")
             if not number:
                 continue
-            number = number[0].replace("\xa0", " ")
+            number = number.replace("\xa0", "")
+            type = CourseTypeEnum[number[-1]]
             comments = "\n".join(
                 [t.strip() for t in x.css(".kommentar-lv::text").getall() if t.strip()]
             )
+
+            columns = x.css("td:not(.td-small)")
+            name = columns[1].css("::text").get()
+            lecturer_ids = [int(x) for x in columns[4].re(r"dozide=(\d+)")]
+            timeslots: list[CourseSlot] = []
+            slots = columns[3].css("a::text").getall()
+
+            weekday: WeekdayEnum = WeekdayEnum.Mon
+            i = 0
+            while i < len(slots):
+                day, *args = slots[i].split("/")
+                try:
+                    # weekday is not always given for every time slot
+                    weekday = (
+                        WeekdayEnum.ByAppointment
+                        if day == "by appt."
+                        else WeekdayEnum[day]
+                    )
+                    i += 1
+                except KeyError:
+                    pass
+
+                start_time, end_time = slots[i].split("-")
+                building = slots[i + 1]
+                room = slots[i + 2]
+                timeslots.append(
+                    CourseSlot(
+                        weekday=weekday,
+                        start_time=start_time,
+                        end_time=end_time,
+                        building=building,
+                        room=room,
+                        first_half_semester="1" in args,
+                        second_half_semester="2" in args,
+                        two_weekly="2w" in args,
+                    )
+                )
+
+                i += 4
+
+            yield Course(
+                number=number,
+                name=name or "",
+                teaching_unit_id=teaching_unit_id,
+                type=type,
+                comments=comments or None,
+                slots=timeslots,
+            )
+
+            for lecturer_id in lecturer_ids:
+                yield CourseLecturerRelations(
+                    course_number=number, lecturer_id=lecturer_id
+                )
 
     def get_catalogue_data(self, response: Response):
         table = TableExtractor(response, ["Catalogue data", "Katalogdaten"])

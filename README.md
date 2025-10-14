@@ -26,6 +26,7 @@ uv run scrapy shell "<url>"
 
 ```sh
 uv run scrapy parse --spider=lectures -c <cb func> "<url>"
+uv run scrapy parse --spider=lectures -c parse_course "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?semkez=2025W&ansicht=ALLE&lerneinheitId=192945&lang=en"
 ```
 
 ## Alembic

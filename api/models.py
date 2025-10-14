@@ -18,6 +18,15 @@ class CatalogueData(BaseModel):
     other_data: list[str] = Field(sa_column=Column(JSON), default=[])
 
 
+class ExamLecturerRelations(BaseModel, table=True):
+    teaching_unit_id: int = Field(
+        foreign_key="teachingunit.id", primary_key=True, ondelete="CASCADE"
+    )
+    lecturer_id: int = Field(
+        foreign_key="lecturer.id", primary_key=True, ondelete="CASCADE"
+    )
+
+
 class PerformanceAssessment(BaseModel):
     # Two semester courses also list their full credits: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?semkez=2025W&ansicht=ALLE&lerneinheitId=192945&lang=en
     two_semester_credits: float | None
@@ -76,8 +85,11 @@ class TeachingUnit(PerformanceAssessment, CatalogueData, table=True):
     text_language: str
     """en or de"""
     language: str
-    courses: list["Course"] = Relationship(back_populates="teaching_unit")
     offered_in: list[ProgrammeSection] = Field(sa_column=Column(JSON), default=[])
+    courses: list["Course"] = Relationship(back_populates="teaching_unit")
+    examiners: list["Lecturer"] = Relationship(
+        back_populates="exams", link_model=ExamLecturerRelations
+    )
 
     class Config:  # pyright: ignore[reportIncompatibleVariableOverride]
         arbitrary_types_allowed = True
@@ -87,8 +99,8 @@ class TeachingUnit(PerformanceAssessment, CatalogueData, table=True):
 
 
 class CourseLecturerRelations(BaseModel, table=True):
-    course_id: int = Field(
-        foreign_key="course.id", primary_key=True, ondelete="CASCADE"
+    course_number: str = Field(
+        foreign_key="course.number", primary_key=True, ondelete="CASCADE"
     )
     lecturer_id: int = Field(
         foreign_key="lecturer.id", primary_key=True, ondelete="CASCADE"
@@ -96,13 +108,29 @@ class CourseLecturerRelations(BaseModel, table=True):
 
 
 class WeekdayEnum(Enum):
-    Monday = 0
-    Tuesday = 1
-    Wednesday = 2
-    Thursday = 3
-    Friday = 4
-    Saturday = 5
-    Sunday = 6
+    Mon = 0
+    Tue = 1
+    Wed = 2
+    Thu = 3
+    Fri = 4
+    Sat = 5
+    Sun = 6
+
+    ByAppointment = 7
+
+
+class CourseSlot(BaseModel):
+    weekday: WeekdayEnum
+    start_time: str  # "08:15"
+    end_time: str  # "10:00"
+    building: str
+    room: str
+
+    # If lectures only take place in the first/second half of a semester
+    # https://ethz.ch/applications/teaching/en/applications/vvz/key.html
+    first_half_semester: bool
+    second_half_semester: bool
+    two_weekly: bool
 
 
 class CourseTypeEnum(Enum):
@@ -120,22 +148,13 @@ class CourseTypeEnum(Enum):
 class Course(BaseModel, table=True):
     """The time slots for when a teaching unit takes place"""
 
-    id: int = Field(primary_key=True)
-    number: str
+    number: str = Field(primary_key=True)
+    name: str
     teaching_unit_id: int = Field(foreign_key="teachingunit.id", ondelete="CASCADE")
     teaching_unit: TeachingUnit = Relationship(back_populates="courses")
-    weekday: WeekdayEnum
-    start: str  # format of "08:15"
-    end: str
-    location: str
+    slots: list[CourseSlot] = Field(sa_column=Column(JSON), default=[])
     type: CourseTypeEnum
     comments: str | None
-
-    # If lectures only take place in the first/second half of a semester
-    # https://ethz.ch/applications/teaching/en/applications/vvz/key.html
-    first_half_semester: bool
-    second_half_semester: bool
-    two_weekly: bool
 
     lecturers: list["Lecturer"] = Relationship(
         back_populates="courses", link_model=CourseLecturerRelations
@@ -150,4 +169,7 @@ class Lecturer(BaseModel, table=True):
 
     courses: list[Course] = Relationship(
         back_populates="lecturers", link_model=CourseLecturerRelations
+    )
+    exams: list[TeachingUnit] = Relationship(
+        back_populates="examiners", link_model=ExamLecturerRelations
     )
