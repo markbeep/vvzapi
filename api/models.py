@@ -129,6 +129,7 @@ class Course(BaseModel, table=True):
     end: str
     location: str
     type: CourseTypeEnum
+    comments: str | None
 
     # If lectures only take place in the first/second half of a semester
     # https://ethz.ch/applications/teaching/en/applications/vvz/key.html

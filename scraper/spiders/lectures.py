@@ -140,18 +140,15 @@ class LecturesSpider(scrapy.Spider):
         table = TableExtractor(response, ["Courses", "Lehrveranstaltungen"])
         part = table.get_parts()[0]
         # print(part.table.css("tr").getall())
-        rows = part.table.xpath(".//tr[1]")
-        print(len(rows))
+        rows = part.table.css("tr:not(:has(> td.td-small))")
         for x in rows:
-            print(x.getall())
-        # if len(rows.others) == 0:
-        #     self.logger.warning(f"No courses found for {response.url}")
-        #     return []
-
-        # print(rows.others[0].texts())
-        # for i, r in enumerate(rows.others):
-        #     texts = r.texts()
-        #     print(f"Row {i}: {texts}")
+            number = x.re(r"\d{3}-\d{4}-\d{2}\xa0\w")
+            if not number:
+                continue
+            number = number[0].replace("\xa0", " ")
+            comments = "\n".join(
+                [t.strip() for t in x.css(".kommentar-lv::text").getall() if t.strip()]
+            )
 
     def get_catalogue_data(self, response: Response):
         table = TableExtractor(response, ["Catalogue data", "Katalogdaten"])
