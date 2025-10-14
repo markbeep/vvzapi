@@ -15,3 +15,8 @@ def delete_url_key(url: str, key: str):
     query.pop(key)
     url_res = url_res._replace(query=urlencode(query, True))
     return urlunparse(url_res)
+
+
+def list_url_params(url: str) -> dict[str, list[str]]:
+    url_res = urlparse(url)
+    return parse_qs(url_res.query, keep_blank_values=True)

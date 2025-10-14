@@ -1,12 +1,46 @@
 from enum import Enum
-from pydantic import BaseModel
-from sqlalchemy import JSON, Column, Time
+from sqlalchemy import JSON, Column
 from sqlmodel import Field, Relationship, SQLModel
 
 
-class SemesterEnum(Enum):
-    HS = "HS"
-    FS = "FS"
+class BaseModel(SQLModel):
+    pass
+
+
+class CatalogueData(BaseModel):
+    abstract: str | None
+    learning_objective: str | None
+    content: str | None
+    notice: str | None
+    competencies: str | None
+    lecture_notes: str | None
+    literature: str | None
+    other_data: list[str] = Field(sa_column=Column(JSON), default=[])
+
+
+class PerformanceAssessment(BaseModel):
+    # Two semester courses also list their full credits: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?semkez=2025W&ansicht=ALLE&lerneinheitId=192945&lang=en
+    two_semester_credits: float | None
+    programme_regulations: list[str] = Field(sa_column=Column(JSON), default=[])
+    together_with_number: str | None
+
+    # Credits are in infact actually floats, e.g. 1.5
+    # For example: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId=192834&semkez=2025W&ansicht=ALLE&lang=en
+    ects_credits: float
+    examiner_ids: list[int] = Field(sa_column=Column(JSON), default=[])
+    assessment_type: str
+    assessment_language: str
+    repetition: str
+    exam_block_of: list[str] = Field(sa_column=Column(JSON), default=[])
+
+    mode: str | None
+    additional_info: str | None
+    written_aids: str | None
+    distance: str | None
+    digital: str | None
+    update_note: str | None
+    admission_requirement: str | None
+    other_assessment: list[str] = Field(sa_column=Column(JSON), default=[])
 
 
 class UnitTypeEnum(Enum):
@@ -20,34 +54,39 @@ class UnitTypeEnum(Enum):
     Dr = "Doctorate"  # Suitable for doctorate
 
 
-class TeachingUnit(SQLModel, table=True):
-    id: int = Field(primary_key=True)
-    year: int
+class ProgrammeSection(BaseModel):
+    programme: str
+    section: str
     type: UnitTypeEnum
-    number: str
-    name: str
+
+
+class SemesterEnum(Enum):
+    HS = "HS"
+    FS = "FS"
+
+
+class TeachingUnit(PerformanceAssessment, CatalogueData, table=True):
+    """What is commonly, but also confusingly, known as a "course". German translation is "Lerneinheit"."""
+
+    id: int = Field(primary_key=True)
+    number: str = Field(index=True)  # not unique because we store both languages
+    year: int
+    name: str = Field(index=True)
     semester: SemesterEnum
+    text_language: str
+    """en or de"""
     language: str
     courses: list["Course"] = Relationship(back_populates="teaching_unit")
-
-    # catalogue data
-    abstract: str
-    learning_objective: str
-    content: str
-    lecture_notes: str
-    literature: str
-    competencies: str
-
-    # performance assessment
-    examination_block: list[str] = Field(default_factory=list, sa_column=Column(JSON))
-    # TODO: courses can have multiple credit amounts. See https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?semkez=2025W&ansicht=ALLE&lerneinheitId=192945&lang=en
-    ects_credits: int
+    offered_in: list[ProgrammeSection] = Field(sa_column=Column(JSON), default=[])
 
     class Config:  # pyright: ignore[reportIncompatibleVariableOverride]
         arbitrary_types_allowed = True
 
+    def get_link(self) -> str:
+        return f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={self.id}&semkez={self.year}{self.semester.value}&ansicht=ALLE&lang={self.text_language}"
 
-class CourseLecturerRelations(SQLModel, table=True):
+
+class CourseLecturerRelations(BaseModel, table=True):
     course_id: int = Field(
         foreign_key="course.id", primary_key=True, ondelete="CASCADE"
     )
@@ -78,7 +117,9 @@ class CourseTypeEnum(Enum):
     R = "revision course / private study"
 
 
-class Course(SQLModel, table=True):
+class Course(BaseModel, table=True):
+    """The time slots for when a teaching unit takes place"""
+
     id: int = Field(primary_key=True)
     number: str
     teaching_unit_id: int = Field(foreign_key="teachingunit.id", ondelete="CASCADE")
@@ -100,11 +141,12 @@ class Course(SQLModel, table=True):
     )
 
 
-class Lecturer(SQLModel, table=True):
+class Lecturer(BaseModel, table=True):
     id: int = Field(primary_key=True)
     firstname: str
     lastname: str
+    golden_owl: bool = Field(default=False)
 
-    courses: list[TeachingUnit] = Relationship(
+    courses: list[Course] = Relationship(
         back_populates="lecturers", link_model=CourseLecturerRelations
     )

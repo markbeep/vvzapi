@@ -13,11 +13,31 @@ uv run scrapy genspider <scraper name> <scraper name>.py
 #### Run scraper
 
 ```sh
-uv run scrapy crawl lectures -O data/test.json
+uv run scrapy crawl lectures
 ```
 
-### Run in shell (for debug)
+#### Run in shell (for debug)
 
 ```sh
 uv run scrapy shell "<url>"
+```
+
+#### Debug spider
+
+```sh
+uv run scrapy parse --spider=lectures -c <cb func> "<url>"
+```
+
+## Alembic
+
+#### Create revision
+
+```sh
+uv run alembic revision --autogenerate -m "message"
+```
+
+#### Run migrations
+
+```sh
+uv run alembic upgrade heads
 ```
