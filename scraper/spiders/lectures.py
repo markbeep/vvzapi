@@ -1,25 +1,14 @@
 import re
-from typing import Any, Generator
 from urllib.parse import urljoin
 import scrapy
 from scrapy.http import Response
 
-from api.models import (
-    CatalogueData,
-    Course,
-    CourseLecturerRelations,
-    CourseSlot,
-    CourseTypeEnum,
-    ExamLecturerRelations,
-    Lecturer,
-    PerformanceAssessment,
-    Section,
-    SemesterEnum,
-    TeachingUnit,
-    WeekdayEnum,
-)
+# from api.models import Lecturer
+from api.new_models.lerneinheit import Lerneinheit
+from api.new_models.lehrveranstalter import Lehrveranstalter
+from scraper.util.keymap import get_key
 from scraper.util.progress import create_progress
-from scraper.util.table import TableExtractor, TableRows
+from scraper.util.table import Table
 from scraper.util.url import delete_url_key, edit_url_key, list_url_params
 
 
@@ -59,10 +48,10 @@ class LecturesSpider(scrapy.Spider):
             if "lerneinheit.view" in course:
                 url = edit_url_key(urljoin(response.url, course), "ansicht", ["ALLE"])
                 url = delete_url_key(url, "lang")
-                yield response.follow(url + "&lang=en", self.parse_course)
-                yield response.follow(url + "&lang=de", self.parse_course)
+                yield response.follow(url + "&lang=en", self.parse_lerneinheit)
+                yield response.follow(url + "&lang=de", self.parse_lerneinheit)
 
-    def parse_course(self, response: Response):
+    def parse_lerneinheit(self, response: Response):
         # lecturers might be listed here under examiners, but not under courses.
         # By checking all lecturers on the course page, we ensure that we get all of them.
         for course in response.css("a::attr(href)").getall():
@@ -103,31 +92,101 @@ class LecturesSpider(scrapy.Spider):
             lang = lang.group(1)
 
         # courses
-        for item in self.get_courses(response, lerneinheitId):
-            yield item
+        # for item in self.get_courses(response, lerneinheitId):
+        #     yield item
         # catalogue data
-        catalogue_data = self.get_catalogue_data(response)
-        # performance assessment
-        performance_assessment = self.get_performance_assessments(response)
-        # offered in
-        offered_in = self.get_offered_in(response)
+        # catalogue_data = self.get_catalogue_data(response)
+        # # performance assessment
+        # performance_assessment = self.get_performance_assessments(response)
+        # # offered in
+        # offered_in = self.get_offered_in(response)
 
-        for examiner_id in performance_assessment.examiner_ids:
-            yield ExamLecturerRelations(
-                teaching_unit_id=lerneinheitId, lecturer_id=examiner_id
-            )
+        # for examiner_id in performance_assessment.examiner_ids:
+        #     yield ExamLecturerRelations(
+        #         teaching_unit_id=lerneinheitId, lecturer_id=examiner_id
+        #     )
 
-        yield TeachingUnit(
+        table = Table(response)
+
+        kreditpunkte = table.find_last("credits")
+        if kreditpunkte is not None:
+            kreditpunkte = kreditpunkte[1].css("::text").get()
+            if kreditpunkte is not None:
+                kreditpunkte = float(kreditpunkte.split("\xa0")[0])
+        url = table.find("url")
+        if url is not None:
+            url = url[1].css("a::attr(href)").get()
+        literatur = "\n".join(table.get_texts("literature")) or None
+        lernziele = "\n".join(table.get_texts("learning_objective")) or None
+        inhalt = "\n".join(table.get_texts("content")) or None
+        skript = "".join(table.get_texts("lecture_notes")) or None
+        besonderes = "\n".join(table.get_texts("notice")) or None
+        # TODO: find german/english name for diplomasupplement
+        diplomasupplement = None  # "\n".join(table.get_texts("other")) or None
+        angezeigterkommentar = "".join(table.get_texts("comment")) or None
+        # TODO: find german/english name for sternkollonne
+        sternkollonne = None
+
+        belegungMaxPlatzzahl = table.find("places")
+        if belegungMaxPlatzzahl is not None:
+            belegungMaxPlatzzahl = belegungMaxPlatzzahl[1].css("::text").get()
+            if belegungMaxPlatzzahl is not None:
+                try:
+                    belegungMaxPlatzzahl = int(belegungMaxPlatzzahl.split(" ")[0])
+                except ValueError:
+                    # Cases where we have: "Limited number of places. Special selection procedure."
+                    # Example: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId=195346&semkez=2025W&ansicht=ALLE&lang=en
+                    belegungMaxPlatzzahl = -1
+        belegungTermin2Wl = table.re_first("waiting_list", r"(\d{2}\.\d{2}\.\d{4})")
+        belegungTermin3Ende = table.re_first(
+            "registration_end", r"(\d{2}\.\d{2}\.\d{4})"
+        )
+        belegungsTerminStart = table.re_first(
+            "registration_start", r"(\d{2}\.\d{2}\.\d{4})"
+        )
+        vorrang = "".join(table.get_texts("priority")) or None
+
+        keys = table.keys()
+        for k in keys:
+            if (
+                k.strip() == ""
+                or re.match(r"\d{3}-\d{4}-\d{2}", k)
+                or "zusätzlichen Belegungseinschränkungen" in k
+                or "additional restrictions" in k
+            ):
+                continue
+            if get_key(k) == "other":
+                with open(".scrapy/database_cache/unknown_keys.jsonl", "a") as f:
+                    f.write(f'{{"key": "{k}", "url": "{response.url}"}}\n')
+
+        yield Lerneinheit(
             id=lerneinheitId,
-            number=course_number,
-            year=int(semkez[:4]),
-            name=course_name,
-            semester=SemesterEnum.FS if semkez[-1] == "S" else SemesterEnum.HS,
-            text_language=lang,
-            # catalogue data
-            **catalogue_data.model_dump(),
-            # performance assessment
-            **performance_assessment.model_dump(),
+            code=course_number,
+            titel=course_name if lang == "de" else None,
+            titelenglisch=course_name if lang == "en" else None,
+            semkez=semkez,
+            kreditpunkte=kreditpunkte,
+            url=url,
+            literatur=literatur if lang == "de" else None,
+            literaturenglisch=literatur if lang == "en" else None,
+            lernziel=lernziele if lang == "de" else None,
+            lernzielenglisch=lernziele if lang == "en" else None,
+            inhalt=inhalt if lang == "de" else None,
+            inhaltenglisch=inhalt if lang == "en" else None,
+            skript=skript if lang == "de" else None,
+            skriptenglisch=skript if lang == "en" else None,
+            besonderes=besonderes if lang == "de" else None,
+            besonderesenglisch=besonderes if lang == "en" else None,
+            diplomasupplement=diplomasupplement if lang == "de" else None,
+            diplomasupplementenglisch=diplomasupplement if lang == "en" else None,
+            angezeigterkommentar=angezeigterkommentar if lang == "de" else None,
+            angezeigterkommentaren=angezeigterkommentar if lang == "en" else None,
+            sternkollonne=sternkollonne,
+            belegungMaxPlatzzahl=belegungMaxPlatzzahl,
+            belegungTermin2Wl=belegungTermin2Wl,
+            belegungTermin3Ende=belegungTermin3Ende,
+            belegungsTerminStart=belegungsTerminStart,
+            vorrang=vorrang,
         )
 
     def parse_lecturer(self, response: Response):
@@ -145,177 +204,9 @@ class LecturesSpider(scrapy.Spider):
 
         golden_owl = any("Golden" in x for x in response.css("img::attr(alt)").getall())
 
-        yield Lecturer(
-            id=int(dozide.group(1)),
-            firstname=names[0],
-            lastname=names[1],
+        yield Lehrveranstalter(
+            dozide=int(dozide.group(1)),
+            vorname=names[0],
+            name=names[1],
             golden_owl=golden_owl,
         )
-
-    def get_courses(
-        self, response: Response, teaching_unit_id: int
-    ) -> Generator[Course | CourseLecturerRelations, Any, None]:
-        table = TableExtractor(response, ["Courses", "Lehrveranstaltungen"])
-        part = table.get_parts()[0]
-        # print(part.table.css("tr").getall())
-        rows = part.table.css("tr:not(:has(> td.td-small))")
-        for x in rows:
-            number = x.re_first(r"\d{3}-\d{4}-\d{2}\xa0\w")
-            if not number:
-                continue
-            number = number.replace("\xa0", "")
-            type = CourseTypeEnum[number[-1]]
-            comments = "\n".join(
-                [t.strip() for t in x.css(".kommentar-lv::text").getall() if t.strip()]
-            )
-
-            columns = x.css("td:not(.td-small)")
-            name = columns[1].css("::text").get()
-            lecturer_ids = [int(x) for x in columns[4].re(r"dozide=(\d+)")]
-            timeslots: list[CourseSlot] = []
-            slots = columns[3].css("a::text").getall()
-
-            weekday: WeekdayEnum = WeekdayEnum.Mon
-            i = 0
-            while i < len(slots):
-                day, *args = slots[i].split("/")
-                try:
-                    # weekday is not always given for every time slot
-                    weekday = (
-                        WeekdayEnum.ByAppointment
-                        if day == "by appt."
-                        else WeekdayEnum[day]
-                    )
-                    i += 1
-                except KeyError:
-                    pass
-
-                start_time, end_time = slots[i].split("-")
-                building = slots[i + 1]
-                room = slots[i + 2]
-                timeslots.append(
-                    CourseSlot(
-                        weekday=weekday,
-                        start_time=start_time,
-                        end_time=end_time,
-                        building=building,
-                        room=room,
-                        first_half_semester="1" in args,
-                        second_half_semester="2" in args,
-                        two_weekly="2w" in args,
-                    )
-                )
-
-                i += 4
-
-            yield Course(
-                number=number,
-                name=name or "",
-                teaching_unit_id=teaching_unit_id,
-                type=type,
-                comments=comments or None,
-                slots=timeslots,
-            )
-
-            for lecturer_id in lecturer_ids:
-                yield CourseLecturerRelations(
-                    course_number=number, lecturer_id=lecturer_id
-                )
-
-    def get_catalogue_data(self, response: Response):
-        table = TableExtractor(response, ["Catalogue data", "Katalogdaten"])
-        parts = table.get_parts()
-        part = parts[0]
-        # There might be multiple parts because of some "INFO" images
-        part = part.extend(*parts[1:] if len(parts) > 1 else [])
-        rows = part.get_rows()
-
-        for r in rows.others:
-            if "Competencies" in " ".join(r.texts()):
-                continue
-            self.logger.warning(
-                f"Unknown catalogue data key in {response.url}: {r.texts()}"
-            )
-
-        return CatalogueData(
-            abstract=rows.two["abstract"].text(),
-            learning_objective=rows.two["learning_objective"].text(),
-            content="\n".join(rows.two["content"].texts()),
-            notice=rows.two["notice"].text(),
-            competencies=rows.two["competencies"].text(),
-            lecture_notes=rows.two["lecture_notes"].text(),
-            literature=rows.two["literature"].text(),
-            other_data=["\n".join(r.texts()) for r in rows.others if r.texts()],
-        )
-
-    def get_performance_assessments(self, response: Response):
-        table = TableExtractor(
-            response, ["Performance assessment", "Leistungskontrolle"]
-        )
-        parts = table.get_parts()[1:]
-
-        two_semester = TableRows()
-        one_semester = TableRows()
-
-        if len(parts) == 2:
-            self.logger.info(
-                f"Found two semester performance assessment: {response.url}"
-            )
-            two_semester = parts[0].get_rows()
-            parts = parts[1:]
-        one_semester = parts[0].get_rows()
-
-        """
-        TWO SEMESTER ASSESSMENT
-        """
-        two_semester_credits = two_semester.two.get("credits")
-        two_semester_credits = (
-            two_semester_credits.credit() if two_semester_credits else None
-        )
-        together_with_number = None
-        r = two_semester.one["two_semester_course"].re(r"(\d{3}-\d{4}-\d{2}\w) (.+)\n")
-        if len(r) == 2:
-            together_with_number = r[0]
-            together_with_name = r[1]
-            self.logger.info(
-                f"Found two semester course together with {together_with_number} {together_with_name}: {response.url}"
-            )
-
-        """
-        ONE SEMESTER ASSESSMENT
-        """
-        examiner_ids = one_semester.two["examiners"].re(r"dozide=(\d+)")
-        examiner_ids = [int(x) for x in examiner_ids]
-
-        return PerformanceAssessment(
-            two_semester_credits=two_semester_credits,
-            programme_regulations=two_semester.two["regulations"].texts(),
-            together_with_number=together_with_number,
-            ects_credits=one_semester.two["credits"].credit() or 0.0,
-            examiner_ids=examiner_ids,
-            assessment_type=one_semester.two["type"].text() or "",
-            assessment_language=one_semester.two["assessment_language"].text() or "",
-            repetition=one_semester.two["repetition"].text() or "",
-            exam_block_of=one_semester.two["exam_block"].texts(),
-            mode=one_semester.two["exam_mode"].text(),
-            additional_info=one_semester.two["additional_info"].text(),
-            written_aids=one_semester.two["written_aids"].text(),
-            distance=one_semester.two["distance_exam"].text(),
-            digital=one_semester.two["digital"].text(),
-            update_note=one_semester.two["to_be_updated"].text(),
-            admission_requirement=one_semester.two["admission_requirement"].text(),
-            other_assessment=[
-                "\n".join(cell.texts()) for cell in one_semester.others if cell.texts()
-            ],
-        )
-
-    def get_offered_in(self, response: Response) -> list[Section]:
-        offered_in: list[Section] = []
-        table = TableExtractor(response, ["Offered in", "Angeboten in"])
-        parts = table.get_parts()
-        if len(parts) == 0:
-            return []
-        part = parts[0].extend(*parts[1:] if len(parts) > 1 else [])
-
-        rows = part.get_rows()
-        return []
