@@ -53,7 +53,8 @@ class LecturesSpider(scrapy.Spider):
 
     def parse_lerneinheit(self, response: Response):
         # lecturers might be listed here under examiners, but not under courses.
-        # By checking all lecturers on the course page, we ensure that we get all of them.
+        # By checking all lecturers on the course page (instead of search page),
+        # we ensure that we get all of them.
         for course in response.css("a::attr(href)").getall():
             if "dozent.view" in course:
                 for param in list_url_params(course).keys():

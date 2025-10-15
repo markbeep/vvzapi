@@ -3,7 +3,7 @@ from api.new_models.base import BaseModel
 
 
 class AbschnittElement(BaseModel, table=True):
-    """WsAbschnittElement — synthetic PK added"""
+    """WsAbschnittElement"""
 
     id: int = Field(primary_key=True)
     abschnittelementtyp: int = Field()
