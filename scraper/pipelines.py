@@ -4,7 +4,7 @@ from scrapy import Spider
 
 from api import db
 from api.new_models.lerneinheit import Lerneinheit
-from api.new_models.lehrnveranstalter import Lehrveranstalter
+from api.new_models.lehrveranstalter import Lehrveranstalter
 
 CACHE_PATH = "database_cache"
 

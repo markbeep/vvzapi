@@ -5,7 +5,7 @@ from scrapy.http import Response
 
 # from api.models import Lecturer
 from api.new_models.lerneinheit import Lerneinheit
-from api.new_models.lehrnveranstalter import Lehrveranstalter
+from api.new_models.lehrveranstalter import Lehrveranstalter
 from scraper.util.keymap import get_key
 from scraper.util.progress import create_progress
 from scraper.util.table import Table, TableExtractor, TableRows
