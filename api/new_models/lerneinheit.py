@@ -1,10 +1,10 @@
-from sqlmodel import Field
-from api.new_models.basemodel import BaseModel
+from sqlmodel import JSON, Field, Column
+from api.new_models.base import BaseModel
 from api.new_models.lehrveranstaltungen import Lehrveranstaltung
 
 
-class Lehrneinheit(BaseModel, table=True):
-    """WsLehrneinheit"""
+class Lerneinheit(BaseModel, table=True):
+    """WsLerneinheit"""
 
     id: int = Field(primary_key=True)
     code: str | None = Field(default=None, max_length=12)
@@ -13,10 +13,10 @@ class Lehrneinheit(BaseModel, table=True):
     semkez: str = Field(max_length=5)
     kreditpunkte: float | None = Field(default=None)
     url: str | None = Field(default=None, max_length=1000)
-    urlvon: str | None = Field(default=None)
-    urlbis: str | None = Field(default=None)
-    reihenfolge: int | None = Field(default=None)
-    lkeinheitid: int | None = Field(default=None)  # FK expected
+    # urlvon: str | None = Field(default=None)
+    # urlbis: str | None = Field(default=None)
+    # reihenfolge: int | None = Field(default=None)
+    # lkeinheitid: int | None = Field(default=None)  # FK expected
     literatur: str | None = Field(default=None, max_length=4000)
     literaturenglisch: str | None = Field(default=None, max_length=4000)
     lernziel: str | None = Field(default=None, max_length=4000)
@@ -35,4 +35,16 @@ class Lehrneinheit(BaseModel, table=True):
     belegungMaxPlatzzahl: int | None = Field(default=None)
     belegungTermin2Wl: str | None = Field(default=None)
     belegungTermin3Ende: str | None = Field(default=None)
-    lehrveranstaltungen: Lehrveranstaltung = Field(default_factory=list)
+    # NOTE: Not listed in doc, but listed on vvz
+    belegungsTerminStart: str | None = Field(default=None)
+    vorrang: str | None = Field(default=None)
+
+    # lehrveranstaltungen: list[Lehrveranstaltung] = Field(
+    #     default_factory=list, sa_column=Column(JSON)
+    # )
+
+    def overwrite_with(self, other: "Lerneinheit"):
+        for field in other.model_fields_set:
+            value = getattr(other, field)
+            if value is not None:
+                setattr(self, field, value)

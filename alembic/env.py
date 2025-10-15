@@ -2,19 +2,16 @@ import pathlib
 from logging.config import fileConfig
 
 from alembic import context
-from api import new_models
 from api.db import engine
 from api.env import Settings
+from api.new_models import BaseModel
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
-target_metadata = new_models.BaseModel.metadata
 
 
 def run_migrations() -> None:
@@ -23,7 +20,7 @@ def run_migrations() -> None:
     with engine.connect() as connection:
         context.configure(
             connection=connection,
-            target_metadata=target_metadata,
+            target_metadata=BaseModel.metadata,
             render_as_batch=True,
         )
 

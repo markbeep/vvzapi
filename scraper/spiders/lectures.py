@@ -318,3 +318,4 @@ class LecturesSpider(scrapy.Spider):
         part = parts[0].extend(*parts[1:] if len(parts) > 1 else [])
 
         rows = part.get_rows()
+        return []

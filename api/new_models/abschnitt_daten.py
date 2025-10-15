@@ -1,5 +1,6 @@
 from sqlmodel import Field
-from api.new_models.basemodel import BaseModel
+
+from api.new_models.base import BaseModel
 
 
 class AbschnittDaten(BaseModel, table=True):
@@ -19,3 +20,7 @@ class AbschnittDaten(BaseModel, table=True):
     reihenfolge: int | None = Field(default=None)
     angezeigterkommentar: str | None = Field(default=None)
     angezeigterkommentaren: str | None = Field(default=None)
+
+    # abschnittelemente: list["AbschnittElement"] = Relationship(
+    #     back_populates="abschnittdaten"
+    # )

@@ -1,5 +1,6 @@
 from sqlmodel import Field
-from api.new_models.basemodel import BaseModel
+
+from api.new_models.base import BaseModel
 
 
 class BelegungsserieOrt(BaseModel, table=True):

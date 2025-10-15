@@ -77,8 +77,8 @@ class OfferedInRelations(BaseModel, table=True):
     type: UnitTypeEnum
 
     # TODO: fix this
-    teaching_unit = Relationship(back_populates="offered_in_type")
-    section = Relationship(back_populates="teaching_units_type")
+    # teaching_unit = Relationship(back_populates="offered_in_type")
+    # section = Relationship(back_populates="teaching_units_type")
 
 
 class Section(BaseModel, table=True):
@@ -101,12 +101,12 @@ class Section(BaseModel, table=True):
     section_id: int = Field(primary_key=True)
     name: str
     parent_id: str | None
-    teaching_units: list["TeachingUnit"] = Relationship(
-        back_populates="offered_in", link_model=OfferedInRelations
-    )
-    teaching_units_type: list[OfferedInRelations] = Relationship(
-        back_populates="section"
-    )
+    # teaching_units: list["TeachingUnit"] = Relationship(
+    #     back_populates="offered_in", link_model=OfferedInRelations
+    # )
+    # teaching_units_type: list[OfferedInRelations] = Relationship(
+    #     back_populates="section"
+    # )
 
 
 class SemesterEnum(Enum):
@@ -129,12 +129,12 @@ class TeachingUnit(PerformanceAssessment, CatalogueData, table=True):
     examiners: list["Lecturer"] = Relationship(
         back_populates="exams", link_model=ExamLecturerRelations
     )
-    offered_in: list[Section] = Relationship(
-        back_populates="teaching_units", link_model=OfferedInRelations
-    )
-    offered_in_type: list[OfferedInRelations] = Relationship(
-        back_populates="teaching_unit"
-    )
+    # offered_in: list[Section] = Relationship(
+    #     back_populates="teaching_units", link_model=OfferedInRelations
+    # )
+    # offered_in_type: list[OfferedInRelations] = Relationship(
+    #     back_populates="teaching_unit"
+    # )
 
     class Config:  # pyright: ignore[reportIncompatibleVariableOverride]
         arbitrary_types_allowed = True

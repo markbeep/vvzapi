@@ -1,8 +1,7 @@
-from sqlmodel import Field
-from api.new_models.basemodel import BaseModel
+from sqlmodel import JSON, Column, Field
+from api.new_models.base import BaseModel
 from api.new_models.belegungsserie_ort import BelegungsserieOrt
 from api.new_models.lehrnveranstalter import Lehrveranstalter
-from api.new_models.veranstalter import Veranstalter
 
 
 class Lehrveranstaltung(BaseModel, table=True):
@@ -46,6 +45,14 @@ class Lehrveranstaltung(BaseModel, table=True):
     externehoerer: bool | None = Field(default=None)
     angezeigterkommentar: str | None = Field(default=None, max_length=1000)
 
-    lehrveranstalter: list[Lehrveranstalter] = Field(default_factory=list)
-    belegungsserien: list[BelegungsserieOrt] = Field(default_factory=list)
-    veranstalter: list[Veranstalter] = Field(default_factory=list)
+    lehrveranstalter: list[Lehrveranstalter] = Field(
+        default_factory=list, sa_column=Column(JSON)
+    )
+    belegungsserien: list[BelegungsserieOrt] = Field(
+        default_factory=list, sa_column=Column(JSON)
+    )
+
+    # NOTE: veranstalter is excluded
+    # veranstalter: list[Veranstalter] = Field(
+    #     default_factory=list, sa_column=Column(JSON)
+    # )

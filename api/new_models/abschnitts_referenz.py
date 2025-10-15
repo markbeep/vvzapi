@@ -1,5 +1,6 @@
 from sqlmodel import Field
-from api.new_models.basemodel import BaseModel
+
+from api.new_models.base import BaseModel
 
 
 class AbschnittsRefernz(BaseModel, table=True):
@@ -15,3 +16,7 @@ class AbschnittsRefernz(BaseModel, table=True):
     typstringlangen: str | None = Field(default=None)
     kommentar: str | None = Field(default=None, max_length=1000)
     kommentaren: str | None = Field(default=None, max_length=1000)
+
+    # abschnittelemente: "AbschnittElement | None" = Relationship(
+    #     back_populates="abschnittsreferenz"
+    # )

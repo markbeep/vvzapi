@@ -23,6 +23,7 @@ TranslationKey = Literal[
     "competencies",
     "lecture_notes",
     "literature",
+    "url",
     # Performance assessment
     "assessment_information",
     "semester_course",
@@ -50,6 +51,8 @@ TranslationKey = Literal[
     "places",
     "waiting_list",
     "registration_end",
+    "registration_start",
+    "priority",
     #
     "other",
 ]
@@ -62,9 +65,10 @@ translations: dict[TranslationKey, Translation] = {
     "course": Translation(de="Lehrveranstaltung", en="Course"),
     "language": Translation(de="Lehrsprache", en="Language of instruction"),
     "comment": Translation(de="Kommentar", en="Comment"),
+    "url": Translation(de="Hauptlink", en="Main link"),
     # Catalogue data
     "abstract": Translation(de="Kurzbeschreibung", en="Abstract"),
-    "learning_objective": Translation(de="Lernziele", en="Learning objective"),
+    "learning_objective": Translation(de="Lernziel", en="Learning objective"),
     "content": Translation(de="Inhalt", en="Content"),
     "notice": Translation(
         de="Voraussetzungen / Besonderes", en="Prerequisites / Notice"
@@ -132,6 +136,10 @@ translations: dict[TranslationKey, Translation] = {
     "registration_end": Translation(
         de="Belegungsende", en="End of registration period"
     ),
+    "registration_start": Translation(
+        de="Belegungsbeginn", en="Beginning of registration period"
+    ),
+    "priority": Translation(de="Vorrang", en="Priority"),
 }
 
 
