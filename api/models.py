@@ -63,10 +63,50 @@ class UnitTypeEnum(Enum):
     Dr = "Doctorate"  # Suitable for doctorate
 
 
-class ProgrammeSection(BaseModel):
-    programme: str
-    section: str
+class OfferedInRelations(BaseModel, table=True):
+    """
+    These are the relations from the "Offered in" section of a teaching unit
+    """
+
+    teaching_unit_id: int = Field(
+        foreign_key="teachingunit.id", primary_key=True, ondelete="CASCADE"
+    )
+    section_id: int = Field(
+        foreign_key="section.section_id", primary_key=True, ondelete="CASCADE"
+    )
     type: UnitTypeEnum
+
+    # TODO: fix this
+    teaching_unit = Relationship(back_populates="offered_in_type")
+    section = Relationship(back_populates="teaching_units_type")
+
+
+class Section(BaseModel, table=True):
+    """
+    For example we have the following entries in the "Offered in" section:
+    - Programme: Agricultural Sciences Bachelor
+    - Section: First Year Examinations
+
+    But if we go to [1] we can see that the full structure is as follows:
+    - Agricultural Sciences Bachelor
+        - 1. Semester
+            - First Year Examinations
+
+    Each of these entries has a sectionId (abschnittId), so we
+    can handle them as their own section.
+
+    [1] https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?abschnittId=118692&semkez=2025W&lang=en
+    """
+
+    section_id: int = Field(primary_key=True)
+    name: str
+    parent_id: str | None
+    teaching_units: list["TeachingUnit"] = Relationship(
+        back_populates="offered_in", link_model=OfferedInRelations
+    )
+    teaching_units_type: list[OfferedInRelations] = Relationship(
+        back_populates="section"
+    )
 
 
 class SemesterEnum(Enum):
@@ -85,10 +125,15 @@ class TeachingUnit(PerformanceAssessment, CatalogueData, table=True):
     text_language: str
     """en or de"""
     language: str
-    offered_in: list[ProgrammeSection] = Field(sa_column=Column(JSON), default=[])
     courses: list["Course"] = Relationship(back_populates="teaching_unit")
     examiners: list["Lecturer"] = Relationship(
         back_populates="exams", link_model=ExamLecturerRelations
+    )
+    offered_in: list[Section] = Relationship(
+        back_populates="teaching_units", link_model=OfferedInRelations
+    )
+    offered_in_type: list[OfferedInRelations] = Relationship(
+        back_populates="teaching_unit"
     )
 
     class Config:  # pyright: ignore[reportIncompatibleVariableOverride]

@@ -13,6 +13,7 @@ from api.models import (
     ExamLecturerRelations,
     Lecturer,
     PerformanceAssessment,
+    Section,
     SemesterEnum,
     TeachingUnit,
     WeekdayEnum,
@@ -108,6 +109,8 @@ class LecturesSpider(scrapy.Spider):
         catalogue_data = self.get_catalogue_data(response)
         # performance assessment
         performance_assessment = self.get_performance_assessments(response)
+        # offered in
+        offered_in = self.get_offered_in(response)
 
         for examiner_id in performance_assessment.examiner_ids:
             yield ExamLecturerRelations(
@@ -305,3 +308,13 @@ class LecturesSpider(scrapy.Spider):
                 "\n".join(cell.texts()) for cell in one_semester.others if cell.texts()
             ],
         )
+
+    def get_offered_in(self, response: Response) -> list[Section]:
+        offered_in: list[Section] = []
+        table = TableExtractor(response, ["Offered in", "Angeboten in"])
+        parts = table.get_parts()
+        if len(parts) == 0:
+            return []
+        part = parts[0].extend(*parts[1:] if len(parts) > 1 else [])
+
+        rows = part.get_rows()

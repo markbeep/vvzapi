@@ -2,7 +2,7 @@ import pathlib
 from logging.config import fileConfig
 
 from alembic import context
-from api import models
+from api import new_models
 from api.db import engine
 from api.env import Settings
 
@@ -14,7 +14,7 @@ config = context.config
 # This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
-target_metadata = models.BaseModel.metadata
+target_metadata = new_models.BaseModel.metadata
 
 
 def run_migrations() -> None:
