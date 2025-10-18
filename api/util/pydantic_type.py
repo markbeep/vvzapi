@@ -8,10 +8,13 @@ from pydantic.json import pydantic_encoder
 from sqlalchemy.dialects.postgresql import JSONB
 
 
-class PydanticType(sa.types.TypeDecorator):
+class PydanticType[T: BaseModel](sa.types.TypeDecorator):
     impl = sa.types.JSON
 
-    def __init__(self, pydantic_type: type[BaseModel] | type[Sequence[BaseModel]]):
+    def __init__(
+        self,
+        pydantic_type: type[T] | type[Sequence[T]] | type[dict[str, list[T]]],
+    ):
         super().__init__()
         self.pydantic_type = pydantic_type
 

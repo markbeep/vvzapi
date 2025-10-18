@@ -131,11 +131,12 @@ class LearningUnit(BaseModel, table=True):
     """Groups can have no slot nor any info: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lang=de&lerneinheitId=193540&semkez=2025W&ansicht=ALLE&"""
     course_frequency: Periodicity | None = Field(default=None)
     learning_materials: dict[str, list[NamedURL]] | None = Field(
-        default=None, sa_column=Column(JSON)
+        default=None, sa_column=Column(PydanticType(dict[str, list[NamedURL]]))
     )
     """Links to learning materials provided for this learning unit."""
     learning_materials_english: dict[str, list[NamedURL]] | None = Field(
-        default=None, sa_column=Column(JSON)
+        default=None,
+        sa_column=Column(PydanticType(dict[str, list[NamedURL]])),
     )
     occurence: OccurenceEnum | None = Field(default=None)
     general_restrictions: str | None = Field(default=None)

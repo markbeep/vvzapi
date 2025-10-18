@@ -46,3 +46,7 @@ uv run alembic upgrade heads
 ## Schema
 
 [VVZ Schema](https://www.bi.id.ethz.ch/soapvvz-2023-1/manual/SoapVVZ.pdf#page=18) (starts page 18)
+
+## Caching
+
+https://pypi.org/project/fastapi-cache2/
