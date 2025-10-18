@@ -1,7 +1,9 @@
+from datetime import date
 import traceback
 from collections import defaultdict
 import json
 import re
+from typing_extensions import Literal
 from urllib.parse import urljoin
 from parsel import SelectorList, Selector
 from pydantic import BaseModel
@@ -40,12 +42,23 @@ from scraper.util.url import (
     sort_url_params,
 )
 
+START_YEAR = 2025  # 2003
+END_YEAR = date.today().year + 1
+SEMESTERS = ("W",)  # ("W", "S")
+
+
+def get_urls(year: int, semester: Literal["W", "S"]):
+    url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?semkez={year}{semester}&ansicht=1&lang=en"
+    return [url, url + "&strukturAus=on"]
+
 
 class LecturesSpider(scrapy.Spider):
     name = "lectures"
     start_urls = [
-        "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?lerneinheitscode=&deptId=&famname=&unterbereichAbschnittId=&lerneinheitstitel=&rufname=&kpRange=0,999&lehrsprache=&bereichAbschnittId=&semkez=2025W&studiengangAbschnittId=&studiengangTyp=&ansicht=1&lang=en&katalogdaten=&wahlinfo=",
-        "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?lerneinheitscode=&deptId=&famname=&unterbereichAbschnittId=&lerneinheitstitel=&rufname=&kpRange=0,999&lehrsprache=&bereichAbschnittId=&semkez=2025W&studiengangAbschnittId=&studiengangTyp=&ansicht=1&lang=en&katalogdaten=&wahlinfo=&strukturAus=on",
+        url
+        for year in range(START_YEAR, END_YEAR + 1)
+        for semester in SEMESTERS
+        for url in get_urls(year, semester)
     ]
 
     def parse(self, response: Response):
