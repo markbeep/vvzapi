@@ -1,5 +1,5 @@
 from sqlmodel import Field
-from api.new_models.base import BaseModel
+from api.models.base import BaseModel
 
 
 class Section(BaseModel, table=True):

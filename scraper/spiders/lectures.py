@@ -9,20 +9,27 @@ import scrapy
 from scrapy.http import Response
 
 # from api.models import Lecturer
-from api.models import CourseSlot, CourseTypeEnum, WeekdayEnum
-from api.new_models.lehrveranstaltungen import CourseHourEnum, Lehrveranstaltung
-from api.new_models.lerneinheit import Lerneinheit, NamedURL, OccurenceEnum, Periodicity
-from api.new_models.lehrveranstalter import Lehrveranstalter
-from api.new_models.section import Section
+from api.util.types import CourseSlot, CourseTypeEnum, WeekdayEnum
+from api.models.course import CourseHourEnum, Course
+from api.models.learning_unit import (
+    LearningUnit,
+    NamedURL,
+    OccurenceEnum,
+    OfferedIn,
+    Periodicity,
+    UnitTypeEnum,
+)
+from api.models.lecturer import Lecturer
+from api.models.section import Section
 from scraper.util.keymap import get_key
 from scraper.util.progress import create_progress
 from scraper.util.regex_rules import (
     RE_ABSCHNITTID,
-    RE_COURSE_NUMBER,
+    RE_CODE,
     RE_DATE,
     RE_DOZIDE,
     RE_LANG,
-    RE_LERNEINHEITID,
+    RE_UNITID,
     RE_SEMKEZ,
 )
 from scraper.util.table import Table, table_under_header
@@ -68,10 +75,10 @@ class LecturesSpider(scrapy.Spider):
                 url = edit_url_key(url, "ansicht", ["ALLE"])
                 url = delete_url_key(url, "lang")
                 url = sort_url_params(url)
-                yield response.follow(url + "&lang=en", self.parse_lerneinheit)
-                yield response.follow(url + "&lang=de", self.parse_lerneinheit)
+                yield response.follow(url + "&lang=en", self.parse_unit)
+                yield response.follow(url + "&lang=de", self.parse_unit)
 
-    def parse_lerneinheit(self, response: Response):
+    def parse_unit(self, response: Response):
         try:
             # lecturers might be listed here under examiners, but not under courses.
             # By checking all lecturers on the course page (instead of search page),
@@ -99,13 +106,13 @@ class LecturesSpider(scrapy.Spider):
                 return
             semkez = semkez.group(1)
 
-            lerneinheitId = re.search(RE_LERNEINHEITID, response.url)
-            if not lerneinheitId:
+            unit_id = re.search(RE_UNITID, response.url)
+            if not unit_id:
                 self.logger.warning(f"No lerneinheitId found for {response.url}")
-                lerneinheitId = "unknown"
+                unit_id = "unknown"
             else:
-                lerneinheitId = lerneinheitId.group(1)
-            lerneinheitId = int(lerneinheitId)
+                unit_id = unit_id.group(1)
+            unit_id = int(unit_id)
 
             lang = re.search(RE_LANG, response.url)
             if not lang:
@@ -115,71 +122,74 @@ class LecturesSpider(scrapy.Spider):
 
             table = Table(response)
 
-            kreditpunkte = table.find_last("credits")
-            if kreditpunkte is not None:
-                kreditpunkte = kreditpunkte[1].css("::text").get()
-                if kreditpunkte is not None:
-                    kreditpunkte = float(kreditpunkte.split("\xa0")[0])
-            literatur = "\n".join(table.get_texts("literature")) or None
-            lernziele = "\n".join(table.get_texts("learning_objective")) or None
-            inhalt = "\n".join(table.get_texts("content")) or None
-            skript = "".join(table.get_texts("lecture_notes")) or None
-            besonderes = "\n".join(table.get_texts("notice")) or None
-            # TODO: find german/english name for diplomasupplement
-            diplomasupplement = None  # "\n".join(table.get_texts("other")) or None
-            angezeigterkommentar = "".join(table.get_texts("comment")) or None
-            # TODO: find german/english name for sternkollonne
-            sternkollonne = None
+            credit_cols = table.find_all("credits")
+            credits = None
+            two_semester_credits = None
+            if len(credit_cols) > 0:
+                # two semester credits is shown before the actual course credits
+                credits = credit_cols[-1][1].css("::text").get()
+                if credits is not None:
+                    credits = float(credits.split("\xa0")[0])
+            if len(credit_cols) == 2:
+                two_semester_credits = credit_cols[0][1].css("::text").get()
+                if two_semester_credits is not None:
+                    two_semester_credits = float(two_semester_credits.split("\xa0")[0])
 
-            belegungMaxPlatzzahl = table.find("places")
-            if belegungMaxPlatzzahl is not None:
-                belegungMaxPlatzzahl = belegungMaxPlatzzahl[1].css("::text").get()
-                if belegungMaxPlatzzahl is not None:
+            literature = "\n".join(table.get_texts("literature")) or None
+            objective = "\n".join(table.get_texts("learning_objective")) or None
+            content = "\n".join(table.get_texts("content")) or None
+            lecture_notes = "".join(table.get_texts("lecture_notes")) or None
+            additional = "\n".join(table.get_texts("notice")) or None
+            comment = "".join(table.get_texts("comment")) or None
+
+            max_places = table.find("places")
+            if max_places is not None:
+                max_places = max_places[1].css("::text").get()
+                if max_places is not None:
                     try:
-                        belegungMaxPlatzzahl = int(belegungMaxPlatzzahl.split(" ")[0])
+                        max_places = int(max_places.split(" ")[0])
                     except ValueError:
                         # Cases where we have: "Limited number of places. Special selection procedure."
                         # Example: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId=195346&semkez=2025W&ansicht=ALLE&lang=en
-                        belegungMaxPlatzzahl = -1
-            belegungTermin2Wl = table.re_first("waiting_list", RE_DATE)
-            belegungTermin3Ende = table.re_first("registration_end", RE_DATE)
-            belegungsTerminStart = table.re_first("registration_start", RE_DATE)
-            vorrang = "".join(table.get_texts("priority")) or None
-            lehrsprache = "".join(table.get_texts("language")) or None
-            kurzbeschreibung = "".join(table.get_texts("abstract")) or None
-            kompetenzen = {}
+                        max_places = -1
+            waitlist_end = table.re_first("waiting_list", RE_DATE)
+            signup_end = table.re_first("registration_end", RE_DATE)
+            signup_start = table.re_first("registration_start", RE_DATE)
+            priority = "".join(table.get_texts("priority")) or None
+            language = "".join(table.get_texts("language")) or None
+            abstract = "".join(table.get_texts("abstract")) or None
+            competencies = {}
             if comp_cols := table.find("competencies"):
-                kompetenzen = self.extract_competencies(comp_cols)
-            prufende = table.re("examiners", RE_DOZIDE)
-            prufende = [int(pid) for pid in prufende]
-            dozierende = table.re("lecturers", RE_DOZIDE)
-            dozierende = [int(pid) for pid in dozierende]
-            reglement = table.get_texts("regulations")
-            hilfsmittel = "".join(table.get_texts("written_aids")) or None
-            prufungzusatzinfo = "".join(table.get_texts("additional_info")) or None
-            prufungsmodus = "".join(table.get_texts("exam_mode")) or None
-            prufungssprache = "".join(table.get_texts("assessment_language")) or None
-            prufungsform = "".join(table.get_texts("type")) or None
-            periodicity = table.find("periodicity")
-            if periodicity is not None:
-                periodicity_text = periodicity[1].css("::text").get()
+                competencies = self.extract_competencies(comp_cols)
+            examiners = table.re("examiners", RE_DOZIDE)
+            examiners = [int(pid) for pid in examiners]
+            lecturers = table.re("lecturers", RE_DOZIDE)
+            lecturers = [int(pid) for pid in lecturers]
+            regulations = table.get_texts("regulations")
+            written_aids = "".join(table.get_texts("written_aids")) or None
+            additional_info = "".join(table.get_texts("additional_info")) or None
+            exam_mode = "".join(table.get_texts("exam_mode")) or None
+            exam_language = "".join(table.get_texts("exam_language")) or None
+            exam_type = "".join(table.get_texts("type")) or None
+            course_frequency = table.find("periodicity")
+            if course_frequency is not None:
+                periodicity_text = course_frequency[1].css("::text").get()
                 if periodicity_text in [
                     "jährlich wiederkehrende Veranstaltung",
                     "yearly recurring course",
                 ]:
-                    periodicity = Periodicity.ANNUAL
+                    course_frequency = Periodicity.ANNUAL
                 elif periodicity_text in [
                     "jedes Semester wiederkehrende Veranstaltung",
                     "every semester recurring course",
                 ]:
-                    periodicity = Periodicity.SEMESTER
+                    course_frequency = Periodicity.SEMESTER
                 else:
-                    periodicity = Periodicity.ONETIME
+                    course_frequency = Periodicity.ONETIME
             repetition = "".join(table.get_texts("repetition")) or None
             primary_target_group = table.get_texts("primary_target_group")
             digital = "".join(table.get_texts("digital")) or None
             distance_exam = "".join(table.get_texts("distance_exam")) or None
-            recording = "".join(table.get_texts("recording")) or None
             exam_block_for = table.get_texts("exam_block")
             occurence = table.find("course")
             general_restrictions = (
@@ -211,20 +221,12 @@ class LecturesSpider(scrapy.Spider):
 
             learning_materials = self.extract_learning_materials(response)
 
-            # Get courses
-            for k, cols in table.rows:
-                course_number = re.match(RE_COURSE_NUMBER, k)
-                if course_number:
-                    yield self.extract_course(
-                        parent_unit=lerneinheitId, semkez=semkez, cols=cols
-                    )
-
             # Print any unknown or missed keys
             if lang == "de":
                 for k in table.keys():
                     if (
                         k.strip() == ""
-                        or re.match(RE_COURSE_NUMBER, k)
+                        or re.match(RE_CODE, k)
                         or "zusätzlichen Belegungseinschränkungen" in k
                         or "Information zur Leistungskontrolle" in k
                         or "Leistungskontrolle als Jahreskurs" in k
@@ -247,59 +249,65 @@ class LecturesSpider(scrapy.Spider):
                         ) as f:
                             f.write(f"{json.dumps({'key': k, 'url': response.url})}\n")
 
-            yield Lerneinheit(
-                id=lerneinheitId,
+            yield LearningUnit(
+                id=unit_id,
                 code=unit_number,
-                titel=unit_name if lang == "de" else None,
-                titelenglisch=unit_name if lang == "en" else None,
+                title=unit_name if lang == "de" else None,
+                title_english=unit_name if lang == "en" else None,
                 semkez=semkez,
-                kreditpunkte=kreditpunkte,
-                literatur=literatur if lang == "de" else None,
-                literaturenglisch=literatur if lang == "en" else None,
-                lernziel=lernziele if lang == "de" else None,
-                lernzielenglisch=lernziele if lang == "en" else None,
-                inhalt=inhalt if lang == "de" else None,
-                inhaltenglisch=inhalt if lang == "en" else None,
-                skript=skript if lang == "de" else None,
-                skriptenglisch=skript if lang == "en" else None,
-                besonderes=besonderes if lang == "de" else None,
-                besonderesenglisch=besonderes if lang == "en" else None,
-                diplomasupplement=diplomasupplement if lang == "de" else None,
-                diplomasupplementenglisch=diplomasupplement if lang == "en" else None,
-                angezeigterkommentar=angezeigterkommentar if lang == "de" else None,
-                angezeigterkommentaren=angezeigterkommentar if lang == "en" else None,
-                sternkollonne=sternkollonne,
-                belegungMaxPlatzzahl=belegungMaxPlatzzahl,
-                belegungTermin2Wl=belegungTermin2Wl,
-                belegungTermin3Ende=belegungTermin3Ende,
-                belegungsTerminStart=belegungsTerminStart,
-                vorrang=vorrang,
-                lehrsprache=lehrsprache,
-                Kurzbeschreibung=kurzbeschreibung,
-                kompetenzen=kompetenzen if lang == "de" else None,
-                kompetenzenenglisch=kompetenzen if lang == "en" else None,
-                reglement=reglement,
-                hilfsmittel=hilfsmittel,
-                prufungzusatzinfo=prufungzusatzinfo,
-                prufungsmodus=prufungsmodus,
-                prufungssprache=prufungssprache,
-                prufungsform=prufungsform,
-                prufende=prufende,
-                dozierende=dozierende,
-                periodizitaet=periodicity,
+                credits=credits,
+                two_semester_credits=two_semester_credits,
+                literature=literature if lang == "de" else None,
+                literature_english=literature if lang == "en" else None,
+                objective=objective if lang == "de" else None,
+                objective_english=objective if lang == "en" else None,
+                content=content if lang == "de" else None,
+                content_english=content if lang == "en" else None,
+                lecture_notes=lecture_notes if lang == "de" else None,
+                lecture_notes_english=lecture_notes if lang == "en" else None,
+                additional=additional if lang == "de" else None,
+                additional_english=additional if lang == "en" else None,
+                comment=comment if lang == "de" else None,
+                comment_english=comment if lang == "en" else None,
+                max_places=max_places,
+                waitlist_end=waitlist_end,
+                signup_end=signup_end,
+                signup_start=signup_start,
+                priority=priority,
+                language=language,
+                abstract=abstract if lang == "de" else None,
+                abstract_english=abstract if lang == "en" else None,
+                competencies=competencies if lang == "de" else None,
+                competencies_english=competencies if lang == "en" else None,
+                regulations=regulations,
+                written_aids=written_aids,
+                additional_info=additional_info,
+                exam_mode=exam_mode,
+                exam_language=exam_language,
+                exam_type=exam_type,
+                examiners=examiners,
+                lecturers=lecturers,
+                course_frequency=course_frequency,
                 repetition=repetition,
                 primary_target_group=primary_target_group,
                 digital=digital,
                 distance_exam=distance_exam,
-                recording=recording,
                 groups=groups,
-                prufungsblock=exam_block_for,
+                exam_block=exam_block_for,
                 learning_materials=learning_materials if lang == "de" else None,
                 learning_materials_english=learning_materials if lang == "en" else None,
                 occurence=occurence,
                 general_restrictions=general_restrictions,
                 offered_in=offered_in,
             )
+
+            # Get courses after the learning unit, to ensure the foreign key exists already
+            for k, cols in table.rows:
+                course_number = re.match(RE_CODE, k)
+                if course_number:
+                    yield self.extract_course(
+                        parent_unit=unit_id, semkez=semkez, cols=cols
+                    )
         except Exception as e:
             self.logger.error(f"Error parsing lerneinheit {response.url}: {e}")
             with open(".scrapy/database_cache/error_pages.jsonl", "a") as f:
@@ -322,10 +330,10 @@ class LecturesSpider(scrapy.Spider):
 
         golden_owl = any("Golden" in x for x in response.css("img::attr(alt)").getall())
 
-        yield Lehrveranstalter(
-            dozide=int(dozide.group(1)),
-            vorname=names[0],
-            name=names[1],
+        yield Lecturer(
+            id=int(dozide.group(1)),
+            name=names[0],
+            surname=names[1],
             golden_owl=golden_owl,
         )
 
@@ -341,7 +349,7 @@ class LecturesSpider(scrapy.Spider):
         table = Table(response.xpath("//table"))
         parent_level: list[tuple[int, int]] = []
         for key, cols in table.rows:
-            if re.match(RE_COURSE_NUMBER, key) or key.startswith("»"):
+            if re.match(RE_CODE, key) or key.startswith("»"):
                 continue
             id = cols.re_first(RE_ABSCHNITTID)
             if not id:
@@ -373,18 +381,18 @@ class LecturesSpider(scrapy.Spider):
 
     def extract_course(
         self, parent_unit: int, semkez: str, cols: SelectorList[Selector]
-    ) -> Lehrveranstaltung:
+    ) -> Course:
         if len(cols) == 5:
             number_sel, title_sel, hours_sel, slots_sel, lecturers_sel = cols
         else:
             number_sel, title_sel, hours_sel, lecturers_sel = cols
             slots_sel = None
 
-        number = number_sel.re_first(RE_COURSE_NUMBER)
+        code = number_sel.re_first(RE_CODE)
         course_type = None
-        if number:
-            number = number.replace("\xa0", "")
-            course_type = CourseTypeEnum[number[-1]]
+        if code:
+            code = code.replace("\xa0", "")
+            course_type = CourseTypeEnum[code[-1]]
         title = title_sel.css("::text").get()
         comments = "\n".join(
             [
@@ -463,17 +471,17 @@ class LecturesSpider(scrapy.Spider):
                     )
                 )
 
-        return Lehrveranstaltung(
+        return Course(
             unit_id=parent_unit,
-            nummer=number,
-            titel=title,
+            code=code,
+            title=title,
             semkez=semkez,
-            typ=course_type,
-            angezeigterkommentar=comments or None,
-            lehrumfang=hours,
-            lehrumfangtyp=hours_type,
+            type=course_type,
+            comment=comments or None,
+            hours=hours,
+            hour_type=hours_type,
             timeslots=timeslots,
-            dozierende=lecturer_ids,
+            lecturers=lecturer_ids,
         )
 
     def extract_competencies(self, cols: SelectorList) -> dict[str, dict[str, str]]:
@@ -526,23 +534,50 @@ class LecturesSpider(scrapy.Spider):
             )
         return groups
 
-    def extract_learning_materials(self, response: Response) -> dict[str, NamedURL]:
-        materials: dict[str, NamedURL] = {}
-        table = table_under_header(response, ["Lernmaterialien", "Learning Materials"])
+    def extract_learning_materials(
+        self, response: Response
+    ) -> dict[str, list[NamedURL]]:
+        materials: dict[str, list[NamedURL]] = defaultdict(list)
+        table = table_under_header(response, ["Lernmaterialien", "Learning materials"])
+        prev_key = ""
         for _, r in table.rows:
-            key = r.css("::text").get()
+            if len(r) < 2:
+                continue
+            key = r[0].css("::text").get()
+            if key:
+                prev_key = key
+            else:
+                key = prev_key
             url = r.css("a::attr(href)").get()
             urlname = r.css("a::text").get()
             if key and url and urlname:
-                materials[key] = NamedURL(name=urlname, url=url)
+                materials[key].append(NamedURL(name=urlname, url=url))
         return materials
 
-    def extract_offered_in(self, response: Response) -> list[int]:
-        offered_in: list[int] = []
+    def extract_offered_in(self, response: Response) -> list[OfferedIn]:
+        offered_in: list[OfferedIn] = []
         table = table_under_header(response, ["Angeboten in", "Offered in"])
         for _, r in table.rows:
-            ids = r.re(RE_ABSCHNITTID)
-            offered_in.extend([int(i) for i in ids])
+            id = r[1].re_first(RE_ABSCHNITTID)
+            if not id:
+                continue
+            type = r[2].css("a::text").get()
+            match type:
+                case "O":
+                    type = UnitTypeEnum.O
+                case "W+":
+                    type = UnitTypeEnum.WPlus
+                case "W":
+                    type = UnitTypeEnum.W
+                case "E-":
+                    type = UnitTypeEnum.EMinus
+                case "Z":
+                    type = UnitTypeEnum.Z
+                case "Dr":
+                    type = UnitTypeEnum.Dr
+                case _:
+                    type = None
+            offered_in.append(OfferedIn(id=int(id), type=type))
         return offered_in
 
 

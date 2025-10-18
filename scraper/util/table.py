@@ -54,6 +54,15 @@ class Table:
     def find_last(self, table_key: TranslationKey) -> SelectorList[Selector] | None:
         return self.find(table_key, list(reversed(self.rows)))
 
+    def find_all(self, table_key: TranslationKey) -> list[SelectorList[Selector]]:
+        translation = translations[table_key]
+        found: list[SelectorList[Selector]] = []
+        for key, cols in self.rows:
+            if translation.de in key or translation.en in key:
+                self.accessed_keys.add(key)  # keep track of what we accessed
+                found.append(cols)
+        return found
+
     def get_texts(self, table_key: TranslationKey) -> list[str]:
         cols = self.find(table_key)
         if cols is None:

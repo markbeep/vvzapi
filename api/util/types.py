@@ -2,22 +2,6 @@ from enum import Enum
 from pydantic import BaseModel
 
 
-class UnitTypeEnum(Enum):
-    """www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=117361&semkez=2025W&lang=en"""
-
-    O = "Compulsory"
-    WPlus = "ElligibleRecommended"  # Eligible for credits and recommended
-    W = "Elligible"  # Eligible for credits
-    EMinus = "NotElligible"  # Recommended, not eligible for credits
-    Z = "Outside"  # Courses outside the curriculum
-    Dr = "Doctorate"  # Suitable for doctorate
-
-
-class SemesterEnum(Enum):
-    HS = "HS"
-    FS = "FS"
-
-
 class WeekdayEnum(Enum):
     Mon = 0
     Tue = 1

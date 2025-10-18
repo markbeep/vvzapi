@@ -2,9 +2,9 @@ import pathlib
 from logging.config import fileConfig
 
 from alembic import context
-from api.db import engine
+from api.util.db import engine
 from api.env import Settings
-from api.new_models import BaseModel
+from api.models import BaseModel
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

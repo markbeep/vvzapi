@@ -31,7 +31,7 @@ TranslationKey = Literal[
     "credits",
     "examiners",
     "type",
-    "assessment_language",
+    "exam_language",
     "repetition",
     "exam_mode",
     "additional_info",
@@ -47,7 +47,6 @@ TranslationKey = Literal[
     "no_materials",
     "public_materials",
     "no_group_info",
-    "recording",
     # Restrictions
     "places",
     "waiting_list",
@@ -98,9 +97,7 @@ translations: dict[TranslationKey, Translation] = {
     "credits": Translation(de="ECTS Kreditpunkte", en="ECTS credits"),
     "examiners": Translation(de="Prüfende", en="Examiners"),
     "type": Translation(de="Form", en="Type"),
-    "assessment_language": Translation(
-        de="Prüfungssprache", en="Language of examination"
-    ),
+    "exam_language": Translation(de="Prüfungssprache", en="Language of examination"),
     "repetition": Translation(de="Repetition", en="Repetition"),
     "exam_mode": Translation(de="Prüfungsmodus", en="Mode of examination"),
     "additional_info": Translation(
@@ -136,7 +133,6 @@ translations: dict[TranslationKey, Translation] = {
         de="Keine Informationen zu Gruppen vorhanden.",
         en="No information on groups available.",
     ),
-    "recording": Translation(de="Aufzeichnung", en="Recording"),
     # Restrictions
     "places": Translation(de="Plätze", en="Places"),
     "waiting_list": Translation(de="Warteliste", en="Waiting list"),
