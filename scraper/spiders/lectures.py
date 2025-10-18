@@ -227,8 +227,8 @@ class LecturesSpider(scrapy.Spider):
 
             groups = self.extract_groups(response)
             offered_in = self.extract_offered_in(response)
-            for id in offered_in:
-                url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?abschnittId={id}&semkez={semkez}"
+            for offered in offered_in:
+                url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?abschnittId={offered.id}&semkez={semkez}"
                 yield response.follow(url + "&lang=en", self.parse_section)
                 yield response.follow(url + "&lang=de", self.parse_section)
 
