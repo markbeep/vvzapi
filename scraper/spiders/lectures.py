@@ -1,12 +1,14 @@
-from datetime import date
+import json
 import re
-from typing import Literal
 from urllib.parse import urljoin
+from parsel import SelectorList
 import scrapy
 from scrapy.http import Response
 
 # from api.models import Lecturer
-from api.new_models.lerneinheit import Lerneinheit
+from api.models import CourseSlot, CourseTypeEnum, WeekdayEnum
+from api.new_models.lehrveranstaltungen import CourseHourEnum, Lehrveranstaltung
+from api.new_models.lerneinheit import Lerneinheit, Periodicity
 from api.new_models.lehrveranstalter import Lehrveranstalter
 from scraper.util.keymap import get_key
 from scraper.util.progress import create_progress
@@ -19,23 +21,12 @@ re_lerneinheitId = re.compile(r"lerneinheitId=(\d+)")
 re_lang = re.compile(r"lang=(\w+)")
 re_dozide = re.compile(r"dozide=(\d+)")
 
-START_YEAR = 2025  # 2003
-END_YEAR = date.today().year + 1
-SEMESTERS = ("W",)  # ("W", "S")
-
-
-def get_urls(year: int, semester: Literal["W", "S"]):
-    url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?semkez={year}{semester}&ansicht=1&lang=en"
-    return [url, url + "&strukturAus=on"]
-
 
 class LecturesSpider(scrapy.Spider):
     name = "lectures"
     start_urls = [
-        url
-        for year in range(START_YEAR, END_YEAR + 1)
-        for semester in SEMESTERS
-        for url in get_urls(year, semester)
+        "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?lerneinheitscode=&deptId=&famname=&unterbereichAbschnittId=&lerneinheitstitel=&rufname=&kpRange=0,999&lehrsprache=&bereichAbschnittId=&semkez=2025W&studiengangAbschnittId=&studiengangTyp=&ansicht=1&lang=en&katalogdaten=&wahlinfo=",
+        "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?lerneinheitscode=&deptId=&famname=&unterbereichAbschnittId=&lerneinheitstitel=&rufname=&kpRange=0,999&lehrsprache=&bereichAbschnittId=&semkez=2025W&studiengangAbschnittId=&studiengangTyp=&ansicht=1&lang=en&katalogdaten=&wahlinfo=&strukturAus=on",
     ]
 
     def parse(self, response: Response):
@@ -75,15 +66,15 @@ class LecturesSpider(scrapy.Spider):
                         course = delete_url_key(course, param)
                 yield response.follow(course, self.parse_lecturer)
 
-        course_title = response.css(
+        unit_title = response.css(
             "section#contentContainer div#contentTop h1::text"
         ).extract_first()
-        if not course_title:
+        if not unit_title:
             self.logger.error(f"No course title found for {response.url}")
             return
-        course_title = course_title.split("\n")
-        course_number = course_title[0].replace("\xa0", "").strip()
-        course_name = " ".join(course_title[1:]).strip()
+        unit_title = unit_title.split("\n")
+        unit_number = unit_title[0].replace("\xa0", "").strip()
+        unit_name = " ".join(unit_title[1:]).strip()
 
         semkez = re_semkez.search(response.url)
         if not semkez:
@@ -159,25 +150,71 @@ class LecturesSpider(scrapy.Spider):
             "registration_start", r"(\d{2}\.\d{2}\.\d{4})"
         )
         vorrang = "".join(table.get_texts("priority")) or None
+        lehrsprache = "".join(table.get_texts("language")) or None
+        kurzbeschreibung = "".join(table.get_texts("abstract")) or None
+        kompetenzen = dict()
+        if comp_cols := table.find("competencies"):
+            kompetenzen = self.extract_competencies(comp_cols)
+        prufende = table.re("examiners", r"dozide=(\d+)")
+        prufende = [int(pid) for pid in prufende]
+        dozierende = table.re("lecturers", r"dozide=(\d+)")
+        dozierende = [int(pid) for pid in dozierende]
+        reglement = table.get_texts("regulations")
+        hilfsmittel = "".join(table.get_texts("written_aids")) or None
+        prufungzusatzinfo = "".join(table.get_texts("additional_info")) or None
+        prufungsmodus = "".join(table.get_texts("exam_mode")) or None
+        prufungssprache = "".join(table.get_texts("assessment_language")) or None
+        prufungsform = "".join(table.get_texts("type")) or None
+        periodicity = table.find("periodicity")
+        if periodicity is not None:
+            periodicity_text = periodicity[1].css("::text").get()
+            if periodicity_text in [
+                "jährlich wiederkehrende Veranstaltung",
+                "yearly recurring course",
+            ]:
+                periodicity = Periodicity.ANNUAL
+            elif periodicity_text in [
+                "jedes Semester wiederkehrende Veranstaltung",
+                "every semester recurring course",
+            ]:
+                periodicity = Periodicity.SEMESTER
+            else:
+                periodicity = Periodicity.ONETIME
+        repetition = "".join(table.get_texts("repetition")) or None
 
-        keys = table.keys()
-        for k in keys:
-            if (
-                k.strip() == ""
-                or re.match(r"\d{3}-\d{4}-\d{2}", k)
-                or "zusätzlichen Belegungseinschränkungen" in k
-                or "additional restrictions" in k
-            ):
-                continue
-            if get_key(k) == "other":
-                with open(".scrapy/database_cache/unknown_keys.jsonl", "a") as f:
-                    f.write(f'{{"key": "{k}", "url": "{response.url}"}}\n')
+        # Get courses
+        for k, cols in table.rows:
+            course_number = re.match(r"\d{3}-\d{4}-\d{2}", k)
+            if course_number:
+                yield self.extract_course(
+                    parent_unit=lerneinheitId, semkez=semkez, cols=cols
+                )
+
+        if lang == "de":
+            for k in table.keys():
+                if (
+                    k.strip() == ""
+                    or re.match(r"\d{3}-\d{4}-\d{2}", k)
+                    or "zusätzlichen Belegungseinschränkungen" in k
+                    or "Information zur Leistungskontrolle" in k
+                    or "Leistungskontrolle als Jahreskurs" in k
+                    or "Falls die Lerneinheit innerhalb" in k
+                    or "Es werden nur die öffentlichen Lernmaterialien aufgeführt" in k
+                    or "Keine Informationen zu Gruppen vorhanden" in k
+                    or "Semester" in k
+                    or "Leistungskontrolle als Semesterkurs" in k
+                    or "Keine öffentlichen Lernmaterialien verfügbar." in k
+                ):
+                    continue
+                if get_key(k) == "other" or k not in table.accessed_keys:
+                    with open(".scrapy/database_cache/unknown_keys.jsonl", "a") as f:
+                        f.write(f"{json.dumps({'key': k, 'url': response.url})}\n")
 
         yield Lerneinheit(
             id=lerneinheitId,
-            code=course_number,
-            titel=course_name if lang == "de" else None,
-            titelenglisch=course_name if lang == "en" else None,
+            code=unit_number,
+            titel=unit_name if lang == "de" else None,
+            titelenglisch=unit_name if lang == "en" else None,
             semkez=semkez,
             kreditpunkte=kreditpunkte,
             url=url,
@@ -201,6 +238,20 @@ class LecturesSpider(scrapy.Spider):
             belegungTermin3Ende=belegungTermin3Ende,
             belegungsTerminStart=belegungsTerminStart,
             vorrang=vorrang,
+            lehrsprache=lehrsprache,
+            Kurzbeschreibung=kurzbeschreibung,
+            kompetenzen=kompetenzen if lang == "de" else dict(),
+            kompetenzenenglisch=kompetenzen if lang == "en" else dict(),
+            reglement=reglement,
+            hilfsmittel=hilfsmittel,
+            prufungzusatzinfo=prufungzusatzinfo,
+            prufungsmodus=prufungsmodus,
+            prufungssprache=prufungssprache,
+            prufungsform=prufungsform,
+            prufende=prufende,
+            dozierende=dozierende,
+            periodizitaet=periodicity,
+            repetition=repetition,
         )
 
     def parse_lecturer(self, response: Response):
@@ -224,3 +275,93 @@ class LecturesSpider(scrapy.Spider):
             name=names[1],
             golden_owl=golden_owl,
         )
+
+    def extract_course(
+        self, parent_unit: int, semkez: str, cols: SelectorList[scrapy.Selector]
+    ) -> Lehrveranstaltung:
+        if len(cols) == 5:
+            number_sel, title_sel, hours_sel, slots_sel, lecturers_sel = cols
+        else:
+            number_sel, title_sel, hours_sel, lecturers_sel = cols
+            slots_sel = None
+
+        number = number_sel.re_first(r"\d{3}-\d{4}-\d{2}\xa0\w")
+        course_type = None
+        if number:
+            number = number.replace("\xa0", "")
+            course_type = CourseTypeEnum[number[-1]]
+        title = title_sel.css("::text").get()
+        comments = "\n".join(
+            [
+                t.strip()
+                for t in title_sel.css(".kommentar-lv::text").getall()
+                if t.strip()
+            ]
+        )
+        lecturer_ids = [int(x) for x in lecturers_sel.re(r"dozide=(\d+)")]
+        hours_text = hours_sel.css("::text").get()
+        hours: float | None = None
+        hours_type = None
+        if hours_text:
+            hours_str = hours_text.split("\xa0")[0]
+            if "s" in hours_str:
+                hours_type = CourseHourEnum.SEMESTER_HOURS
+                hours = float(hours_str.replace("s", ""))
+            else:
+                hours_type = CourseHourEnum.WEEKLY_HOURS
+                hours = float(hours_str)
+
+        # Gets the course time slots
+        timeslots: list[CourseSlot] = []
+        weekday: WeekdayEnum = WeekdayEnum.Mon
+        i = 0
+        if slots_sel is not None:
+            slots = slots_sel.css("a::text").getall()
+            print(slots)
+            while i < len(slots):
+                day, *args = slots[i].split("/")
+                try:
+                    # weekday is not always given for every time slot
+                    weekday = (
+                        WeekdayEnum.ByAppointment
+                        if day == "by appt."
+                        else WeekdayEnum[day]
+                    )
+                    i += 1
+                except KeyError:
+                    pass
+
+                start_time, end_time = slots[i].split("-")
+                building = slots[i + 1]
+                floor, room = slots[i + 2].split(" ")
+                timeslots.append(
+                    CourseSlot(
+                        weekday=weekday,
+                        start_time=start_time,
+                        end_time=end_time,
+                        building=building,
+                        floor=floor,
+                        room=room,
+                        first_half_semester="1" in args,
+                        second_half_semester="2" in args,
+                        two_weekly="2w" in args,
+                    )
+                )
+
+                i += 4
+
+        return Lehrveranstaltung(
+            nummer=number,
+            titel=title,
+            semkez=semkez,
+            typ=course_type,
+            angezeigterkommentar=comments or None,
+            lehrumfang=hours,
+            lehrumfangtyp=hours_type,
+            timeslots=timeslots,
+            dozierende=lecturer_ids,
+        )
+
+    def extract_competencies(self, cols: SelectorList) -> dict[str, dict[str, str]]:
+        # TODO
+        ...

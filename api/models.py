@@ -160,6 +160,14 @@ class WeekdayEnum(Enum):
     Fri = 4
     Sat = 5
     Sun = 6
+    # german
+    Mo = 0
+    Di = 1
+    Mi = 2
+    Do = 3
+    Fr = 4
+    Sa = 5
+    So = 6
 
     ByAppointment = 7
 
@@ -169,6 +177,7 @@ class CourseSlot(BaseModel):
     start_time: str  # "08:15"
     end_time: str  # "10:00"
     building: str
+    floor: str
     room: str
 
     # If lectures only take place in the first/second half of a semester

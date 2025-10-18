@@ -1,6 +1,13 @@
+from enum import Enum
 from sqlmodel import JSON, Field, Column
 from api.new_models.base import BaseModel
 from api.new_models.lehrveranstaltungen import Lehrveranstaltung
+
+
+class Periodicity(Enum):
+    ONETIME = 0
+    ANNUAL = 1
+    SEMESTER = 2
 
 
 class Lerneinheit(BaseModel, table=True):
@@ -114,9 +121,9 @@ class Lerneinheit(BaseModel, table=True):
     gar nicht mehr belegt werden.
     Format yyyy-mm-dd
     """
-    lehrveranstaltungen: list[Lehrveranstaltung] = Field(
-        default_factory=list, sa_column=Column(JSON)
-    )
+    # lehrveranstaltungen: list[Lehrveranstaltung] = Field(
+    #     default_factory=list, sa_column=Column(JSON)
+    # )
     """
     Liste der Lehrveranstaltungen, die zur Lerneinheit gehören.
     Falls für die Lerneinheit keine Lehrveranstaltungen erfasst
@@ -127,6 +134,33 @@ class Lerneinheit(BaseModel, table=True):
     # NOTE: Not listed in doc, but listed on vvz
     belegungsTerminStart: str | None = Field(default=None)
     vorrang: str | None = Field(default=None)
+
+    lehrsprache: str | None = Field(default=None)
+    Kurzbeschreibung: str | None = Field(default=None)
+    kompetenzen: dict[str, dict[str, str]] = Field(
+        default_factory=dict, sa_column=Column(JSON)
+    )
+    kompetenzenenglisch: dict[str, dict[str, str]] = Field(
+        default_factory=dict, sa_column=Column(JSON)
+    )
+    reglement: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    hilfsmittel: str | None = Field(default=None, max_length=4000)
+    prufungzusatzinfo: str | None = Field(default=None, max_length=4000)
+    prufungsmodus: str | None = Field(default=None, max_length=4000)
+    prufungssprache: str | None = Field(default=None)
+    prufungsform: str | None = Field(default=None)
+    # TODO: seperate into own table for many-to-many relation
+    prufende: list[int] = Field(default_factory=list, sa_column=Column(JSON))
+    dozierende: list[int] = Field(default_factory=list, sa_column=Column(JSON))
+    repetition: str | None = Field(default=None)
+
+    periodizitaet: Periodicity | None = Field(default=None)
+    """
+    Angabe, in welchem Intervall die Lehrveranstaltung abgehalten wird.
+    - 0 einmalige Veranstaltung (einmalig)
+    - 1 jährlich wiederkehrende Veranstaltung (jährlich)
+    - 2 2-jährlich wiederkehrende Veranstaltung (2-jährlich)
+    """
 
     # NOTE: Listed in doc, but removed because not available on vvz or not relevant
     # urlvon: str | None = Field(default=None)

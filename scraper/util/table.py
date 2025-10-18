@@ -12,6 +12,7 @@ from scraper.util.keymap import TranslationKey, get_key, translations
 class Table:
     def __init__(self, response: Response) -> None:
         self.response = response
+        self.accessed_keys = set()
 
         xpath_rows = response.xpath("//table/tbody/tr")
         self.rows: list[tuple[str, SelectorList]] = []
@@ -36,6 +37,7 @@ class Table:
             rows = self.rows
         for key, cols in rows:
             if translation.de in key or translation.en in key:
+                self.accessed_keys.add(key)  # keep track of what we accessed
                 return cols
         return None
 
@@ -46,7 +48,7 @@ class Table:
         cols = self.find(table_key)
         if cols is None:
             return []
-        return cols[1:].css("::text").getall()
+        return [x.replace("\xa0", " ").strip() for x in cols[1:].css("::text").getall()]
 
     def re(self, table_key: TranslationKey, pattern: str | Pattern[str]) -> list[str]:
         cols = self.find(table_key)
