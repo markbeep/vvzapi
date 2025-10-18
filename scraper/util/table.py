@@ -3,35 +3,45 @@ from re import Pattern
 from typing import Annotated, DefaultDict
 from pydantic import BaseModel, Field
 from scrapy.http import Response
-from scrapy.selector.unified import SelectorList
-from parsel import Selector
+from parsel import Selector, SelectorList
 
 from scraper.util.keymap import TranslationKey, get_key, translations
 
 
 class Table:
-    def __init__(self, response: Response) -> None:
+    """
+    Takes a page and throws all table rows into a list of (key, columns) tuples.
+    """
+
+    def __init__(
+        self,
+        response: SelectorList[Selector] | Response,
+    ) -> None:
         self.response = response
         self.accessed_keys = set()
-
-        xpath_rows = response.xpath("//table/tbody/tr")
-        self.rows: list[tuple[str, SelectorList]] = []
-        for r in xpath_rows:
-            cols = r.xpath("./td")
-            if len(cols) == 0:
-                continue
-            key = cols[0].xpath("string()").get()
-            if not key:
-                continue
-            key = key.replace("\xa0", "").strip()
-            self.rows.append((key, SelectorList(cols)))
+        self.rows: list[tuple[str, SelectorList[Selector]]] = []
+        if response is not None:
+            if isinstance(response, Response):
+                xpath_rows = response.xpath("//table/tbody/tr")
+            else:
+                xpath_rows = response.xpath(".//tr")
+            for r in xpath_rows:
+                cols = r.xpath("./td")
+                if len(cols) == 0:
+                    continue
+                key = cols[0].xpath("string()").get()
+                if key:
+                    key = key.replace("\xa0", "").strip()
+                else:
+                    key = "unkeyed"
+                self.rows.append((key, SelectorList(cols)))
 
     def find(
         self,
         table_key: TranslationKey,
         /,
-        rows: list[tuple[str, SelectorList]] | None = None,
-    ) -> SelectorList | None:
+        rows: list[tuple[str, SelectorList[Selector]]] | None = None,
+    ) -> SelectorList[Selector] | None:
         translation = translations[table_key]
         if rows is None:
             rows = self.rows
@@ -41,7 +51,7 @@ class Table:
                 return cols
         return None
 
-    def find_last(self, table_key: TranslationKey) -> SelectorList | None:
+    def find_last(self, table_key: TranslationKey) -> SelectorList[Selector] | None:
         return self.find(table_key, list(reversed(self.rows)))
 
     def get_texts(self, table_key: TranslationKey) -> list[str]:
@@ -66,6 +76,15 @@ class Table:
 
     def keys(self) -> list[str]:
         return [key for key, _ in self.rows]
+
+
+def table_under_header(response: Response, table_header_variants: list[str]) -> Table:
+    ors = " or ".join(
+        [f'contains(text(), "{header}")' for header in table_header_variants]
+    )
+    table = response.xpath(f"//h3[{ors}]/following-sibling::table[1]")
+
+    return Table(response=table)
 
 
 class TableExtractor:

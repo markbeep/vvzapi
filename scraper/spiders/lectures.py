@@ -1,7 +1,8 @@
+from collections import defaultdict
 import json
 import re
 from urllib.parse import urljoin
-from parsel import SelectorList
+from parsel import SelectorList, Selector
 import scrapy
 from scrapy.http import Response
 
@@ -12,8 +13,13 @@ from api.new_models.lerneinheit import Lerneinheit, Periodicity
 from api.new_models.lehrveranstalter import Lehrveranstalter
 from scraper.util.keymap import get_key
 from scraper.util.progress import create_progress
-from scraper.util.table import Table
-from scraper.util.url import delete_url_key, edit_url_key, list_url_params
+from scraper.util.table import Table, table_under_header
+from scraper.util.url import (
+    delete_url_key,
+    edit_url_key,
+    list_url_params,
+    sort_url_params,
+)
 
 
 re_semkez = re.compile(r"semkez=(\w+)")
@@ -46,12 +52,16 @@ class LecturesSpider(scrapy.Spider):
             search_page_url = edit_url_key(
                 response.url, "seite", [str(current_page + 1)]
             )
+            # Sort to prevent urls to be viewed as different due to param order
+            search_page_url = sort_url_params(search_page_url)
             yield response.follow(search_page_url, self.parse)
 
         for course in response.css("a::attr(href)").getall():
             if "lerneinheit.view" in course:
-                url = edit_url_key(urljoin(response.url, course), "ansicht", ["ALLE"])
+                url = urljoin(response.url, course)
+                url = edit_url_key(url, "ansicht", ["ALLE"])
                 url = delete_url_key(url, "lang")
+                url = sort_url_params(url)
                 yield response.follow(url + "&lang=en", self.parse_lerneinheit)
                 yield response.follow(url + "&lang=de", self.parse_lerneinheit)
 
@@ -152,7 +162,7 @@ class LecturesSpider(scrapy.Spider):
         vorrang = "".join(table.get_texts("priority")) or None
         lehrsprache = "".join(table.get_texts("language")) or None
         kurzbeschreibung = "".join(table.get_texts("abstract")) or None
-        kompetenzen = dict()
+        kompetenzen = {}
         if comp_cols := table.find("competencies"):
             kompetenzen = self.extract_competencies(comp_cols)
         prufende = table.re("examiners", r"dozide=(\d+)")
@@ -181,6 +191,15 @@ class LecturesSpider(scrapy.Spider):
             else:
                 periodicity = Periodicity.ONETIME
         repetition = "".join(table.get_texts("repetition")) or None
+        primary_target_group = table.get_texts("primary_target_group")
+        digital = "".join(table.get_texts("digital")) or None
+        distance_exam = "".join(table.get_texts("distance_exam")) or None
+        recording = "".join(table.get_texts("recording")) or None
+
+        groups_cols = table.find("groups")
+        groups = {}
+        if groups_cols is not None:
+            groups = self.extract_groups(response)
 
         # Get courses
         for k, cols in table.rows:
@@ -190,6 +209,7 @@ class LecturesSpider(scrapy.Spider):
                     parent_unit=lerneinheitId, semkez=semkez, cols=cols
                 )
 
+        # Print any unknown or missed keys
         if lang == "de":
             for k in table.keys():
                 if (
@@ -204,6 +224,7 @@ class LecturesSpider(scrapy.Spider):
                     or "Semester" in k
                     or "Leistungskontrolle als Semesterkurs" in k
                     or "Keine öffentlichen Lernmaterialien verfügbar." in k
+                    or k == "unkeyed"
                 ):
                     continue
                 if get_key(k) == "other" or k not in table.accessed_keys:
@@ -240,8 +261,8 @@ class LecturesSpider(scrapy.Spider):
             vorrang=vorrang,
             lehrsprache=lehrsprache,
             Kurzbeschreibung=kurzbeschreibung,
-            kompetenzen=kompetenzen if lang == "de" else dict(),
-            kompetenzenenglisch=kompetenzen if lang == "en" else dict(),
+            kompetenzen=kompetenzen if lang == "de" else {},
+            kompetenzenenglisch=kompetenzen if lang == "en" else {},
             reglement=reglement,
             hilfsmittel=hilfsmittel,
             prufungzusatzinfo=prufungzusatzinfo,
@@ -252,6 +273,11 @@ class LecturesSpider(scrapy.Spider):
             dozierende=dozierende,
             periodizitaet=periodicity,
             repetition=repetition,
+            primary_target_group=primary_target_group,
+            digital=digital,
+            distance_exam=distance_exam,
+            recording=recording,
+            groups=groups,
         )
 
     def parse_lecturer(self, response: Response):
@@ -277,7 +303,7 @@ class LecturesSpider(scrapy.Spider):
         )
 
     def extract_course(
-        self, parent_unit: int, semkez: str, cols: SelectorList[scrapy.Selector]
+        self, parent_unit: int, semkez: str, cols: SelectorList[Selector]
     ) -> Lehrveranstaltung:
         if len(cols) == 5:
             number_sel, title_sel, hours_sel, slots_sel, lecturers_sel = cols
@@ -317,7 +343,6 @@ class LecturesSpider(scrapy.Spider):
         i = 0
         if slots_sel is not None:
             slots = slots_sel.css("a::text").getall()
-            print(slots)
             while i < len(slots):
                 day, *args = slots[i].split("/")
                 try:
@@ -363,5 +388,37 @@ class LecturesSpider(scrapy.Spider):
         )
 
     def extract_competencies(self, cols: SelectorList) -> dict[str, dict[str, str]]:
-        # TODO
-        ...
+        table = Table(cols[1])
+        competencies: dict[str, dict[str, str]] = defaultdict(dict)
+        prev_key = ""
+        for _, r in table.rows:
+            columns = r.css("::text").getall()
+            if len(columns) == 3:
+                prev_key = columns[0].strip()
+                competencies[prev_key][columns[1].strip()] = columns[2].strip()
+            elif len(columns) == 2:
+                competencies[prev_key][columns[0].strip()] = columns[1].strip()
+        return competencies
+
+    def extract_groups(self, response: Response) -> dict[str, CourseSlot]:
+        groups: dict[str, CourseSlot] = {}
+        table = table_under_header(response, ["Gruppen", "Groups"])
+        for _, r in table.rows:
+            cols = r.css("::text").getall()
+            if len(cols) != 8:
+                continue
+            group, day, time, building, _, floor_room = cols[:6]
+            floor, room = floor_room.split(" ")
+            day = WeekdayEnum.ByAppointment if day == "by appt." else WeekdayEnum[day]
+            groups[group] = CourseSlot(
+                weekday=day,
+                start_time=time.split("-")[0],
+                end_time=time.split("-")[1],
+                building=building,
+                floor=floor,
+                room=room,
+                first_half_semester=False,
+                second_half_semester=False,
+                two_weekly=False,
+            )
+        return groups

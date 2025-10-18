@@ -47,14 +47,19 @@ TranslationKey = Literal[
     "no_materials",
     "public_materials",
     "no_group_info",
+    "recording",
     # Restrictions
     "places",
     "waiting_list",
     "registration_end",
     "registration_start",
     "priority",
+    "primary_target_group",
+    # Groups
+    "groups",
     #
     "other",
+    "unkeyed",
 ]
 
 translations: dict[TranslationKey, Translation] = {
@@ -130,6 +135,7 @@ translations: dict[TranslationKey, Translation] = {
         de="Keine Informationen zu Gruppen vorhanden.",
         en="No information on groups available.",
     ),
+    "recording": Translation(de="Aufzeichnung", en="Recording"),
     # Restrictions
     "places": Translation(de="Plätze", en="Places"),
     "waiting_list": Translation(de="Warteliste", en="Waiting list"),
@@ -140,6 +146,11 @@ translations: dict[TranslationKey, Translation] = {
         de="Belegungsbeginn", en="Beginning of registration period"
     ),
     "priority": Translation(de="Vorrang", en="Priority"),
+    "primary_target_group": Translation(
+        de="Primäre Zielgruppe", en="Primary target group"
+    ),
+    # Groups
+    "groups": Translation(de="Gruppen", en="Groups"),
 }
 
 

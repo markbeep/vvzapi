@@ -1,7 +1,7 @@
 from enum import Enum
 from sqlmodel import JSON, Field, Column
+from api.models import CourseSlot
 from api.new_models.base import BaseModel
-from api.new_models.lehrveranstaltungen import Lehrveranstaltung
 
 
 class Periodicity(Enum):
@@ -134,6 +134,9 @@ class Lerneinheit(BaseModel, table=True):
     # NOTE: Not listed in doc, but listed on vvz
     belegungsTerminStart: str | None = Field(default=None)
     vorrang: str | None = Field(default=None)
+    primary_target_group: list[str] = Field(
+        default_factory=list, sa_column=Column(JSON)
+    )
 
     lehrsprache: str | None = Field(default=None)
     Kurzbeschreibung: str | None = Field(default=None)
@@ -149,10 +152,14 @@ class Lerneinheit(BaseModel, table=True):
     prufungsmodus: str | None = Field(default=None, max_length=4000)
     prufungssprache: str | None = Field(default=None)
     prufungsform: str | None = Field(default=None)
+    digital: str | None = Field(default=None)
+    distance_exam: str | None = Field(default=None)
+    recording: str | None = Field(default=None)
     # TODO: seperate into own table for many-to-many relation
     prufende: list[int] = Field(default_factory=list, sa_column=Column(JSON))
     dozierende: list[int] = Field(default_factory=list, sa_column=Column(JSON))
     repetition: str | None = Field(default=None)
+    groups: dict[str, CourseSlot] = Field(default_factory=dict, sa_column=Column(JSON))
 
     periodizitaet: Periodicity | None = Field(default=None)
     """

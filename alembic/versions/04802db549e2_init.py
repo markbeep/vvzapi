@@ -1,8 +1,8 @@
 """init
 
-Revision ID: d8610f775ae8
+Revision ID: 04802db549e2
 Revises: 
-Create Date: 2025-10-15 14:03:59.319313
+Create Date: 2025-10-18 15:08:20.829784
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'd8610f775ae8'
+revision: str = '04802db549e2'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -111,6 +111,13 @@ def upgrade() -> None:
     sa.Column('semkez', sqlmodel.sql.sqltypes.AutoString(length=5), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('lecturer',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('firstname', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('lastname', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('golden_owl', sa.Boolean(), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('lehrveranstalter',
     sa.Column('dozide', sa.Integer(), nullable=False),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -123,41 +130,17 @@ def upgrade() -> None:
     sa.Column('nummer', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('titel', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('semkez', sqlmodel.sql.sqltypes.AutoString(length=5), nullable=True),
-    sa.Column('typ', sqlmodel.sql.sqltypes.AutoString(length=1), nullable=True),
-    sa.Column('semesterbezug', sa.Integer(), nullable=True),
-    sa.Column('semesterbezugstringkurz', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('semesterbezugstringkurzen', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('semesterbezugstringlang', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('semesterbezugstringlangen', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('typ', sa.Enum('V', 'G', 'U', 'S', 'K', 'P', 'A', 'D', 'R', name='coursetypeenum'), nullable=True),
     sa.Column('lehrumfang', sa.Float(), nullable=True),
-    sa.Column('lehrumfangtyp', sa.Integer(), nullable=True),
-    sa.Column('lehrumfangtypstringkurz', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('lehrumfangtypstringkurzen', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('lehrumfangtypstringlang', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('lehrumfangtypstringlangen', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('findetstatt', sa.Integer(), nullable=True),
-    sa.Column('findetstattstringkurz', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('findetstattstringkurzen', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('findetstattstringlang', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('findetstattstringlangen', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('servicetyp', sa.Integer(), nullable=True),
-    sa.Column('servicetypstringkurz', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('servicetypstringkurzen', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('servicetypstringlang', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('servicetypstringlangen', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('periodizitaet', sa.Integer(), nullable=True),
-    sa.Column('periodizitaetstringkurz', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('periodizitaetstringkurzen', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('periodizitaetstringlang', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('periodizitaetstringlangen', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('lehrumfangtyp', sa.Enum('WEEKLY_HOURS', 'SEMESTER_HOURS', name='coursehourenum'), nullable=True),
     sa.Column('nachvereinbarung', sa.Boolean(), nullable=True),
     sa.Column('dozentauswaehlen', sa.Boolean(), nullable=True),
-    sa.Column('lehrsprache', sqlmodel.sql.sqltypes.AutoString(length=2), nullable=True),
     sa.Column('spezialbewilligung', sa.Boolean(), nullable=True),
     sa.Column('externehoerer', sa.Boolean(), nullable=True),
     sa.Column('angezeigterkommentar', sqlmodel.sql.sqltypes.AutoString(length=1000), nullable=True),
     sa.Column('lehrveranstalter', sa.JSON(), nullable=True),
-    sa.Column('belegungsserien', sa.JSON(), nullable=True),
+    sa.Column('timeslots', sa.JSON(), nullable=True),
+    sa.Column('dozierende', sa.JSON(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('lerneinheit',
@@ -188,7 +171,32 @@ def upgrade() -> None:
     sa.Column('belegungTermin3Ende', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('belegungsTerminStart', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('vorrang', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('primary_target_group', sa.JSON(), nullable=True),
+    sa.Column('lehrsprache', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('Kurzbeschreibung', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('kompetenzen', sa.JSON(), nullable=True),
+    sa.Column('kompetenzenenglisch', sa.JSON(), nullable=True),
+    sa.Column('reglement', sa.JSON(), nullable=True),
+    sa.Column('hilfsmittel', sqlmodel.sql.sqltypes.AutoString(length=4000), nullable=True),
+    sa.Column('prufungzusatzinfo', sqlmodel.sql.sqltypes.AutoString(length=4000), nullable=True),
+    sa.Column('prufungsmodus', sqlmodel.sql.sqltypes.AutoString(length=4000), nullable=True),
+    sa.Column('prufungssprache', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('prufungsform', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('digital', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('distance_exam', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('recording', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('prufende', sa.JSON(), nullable=True),
+    sa.Column('dozierende', sa.JSON(), nullable=True),
+    sa.Column('repetition', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('groups', sa.JSON(), nullable=True),
+    sa.Column('periodizitaet', sa.Enum('ONETIME', 'ANNUAL', 'SEMESTER', name='periodicity'), nullable=True),
     sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('section',
+    sa.Column('section_id', sa.Integer(), nullable=False),
+    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('parent_id', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.PrimaryKeyConstraint('section_id')
     )
     op.create_table('semester',
     sa.Column('semkez', sqlmodel.sql.sqltypes.AutoString(length=5), nullable=False),
@@ -202,16 +210,98 @@ def upgrade() -> None:
     sa.Column('abschnittelemente', sa.JSON(), nullable=True),
     sa.PrimaryKeyConstraint('semkez')
     )
+    op.create_table('teachingunit',
+    sa.Column('abstract', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('learning_objective', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('content', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('notice', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('competencies', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('lecture_notes', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('literature', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('other_data', sa.JSON(), nullable=True),
+    sa.Column('two_semester_credits', sa.Float(), nullable=True),
+    sa.Column('programme_regulations', sa.JSON(), nullable=True),
+    sa.Column('together_with_number', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('ects_credits', sa.Float(), nullable=False),
+    sa.Column('examiner_ids', sa.JSON(), nullable=True),
+    sa.Column('assessment_type', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('assessment_language', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('repetition', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('exam_block_of', sa.JSON(), nullable=True),
+    sa.Column('mode', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('additional_info', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('written_aids', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('distance', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('digital', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('update_note', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('admission_requirement', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('other_assessment', sa.JSON(), nullable=True),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('number', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('year', sa.Integer(), nullable=False),
+    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('semester', sa.Enum('HS', 'FS', name='semesterenum'), nullable=False),
+    sa.Column('text_language', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('language', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    with op.batch_alter_table('teachingunit', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_teachingunit_name'), ['name'], unique=False)
+        batch_op.create_index(batch_op.f('ix_teachingunit_number'), ['number'], unique=False)
+
+    op.create_table('course',
+    sa.Column('number', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('teaching_unit_id', sa.Integer(), nullable=False),
+    sa.Column('slots', sa.JSON(), nullable=True),
+    sa.Column('type', sa.Enum('V', 'G', 'U', 'S', 'K', 'P', 'A', 'D', 'R', name='coursetypeenum'), nullable=False),
+    sa.Column('comments', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.ForeignKeyConstraint(['teaching_unit_id'], ['teachingunit.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('number')
+    )
+    op.create_table('examlecturerrelations',
+    sa.Column('teaching_unit_id', sa.Integer(), nullable=False),
+    sa.Column('lecturer_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['lecturer_id'], ['lecturer.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['teaching_unit_id'], ['teachingunit.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('teaching_unit_id', 'lecturer_id')
+    )
+    op.create_table('offeredinrelations',
+    sa.Column('teaching_unit_id', sa.Integer(), nullable=False),
+    sa.Column('section_id', sa.Integer(), nullable=False),
+    sa.Column('type', sa.Enum('O', 'WPlus', 'W', 'EMinus', 'Z', 'Dr', name='unittypeenum'), nullable=False),
+    sa.ForeignKeyConstraint(['section_id'], ['section.section_id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['teaching_unit_id'], ['teachingunit.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('teaching_unit_id', 'section_id')
+    )
+    op.create_table('courselecturerrelations',
+    sa.Column('course_number', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('lecturer_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['course_number'], ['course.number'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['lecturer_id'], ['lecturer.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('course_number', 'lecturer_id')
+    )
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_table('courselecturerrelations')
+    op.drop_table('offeredinrelations')
+    op.drop_table('examlecturerrelations')
+    op.drop_table('course')
+    with op.batch_alter_table('teachingunit', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_teachingunit_number'))
+        batch_op.drop_index(batch_op.f('ix_teachingunit_name'))
+
+    op.drop_table('teachingunit')
     op.drop_table('semester')
+    op.drop_table('section')
     op.drop_table('lerneinheit')
     op.drop_table('lehrveranstaltung')
     op.drop_table('lehrveranstalter')
+    op.drop_table('lecturer')
     op.drop_table('belegungsserieort')
     op.drop_table('abschnittsrefernz')
     op.drop_table('abschnittelement')

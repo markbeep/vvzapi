@@ -2,7 +2,6 @@ from enum import Enum
 from sqlmodel import JSON, Column, Field
 from api.models import CourseSlot, CourseTypeEnum
 from api.new_models.base import BaseModel
-from api.new_models.belegungsserie_ort import BelegungsserieOrt
 from api.new_models.lehrveranstalter import Lehrveranstalter
 
 
