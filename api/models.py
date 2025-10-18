@@ -36,15 +36,21 @@ class WeekdayEnum(Enum):
     So = 6
 
     ByAppointment = 7
+    Date = 8
+    Invalid = 9
 
 
 class CourseSlot(BaseModel):
     weekday: WeekdayEnum
+
+    # some lectures have specific slots for certain dates
+    # https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?ansicht=ALLE&lerneinheitId=194056&semkez=2025W&lang=en
+    date: str | None = None  # "31.12"
     start_time: str  # "08:15"
     end_time: str  # "10:00"
     building: str
-    floor: str
-    room: str
+    floor: str | None
+    room: str | None
 
     # If lectures only take place in the first/second half of a semester
     # https://ethz.ch/applications/teaching/en/applications/vvz/key.html

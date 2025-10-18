@@ -3,6 +3,7 @@ from sqlmodel import JSON, Column, Field
 from api.models import CourseSlot, CourseTypeEnum
 from api.new_models.base import BaseModel
 from api.new_models.lehrveranstalter import Lehrveranstalter
+from api.util.pydantic_type import PydanticType
 
 
 class CourseHourEnum(Enum):
@@ -15,6 +16,9 @@ class Lehrveranstaltung(BaseModel, table=True):
 
     id: int | None = Field(primary_key=True, default=None)
     """Technische Identifikation dieser Lehrveranstaltung"""
+
+    unit_id: int
+
     nummer: str | None = Field(default=None)
     """Nummer der Lehrveranstaltung"""
     titel: str | None = Field(default=None)
@@ -181,7 +185,9 @@ class Lehrveranstaltung(BaseModel, table=True):
     # """
 
     # NOTE: not listed in doc, but available on vvz
-    timeslots: list[CourseSlot] = Field(default_factory=list, sa_column=Column(JSON))
+    timeslots: list[CourseSlot] = Field(
+        default_factory=list, sa_column=Column(PydanticType(list[CourseSlot]))
+    )
     # TODO: move to separate table
     dozierende: list[int] = Field(default_factory=list, sa_column=Column(JSON))
 

@@ -1,5 +1,4 @@
-from sqlmodel import JSON, Column, Field
-from api.new_models.abschnitt_element import AbschnittElement
+from sqlmodel import Field
 from api.new_models.base import BaseModel
 
 
@@ -14,6 +13,3 @@ class Semester(BaseModel, table=True):
     semestermitte: str | None = Field(default=None)
     semesterende: str | None = Field(default=None)
     semesterintervallende: str | None = Field(default=None)
-    abschnittelemente: list[AbschnittElement] = Field(
-        default_factory=list, sa_column=Column(JSON)
-    )

@@ -5,9 +5,33 @@ from api.new_models.base import BaseModel
 
 
 class Periodicity(Enum):
+    """
+    Angabe, in welchem Intervall die Lehrveranstaltung abgehalten wird.
+    - 0 einmalige Veranstaltung (einmalig)
+    - 1 jährlich wiederkehrende Veranstaltung (jährlich)
+    - 2 2-jährlich wiederkehrende Veranstaltung (2-jährlich)
+    """
+
     ONETIME = 0
     ANNUAL = 1
     SEMESTER = 2
+
+
+class NamedURL(BaseModel):
+    name: str
+    url: str
+
+
+class OccurenceEnum(Enum):
+    """
+    - 0 Veranstaltung findet dieses Jahr nicht statt (nein)
+    - 1 Veranstaltung findet dieses Jahr statt (ja)
+    - 2 Annuliert (Annuliert)
+    """
+
+    NO = 0
+    YES = 1
+    CANCELLED = 2
 
 
 class Lerneinheit(BaseModel, table=True):
@@ -50,14 +74,6 @@ class Lerneinheit(BaseModel, table=True):
     überschrieben werden. Die effektive Anzahl der
     Krediteinheiten wird pro Student/in vergeben und kann in
     Ausnahmefällen von der "Default"-Krediteinheit abweichen
-    """
-    url: str | None = Field(default=None, max_length=1000)
-    """
-    URL für eine spezifische Homepage zu dieser Lerneinheit.
-    Enthält weiter Angaben und Beschreibungen zur Vorlesung
-    und dem Übungsbetrieb oder Übungsunterlagen.
-    Für die Auswertung der URL ist auch der Gültigkeitsbereich
-    der URL auszuwerten.
     """
     literatur: str | None = Field(default=None, max_length=4000)
     """Literaturangaben zu dieser Lerneinheit."""
@@ -140,11 +156,11 @@ class Lerneinheit(BaseModel, table=True):
 
     lehrsprache: str | None = Field(default=None)
     Kurzbeschreibung: str | None = Field(default=None)
-    kompetenzen: dict[str, dict[str, str]] = Field(
-        default_factory=dict, sa_column=Column(JSON)
+    kompetenzen: dict[str, dict[str, str]] | None = Field(
+        default=None, sa_column=Column(JSON)
     )
-    kompetenzenenglisch: dict[str, dict[str, str]] = Field(
-        default_factory=dict, sa_column=Column(JSON)
+    kompetenzenenglisch: dict[str, dict[str, str]] | None = Field(
+        default=None, sa_column=Column(JSON)
     )
     reglement: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     hilfsmittel: str | None = Field(default=None, max_length=4000)
@@ -152,6 +168,7 @@ class Lerneinheit(BaseModel, table=True):
     prufungsmodus: str | None = Field(default=None, max_length=4000)
     prufungssprache: str | None = Field(default=None)
     prufungsform: str | None = Field(default=None)
+    prufungsblock: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     digital: str | None = Field(default=None)
     distance_exam: str | None = Field(default=None)
     recording: str | None = Field(default=None)
@@ -159,15 +176,20 @@ class Lerneinheit(BaseModel, table=True):
     prufende: list[int] = Field(default_factory=list, sa_column=Column(JSON))
     dozierende: list[int] = Field(default_factory=list, sa_column=Column(JSON))
     repetition: str | None = Field(default=None)
-    groups: dict[str, CourseSlot] = Field(default_factory=dict, sa_column=Column(JSON))
-
+    groups: dict[str, CourseSlot | None] = Field(
+        default_factory=dict, sa_column=Column(JSON)
+    )
+    """Groups can have no slot nor any info: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lang=de&lerneinheitId=193540&semkez=2025W&ansicht=ALLE&"""
     periodizitaet: Periodicity | None = Field(default=None)
-    """
-    Angabe, in welchem Intervall die Lehrveranstaltung abgehalten wird.
-    - 0 einmalige Veranstaltung (einmalig)
-    - 1 jährlich wiederkehrende Veranstaltung (jährlich)
-    - 2 2-jährlich wiederkehrende Veranstaltung (2-jährlich)
-    """
+    learning_materials: dict[str, NamedURL] | None = Field(
+        default=None, sa_column=Column(JSON)
+    )
+    learning_materials_english: dict[str, NamedURL] | None = Field(
+        default=None, sa_column=Column(JSON)
+    )
+    occurence: OccurenceEnum | None = Field(default=None)
+    general_restrictions: str | None = Field(default=None)
+    offered_in: list[int] | None = Field(default=None, sa_column=Column(JSON))
 
     # NOTE: Listed in doc, but removed because not available on vvz or not relevant
     # urlvon: str | None = Field(default=None)
@@ -181,6 +203,6 @@ class Lerneinheit(BaseModel, table=True):
         Used to merge german and english scraped data.
         """
         for field in other.model_fields_set:
-            value = getattr(other, field)
-            if value is not None:
-                setattr(self, field, value)
+            value_other = getattr(other, field)
+            if value_other is not None:
+                setattr(self, field, value_other)

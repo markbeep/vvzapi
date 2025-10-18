@@ -55,6 +55,7 @@ TranslationKey = Literal[
     "registration_start",
     "priority",
     "primary_target_group",
+    "general_restrictions",
     # Groups
     "groups",
     #
@@ -149,6 +150,7 @@ translations: dict[TranslationKey, Translation] = {
     "primary_target_group": Translation(
         de="Primäre Zielgruppe", en="Primary target group"
     ),
+    "general_restrictions": Translation(de="Allgemein", en="General"),
     # Groups
     "groups": Translation(de="Gruppen", en="Groups"),
 }
