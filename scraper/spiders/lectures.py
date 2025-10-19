@@ -1,4 +1,3 @@
-from datetime import date
 import traceback
 from collections import defaultdict
 import json
@@ -22,10 +21,8 @@ from api.models.learning_unit import (
     UnitSectionLink,
     UnitTypeEnum,
 )
-from api.models.lecturer import Lecturer
 from scraper.env import Settings
 from scraper.util.keymap import get_key
-from scraper.util.progress import create_progress
 from scraper.util.regex_rules import (
     RE_ABSCHNITTID,
     RE_CODE,
@@ -39,14 +36,14 @@ from scraper.util.table import Table, table_under_header
 from scraper.util.url import (
     delete_url_key,
     edit_url_key,
-    list_url_params,
     sort_url_params,
 )
 
 
 def get_urls(year: int, semester: Literal["W", "S"]):
-    url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?semkez={year}{semester}&ansicht=1&lang=en"
-    return [url, url + "&strukturAus=on"]
+    # seite=0 shows all results in one page
+    url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?semkez={year}{semester}&ansicht=1&seite=0"
+    return [url + "&lang=en", url + "&lang=de"]
 
 
 class LecturesSpider(scrapy.Spider):
@@ -59,27 +56,8 @@ class LecturesSpider(scrapy.Spider):
     ]
 
     def parse(self, response: Response):
-        # get current next page
-        page_info = response.css(
-            ".tabNavi > ul:nth-child(1) > li:nth-child(1)::text"
-        ).getall()
-        if len(page_info) < 2:
-            return
-        # FORMAT: ['\n', '\xa0Page\xa0 \n  1\xa0 \n  of\xa0 \n  358\n\n  ', '\n\n    ', ' \n  \n\n  ']
-        page_info = [x.strip() for x in page_info[1].replace("\xa0", "").split("\n")]
-        # FORMAT: ['Page', '1', 'of', '358', '', '']
-        current_page = int(page_info[1])
-        max_page = int(page_info[3])
-        self.logger.info(f"Scraping next page {current_page}")
-        self.logger.info(create_progress(current_page, max_page, 80))
-
-        if current_page < max_page:
-            search_page_url = edit_url_key(
-                response.url, "seite", [str(current_page + 1)]
-            )
-            # Sort to prevent urls to be viewed as different due to param order
-            search_page_url = sort_url_params(search_page_url)
-            yield response.follow(search_page_url, self.parse)
+        for section in self.extract_sections(response):
+            yield section
 
         for course in response.css("a::attr(href)").getall():
             if "lerneinheit.view" in course:
@@ -92,16 +70,6 @@ class LecturesSpider(scrapy.Spider):
 
     def parse_unit(self, response: Response):
         try:
-            # lecturers might be listed here under examiners, but not under courses.
-            # By checking all lecturers on the course page (instead of search page),
-            # we ensure that we get all of them.
-            for course in response.css("a::attr(href)").getall():
-                if "dozent.view" in course:
-                    for param in list_url_params(course).keys():
-                        if param != "dozide" and param != "semkez":
-                            course = delete_url_key(course, param)
-                    yield response.follow(course, self.parse_lecturer)
-
             unit_title = response.css(
                 "section#contentContainer div#contentTop h1::text"
             ).extract_first()
@@ -227,9 +195,6 @@ class LecturesSpider(scrapy.Spider):
             groups = self.extract_groups(response)
             offered_in = self.extract_offered_in(response, unit_id)
             for offered in offered_in:
-                url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?abschnittId={offered.section_id}&semkez={semkez}"
-                yield response.follow(url + "&lang=en", self.parse_section)
-                yield response.follow(url + "&lang=de", self.parse_section)
                 yield offered
 
             learning_materials = self.extract_learning_materials(response)
@@ -327,36 +292,12 @@ class LecturesSpider(scrapy.Spider):
                     f"{json.dumps({'error': str(e), 'traceback': traceback.format_exc(), 'url': response.url})}\n"
                 )
 
-    def parse_lecturer(self, response: Response):
-        header = response.css("h1::text").get()
-        if not header:
-            self.logger.error(f"No lecture header found for {response.url}")
-            return
-        names = header.replace("\n\n", "\n").replace(":", "").split("\n")[:2]
-        names = [n.strip() for n in names]
-
-        dozide = re.search(RE_DOZIDE, response.url)
-        if not dozide:
-            self.logger.error(f"No dozid found for {response.url}")
-            return
-
-        golden_owl = any("Golden" in x for x in response.css("img::attr(alt)").getall())
-
-        yield Lecturer(
-            id=int(dozide.group(1)),
-            name=names[0],
-            surname=names[1],
-            golden_owl=golden_owl,
-        )
-
-    def parse_section(self, response: Response):
+    def extract_sections(self, response: Response):
         semkez = re.search(RE_SEMKEZ, response.url)
-        id = re.search(RE_ABSCHNITTID, response.url)
-        if not semkez or not id:
-            self.logger.error(f"No semkez or abschnittId found for {response.url}")
+        if not semkez:
+            self.logger.error(f"No semkez found for {response.url}")
             return
         semkez = semkez.group(1)
-        id = int(id.group(1))
 
         table = Table(response.xpath("//table"))
         parent_level: list[tuple[int, int]] = []

@@ -16,7 +16,7 @@ uv run scrapy genspider <scraper name> <scraper name>.py
 #### Run scraper
 
 ```sh
-uv run scrapy crawl lectures
+uv run -m scraper.main
 ```
 
 #### Run in shell (for debug)
@@ -29,7 +29,18 @@ uv run scrapy shell "<url>"
 
 ```sh
 uv run scrapy parse --spider=lectures -c <cb func> "<url>"
-uv run scrapy parse --spider=lectures -c parse_lerneinheit "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?semkez=2025W&ansicht=ALLE&lerneinheitId=192945&lang=en"
+uv run scrapy parse --spider=lectures -c parse_unit "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?semkez=2025W&ansicht=ALLE&lerneinheitId=192945&lang=en"
+```
+
+#### Scrape locally
+
+```sh
+docker run \
+    -e SEMESTER=W \
+    -e START_YEAR=2024 \
+    -e END_YEAR=2024 \
+    -v $PWD/data:/app/.scrapy/httpcache \
+    markbeep/vvzapi-scraper:nightly
 ```
 
 ## Alembic

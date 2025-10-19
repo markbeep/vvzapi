@@ -9,4 +9,4 @@ COPY alembic alembic
 
 RUN uv sync
 
-CMD uv run scrapy crawl lectures
+CMD uv run alembic upgrade heads && uv run -m scraper.main
