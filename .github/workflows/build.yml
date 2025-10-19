@@ -5,8 +5,7 @@ on:
     paths:
       - "**.py"
       - "**.html"
-      - "**.css"
-      - "**.yaml"
+      - "**.yml"
       - "uv.lock"
       - "Dockerfile"
   release:
@@ -63,7 +62,7 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Determine tags
+      - name: Determine API tags
         id: vars
         run: |
           if [ "${{ github.event_name }}" == "release" ]; then
@@ -81,9 +80,38 @@ jobs:
             echo "::set-output name=version::nightly:${github_sha_hash:0:7}"
           fi
 
-      - name: Build and push
+      - name: Build and push API
         uses: docker/build-push-action@v5
         with:
+          file: deploy/Dockerfile.api
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.vars.outputs.tags }}
+          build-args: |
+            VERSION=${{ steps.vars.outputs.version }}
+
+      - name: Determine scraper tags
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            # Remove leading 'v' if present
+            VERSION="${VERSION#v}"
+            MAJOR=$(echo $VERSION | cut -d. -f1)
+            MINOR=$(echo $VERSION | cut -d. -f2)
+            PATCH=$(echo $VERSION | cut -d. -f3)
+            echo "::set-output name=tags::${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi-scraper:$VERSION,${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi-scraper:$MAJOR.$MINOR,${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi-scraper:$MAJOR,${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi-scraper:latest"
+            echo "::set-output name=version::$VERSION"
+          else
+            echo "::set-output name=tags::${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi-scraper:nightly"
+            github_sha_hash=${{ github.sha }}
+            echo "::set-output name=version::nightly:${github_sha_hash:0:7}"
+          fi
+
+      - name: Build and push scraper
+        uses: docker/build-push-action@v5
+        with:
+          file: deploy/Dockerfile.scraper
           platforms: linux/amd64
           push: true
           tags: ${{ steps.vars.outputs.tags }}
