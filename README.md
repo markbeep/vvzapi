@@ -1,3 +1,10 @@
+# VVZ REST API
+
+Community-made REST API for [VVZ](https://www.vvz.ethz.ch/Vorlesungsverzeichnis)
+
+> [!NOTE]  
+> The API is still in it's early stages and very WIP. That means there are currently not as many endpoint options as one might desire.
+
 ## Scraper
 
 #### Create scraper
@@ -48,11 +55,3 @@ uv run fastapi dev api/main.py
 ## Schema
 
 [VVZ Schema](https://www.bi.id.ethz.ch/soapvvz-2023-1/manual/SoapVVZ.pdf#page=18) (starts page 18)
-
-## Caching
-
-https://pypi.org/project/fastapi-cache2/
-
-```
-
-```
