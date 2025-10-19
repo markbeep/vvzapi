@@ -17,12 +17,12 @@ from api.models.learning_unit import (
     LearningUnit,
     NamedURL,
     OccurenceEnum,
-    OfferedIn,
     Periodicity,
+    Section,
+    UnitSectionLink,
     UnitTypeEnum,
 )
 from api.models.lecturer import Lecturer
-from api.models.section import Section
 from scraper.util.keymap import get_key
 from scraper.util.progress import create_progress
 from scraper.util.regex_rules import (
@@ -66,6 +66,8 @@ class LecturesSpider(scrapy.Spider):
         page_info = response.css(
             ".tabNavi > ul:nth-child(1) > li:nth-child(1)::text"
         ).getall()
+        if len(page_info) < 2:
+            return
         # FORMAT: ['\n', '\xa0Page\xa0 \n  1\xa0 \n  of\xa0 \n  358\n\n  ', '\n\n    ', ' \n  \n\n  ']
         page_info = [x.strip() for x in page_info[1].replace("\xa0", "").split("\n")]
         # FORMAT: ['Page', '1', 'of', '358', '', '']
@@ -226,11 +228,12 @@ class LecturesSpider(scrapy.Spider):
                     occurence = None
 
             groups = self.extract_groups(response)
-            offered_in = self.extract_offered_in(response)
+            offered_in = self.extract_offered_in(response, unit_id)
             for offered in offered_in:
-                url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?abschnittId={offered.id}&semkez={semkez}"
+                url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?abschnittId={offered.section_id}&semkez={semkez}"
                 yield response.follow(url + "&lang=en", self.parse_section)
                 yield response.follow(url + "&lang=de", self.parse_section)
+                yield offered
 
             learning_materials = self.extract_learning_materials(response)
 
@@ -311,7 +314,6 @@ class LecturesSpider(scrapy.Spider):
                 learning_materials_english=learning_materials if lang == "en" else None,
                 occurence=occurence,
                 general_restrictions=general_restrictions,
-                offered_in=offered_in,
             )
 
             # Get courses after the learning unit, to ensure the foreign key exists already
@@ -444,7 +446,7 @@ class LecturesSpider(scrapy.Spider):
             date=None,
             first_half_semester=False,
             second_half_semester=False,
-            two_weekly=False,
+            biweekly=False,
         )
         if slots_sel is not None:
             slots = slots_sel.css("a::text").getall()
@@ -480,7 +482,7 @@ class LecturesSpider(scrapy.Spider):
                         room=room,
                         first_half_semester=day_info.first_half_semester,
                         second_half_semester=day_info.second_half_semester,
-                        two_weekly=day_info.two_weekly,
+                        biweekly=day_info.biweekly,
                     )
                 )
 
@@ -543,7 +545,7 @@ class LecturesSpider(scrapy.Spider):
                 room=room,
                 first_half_semester=day_info.first_half_semester,
                 second_half_semester=day_info.second_half_semester,
-                two_weekly=day_info.two_weekly,
+                biweekly=day_info.biweekly,
             )
         return groups
 
@@ -567,8 +569,10 @@ class LecturesSpider(scrapy.Spider):
                 materials[key].append(NamedURL(name=urlname, url=url))
         return materials
 
-    def extract_offered_in(self, response: Response) -> list[OfferedIn]:
-        offered_in: list[OfferedIn] = []
+    def extract_offered_in(
+        self, response: Response, parent_unit_id: int
+    ) -> list[UnitSectionLink]:
+        offered_in: list[UnitSectionLink] = []
         table = table_under_header(response, ["Angeboten in", "Offered in"])
         for _, r in table.rows:
             id = r[1].re_first(RE_ABSCHNITTID)
@@ -590,7 +594,9 @@ class LecturesSpider(scrapy.Spider):
                     type = UnitTypeEnum.Dr
                 case _:
                     type = None
-            offered_in.append(OfferedIn(id=int(id), type=type))
+            offered_in.append(
+                UnitSectionLink(section_id=int(id), unit_id=parent_unit_id, type=type)
+            )
         return offered_in
 
 
@@ -599,7 +605,7 @@ class DayInfo(BaseModel):
     date: str | None
     first_half_semester: bool
     second_half_semester: bool
-    two_weekly: bool
+    biweekly: bool
 
 
 def get_day_info(day_str: str) -> DayInfo:
@@ -611,7 +617,7 @@ def get_day_info(day_str: str) -> DayInfo:
             date=date,
             first_half_semester=False,
             second_half_semester=False,
-            two_weekly=False,
+            biweekly=False,
         )
     day, *args = day_str.split("/")
     try:
@@ -625,5 +631,5 @@ def get_day_info(day_str: str) -> DayInfo:
         date=None,
         first_half_semester="1" in args,
         second_half_semester="2" in args,
-        two_weekly="2w" in args,
+        biweekly="2w" in args,
     )

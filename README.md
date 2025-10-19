@@ -1,7 +1,3 @@
-## Notes
-
-- Lecturer information is listed in `robots.txt`. But we need to access the lecturer page to get the full name of a lecturer for course search reasons. We do not store any other Lecturer information other than if the professor has recieved the golden owl.
-
 ## Scraper
 
 #### Create scraper
@@ -43,6 +39,12 @@ uv run alembic revision --autogenerate -m "message"
 uv run alembic upgrade heads
 ```
 
+## API
+
+```sh
+uv run fastapi dev api/main.py
+```
+
 ## Schema
 
 [VVZ Schema](https://www.bi.id.ethz.ch/soapvvz-2023-1/manual/SoapVVZ.pdf#page=18) (starts page 18)
@@ -50,3 +52,7 @@ uv run alembic upgrade heads
 ## Caching
 
 https://pypi.org/project/fastapi-cache2/
+
+```
+
+```

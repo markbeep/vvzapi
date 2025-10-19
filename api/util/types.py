@@ -40,7 +40,7 @@ class CourseSlot(BaseModel):
     # https://ethz.ch/applications/teaching/en/applications/vvz/key.html
     first_half_semester: bool
     second_half_semester: bool
-    two_weekly: bool
+    biweekly: bool
 
 
 class CourseTypeEnum(Enum):

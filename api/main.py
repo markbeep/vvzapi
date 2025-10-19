@@ -1,24 +1,14 @@
 from contextlib import asynccontextmanager
-from typing import Annotated, Sequence
-from fastapi import Depends, FastAPI, Query
+
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+from pathlib import Path
+from fastapi.templating import Jinja2Templates
 from fastapi_cache import FastAPICache
-from pydantic import BaseModel
-from sqlalchemy import func
-from sqlmodel import Session, select
-import uvicorn
-import toml
-
-from api.models.course import Course
-from api.models.learning_unit import LearningUnit
-from api.models.lecturer import Lecturer
-from api.util.db import get_session
 from fastapi_cache.backends.inmemory import InMemoryBackend
-from fastapi_cache.decorator import cache
 
-# get current version
-with open("pyproject.toml", "r") as f:
-    pyproject = toml.load(f)
-    version = pyproject["project"]["version"]
+from api.routers.v1_router import router as v1_router
+from api.util.version import get_api_version
 
 
 @asynccontextmanager
@@ -28,72 +18,37 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(v1_router)
 
 
-@app.get("/units")
-@cache(expire=60)
-async def get_units(
-    session: Annotated[Session, Depends(get_session)],
-    limit: Annotated[int, Query(gt=0, le=100)] = 20,
-    offset: Annotated[int, Query(ge=0)] = 0,
-) -> Sequence[int]:
-    return session.exec(select(LearningUnit.id).offset(offset).limit(limit)).all()
+_STATIC_INDEX = Path(__file__).parent / "static" / "index.html"
+templates = Jinja2Templates(directory=str(_STATIC_INDEX.parent))
 
 
-@app.get("/unit/{unit_id}")
-@cache(expire=60)
-async def get_unit(
-    unit_id: int,
-    session: Annotated[Session, Depends(get_session)],
-) -> LearningUnit | None:
-    return session.get(LearningUnit, unit_id)
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def root():
+    if not _STATIC_INDEX.exists():
+        return HTMLResponse("<h1>VVZ API</h1>", status_code=200)
 
-
-class TitleResponse(BaseModel):
-    id: int
-    title: str
-
-
-@app.get("/titles", response_model=list[TitleResponse])
-@cache(expire=60)
-async def get_titles(
-    session: Annotated[Session, Depends(get_session)],
-    limit: Annotated[int, Query(gt=0, le=1000)] = 100,
-    offset: Annotated[int, Query(ge=0)] = 0,
-):
-    return session.exec(
-        select(LearningUnit.id, LearningUnit.title).offset(offset).limit(limit)
-    ).all()
-
-
-class MetricsResponse(BaseModel):
-    semesters: list[str]
-    total_learning_units: int
-    total_courses: int
-    total_lecturers: int
-    version: str
-
-
-@app.get("/metrics")
-@cache(expire=60)
-async def get_metrics(
-    session: Annotated[Session, Depends(get_session)],
-) -> MetricsResponse:
-    semesters = session.exec(
-        select(LearningUnit.semkez).distinct().order_by(LearningUnit.semkez)
-    ).all()
-    total_learning_units = session.exec(select(func.Count(LearningUnit.id))).one()
-    total_courses = session.exec(select(func.Count(Course.id))).one()
-    total_lecturers = session.exec(select(func.Count(Lecturer.id))).one()
-
-    return MetricsResponse(
-        semesters=list(semesters),
-        total_learning_units=total_learning_units,
-        total_courses=total_courses,
-        total_lecturers=total_lecturers,
-        version=version,
+    return templates.TemplateResponse(
+        "index.html", {"request": {}, "version": get_api_version()}
     )
 
 
-if __name__ == "__main__":
-    uvicorn.run(app, port=8000)
+@app.get("/{favicon}", include_in_schema=False)
+async def favicon(favicon: str):
+    if favicon not in [
+        "android-chrome-192x192.png",
+        "android-chrome-512x512.png",
+        "apple-touch-icon.png",
+        "favicon-16x16.png",
+        "favicon-32x32.png",
+        "favicon.ico",
+        "site.webmanifest",
+    ]:
+        return HTMLResponse(status_code=404)
+
+    favicon_path = Path(__file__).parent / "static" / favicon
+    if favicon_path.exists():
+        return HTMLResponse(favicon_path.read_bytes(), media_type="image/x-icon")
+    return HTMLResponse(status_code=404)

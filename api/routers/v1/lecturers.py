@@ -1,0 +1,35 @@
+from typing import Annotated, Sequence
+from fastapi import APIRouter, Depends, Query
+from fastapi_cache.decorator import cache
+from sqlmodel import Session, col, select
+
+from api.env import Settings
+from api.models.lecturer import Lecturer
+from api.util.db import get_session
+
+router = APIRouter(prefix="/lecturer", tags=["Lecturers"])
+
+
+@router.get("/get/{lecturer_id}", response_model=Lecturer | None)
+@cache(expire=Settings().cache_expiry)
+async def get_lecturer(
+    session: Annotated[Session, Depends(get_session)],
+    lecturer_id: int,
+) -> Lecturer | None:
+    return session.get(Lecturer, lecturer_id)
+
+
+@router.get("/list", response_model=Sequence[Lecturer])
+@cache(expire=Settings().cache_expiry)
+async def list_lecturers(
+    session: Annotated[Session, Depends(get_session)],
+    limit: Annotated[int, Query(gt=0, le=1000)] = 100,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    golden_owl: bool | None = None,
+) -> Sequence[Lecturer]:
+    query = (
+        select(Lecturer).offset(offset).limit(limit).order_by(col(Lecturer.id).asc())
+    )
+    if golden_owl is not None:
+        query = query.where(Lecturer.golden_owl == golden_owl)
+    return session.exec(query).all()

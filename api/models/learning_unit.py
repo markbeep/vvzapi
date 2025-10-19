@@ -1,6 +1,7 @@
 from enum import Enum
+from pydantic import ConfigDict
 from sqlalchemy import UniqueConstraint
-from sqlmodel import JSON, Field, Column
+from sqlmodel import JSON, Field, Column, Relationship
 from api.util.pydantic_type import PydanticType
 from api.util.types import CourseSlot
 from api.models.base import BaseModel
@@ -24,17 +25,6 @@ class NamedURL(BaseModel):
     url: str
 
 
-class UnitTypeEnum(Enum):
-    """www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=117361&semkez=2025W&lang=en"""
-
-    O = "Compulsory"
-    WPlus = "ElligibleRecommended"  # Eligible for credits and recommended
-    W = "Elligible"  # Eligible for credits
-    EMinus = "NotElligible"  # Recommended, not eligible for credits
-    Z = "Outside"  # Courses outside the curriculum
-    Dr = "Doctorate"  # Suitable for doctorate
-
-
 class OccurenceEnum(Enum):
     """
     - 0 Veranstaltung findet dieses Jahr nicht statt (nein)
@@ -45,11 +35,6 @@ class OccurenceEnum(Enum):
     NO = 0
     YES = 1
     CANCELLED = 2
-
-
-class OfferedIn(BaseModel):
-    type: UnitTypeEnum | None
-    id: int
 
 
 class LearningUnit(BaseModel, table=True):
@@ -141,15 +126,13 @@ class LearningUnit(BaseModel, table=True):
     occurence: OccurenceEnum | None = Field(default=None)
     general_restrictions: str | None = Field(default=None)
     """Extra notes on any restrictions for this learning unit."""
-    offered_in: list[OfferedIn] | None = Field(
-        default=None, sa_column=Column(PydanticType(list[OfferedIn]))
-    )
-    """List of programmes and sections this learning unit is offered in."""
 
     examiners: list[int] = Field(default_factory=list, sa_column=Column(JSON))
     """IDs of persons who are examiners for this learning unit."""
     lecturers: list[int] = Field(default_factory=list, sa_column=Column(JSON))
     """IDs of persons who are the general lecturers for this learning unit."""
+
+    section_links: list["UnitSectionLink"] = Relationship(back_populates="unit")
 
     def overwrite_with(self, other: "LearningUnit"):
         """
@@ -160,3 +143,52 @@ class LearningUnit(BaseModel, table=True):
             value_other = getattr(other, field)
             if value_other is not None:
                 setattr(self, field, value_other)
+
+
+class SectionBase(BaseModel):
+    id: int = Field(primary_key=True)
+    parent_id: int | None = Field(default=None)
+    semkez: str
+    name: str | None = Field(default=None)
+    name_english: str | None = Field(default=None)
+    level: int | None = Field(default=None)
+    comment: str | None = Field(default=None)
+    comment_english: str | None = Field(default=None)
+
+
+class Section(SectionBase, table=True):
+    unit_links: list["UnitSectionLink"] = Relationship(back_populates="section")
+
+    def overwrite_with(self, other: "Section"):
+        """
+        Overwrites all fields that are not None from the other instance.
+        Used to merge german and english scraped data.
+        """
+        for field in other.model_fields_set:
+            value_other = getattr(other, field)
+            if value_other is not None:
+                setattr(self, field, value_other)
+
+
+class UnitTypeEnum(Enum):
+    """www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=117361&semkez=2025W&lang=en"""
+
+    O = 0
+    WPlus = 1  # Eligible for credits and recommended
+    W = 2  # Eligible for credits
+    EMinus = 3  # Recommended, not eligible for credits
+    Z = 4  # Courses outside the curriculum
+    Dr = 5  # Suitable for doctorate
+
+
+class UnitSectionLink(BaseModel, table=True):
+    unit_id: int = Field(
+        primary_key=True, foreign_key="learningunit.id", ondelete="CASCADE"
+    )
+    section_id: int = Field(
+        primary_key=True, foreign_key="section.id", ondelete="CASCADE"
+    )
+    type: UnitTypeEnum | None = Field(default=None)
+
+    unit: "LearningUnit" = Relationship(back_populates="section_links")
+    section: "Section" = Relationship(back_populates="unit_links")
