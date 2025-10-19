@@ -2,7 +2,7 @@ FROM astral/uv:python3.13-trixie-slim
 
 WORKDIR /app
 
-COPY uv.lock pyproject.toml .python-version alembic.ini ./ 
+COPY uv.lock pyproject.toml .python-version alembic.ini scrapy.cfg ./ 
 COPY scraper scraper
 COPY api api
 COPY alembic alembic

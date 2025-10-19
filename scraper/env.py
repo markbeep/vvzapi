@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     # automatically include next year (if it exists)
     end_year: int = date.today().year + 1
     semester: str = "W"
+    delay: float = 5.0
 
     def read_semesters(self) -> list[Literal["W", "S"]]:
         semesters: list[Literal["W", "S"]] = []
