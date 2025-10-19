@@ -1,12 +1,16 @@
 from contextlib import asynccontextmanager
+from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from starlette.background import BackgroundTask
 from fastapi.responses import HTMLResponse
 from pathlib import Path
 from fastapi.templating import Jinja2Templates
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
+import httpx
 
+from api.env import Settings
 from api.routers.v1_router import router as v1_router
 from api.util.version import get_api_version
 
@@ -23,6 +27,44 @@ app.include_router(v1_router)
 
 _STATIC_INDEX = Path(__file__).parent / "static" / "index.html"
 templates = Jinja2Templates(directory=str(_STATIC_INDEX.parent))
+
+
+def send_analytics_event(request: Request):
+    plausible_url = Settings().plausible_url
+    if not plausible_url:
+        return
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": request.headers.get("user-agent", "vvzapi"),
+    }
+    if request.client:
+        headers["X-Forwarded-For"] = request.client.host
+
+    httpx.post(
+        plausible_url,
+        json={
+            "name": "pageview",
+            "url": str(request.url),
+            "domain": request.url.hostname,
+        },
+        headers=headers,
+        timeout=10,
+    )
+
+
+@app.middleware("http")
+async def analytics_middleware(request: Request, call_next: Any):
+    response = await call_next(request)
+    if (
+        not Settings().plausible_url
+        and not request.url.path.startswith("/api")
+        and not request.url.path == "/"
+        and not request.url.path.startswith("/docs")
+    ):
+        return response
+    task = BackgroundTask(send_analytics_event, request)
+    response.background = task
+    return response
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)

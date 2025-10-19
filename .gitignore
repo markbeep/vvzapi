@@ -12,3 +12,4 @@ wheels/
 # HTML Files and DBs
 data
 .scrapy
+.env

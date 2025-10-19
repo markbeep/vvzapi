@@ -5,7 +5,7 @@ from api.routers.v1.lecturers import router as lecturer_router
 from api.routers.v1.courses import router as course_router
 from api.routers.v1.sections import router as section_router
 
-router = APIRouter(prefix="/v1")
+router = APIRouter(prefix="/api/v1")
 
 router.include_router(unit_router)
 router.include_router(misc_router)
