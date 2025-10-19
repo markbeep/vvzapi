@@ -23,6 +23,7 @@ from api.models.learning_unit import (
     UnitTypeEnum,
 )
 from api.models.lecturer import Lecturer
+from scraper.env import Settings
 from scraper.util.keymap import get_key
 from scraper.util.progress import create_progress
 from scraper.util.regex_rules import (
@@ -42,10 +43,6 @@ from scraper.util.url import (
     sort_url_params,
 )
 
-START_YEAR = 2025  # 2003
-END_YEAR = date.today().year + 1
-SEMESTERS = ("W",)  # ("W", "S")
-
 
 def get_urls(year: int, semester: Literal["W", "S"]):
     url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?semkez={year}{semester}&ansicht=1&lang=en"
@@ -56,8 +53,8 @@ class LecturesSpider(scrapy.Spider):
     name = "lectures"
     start_urls = [
         url
-        for year in range(START_YEAR, END_YEAR + 1)
-        for semester in SEMESTERS
+        for year in range(Settings().start_year, Settings().end_year + 1)
+        for semester in Settings().read_semesters()
         for url in get_urls(year, semester)
     ]
 
