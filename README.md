@@ -43,6 +43,14 @@ docker run \
     markbeep/vvzapi-scraper:nightly
 ```
 
+#### Cleanup html cache directory
+
+There might be outdated or unused files in the html cache directories. Using the cleanup script everything that is not needed can be removed:
+
+```sh
+uv run scraper/util/cleanup_scrapy.py [--dry-run]
+```
+
 ## Alembic
 
 #### Create revision
