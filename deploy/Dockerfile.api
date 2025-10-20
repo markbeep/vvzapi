@@ -5,6 +5,8 @@ WORKDIR /app
 COPY uv.lock pyproject.toml .python-version alembic.ini ./ 
 COPY api api
 COPY alembic alembic
+# allows for debugging in the api pod
+COPY scraper scraper
 
 RUN uv sync
 

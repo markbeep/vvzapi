@@ -5,12 +5,7 @@ from sqlmodel import select
 
 from api.util import db
 from api.models.course import Course
-from api.models.learning_unit import (
-    LearningUnit,
-    Section,
-    UnitSectionLink,
-    UnitTypeEnum,
-)
+from api.models.learning_unit import LearningUnit, Section, UnitSectionLink
 from api.models.lecturer import Lecturer
 
 CACHE_PATH = "database_cache"
@@ -63,9 +58,6 @@ class DatabasePipeline:
         with open(f".scrapy/{CACHE_PATH}/unit_section_link.jsonl", "r") as f:
             for line in f:
                 link = UnitSectionLink.model_validate_json(line)
-                link.type = (
-                    UnitTypeEnum(link.type) if link.type else None
-                )  # fixes the enum type
                 existing_link = self.session.get(
                     UnitSectionLink,
                     (link.unit_id, link.section_id),

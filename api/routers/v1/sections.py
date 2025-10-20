@@ -6,13 +6,7 @@ from sqlalchemy import text
 from sqlmodel import Session, col, select
 
 from api.env import Settings
-from api.models.learning_unit import (
-    LearningUnit,
-    Section,
-    SectionBase,
-    UnitSectionLink,
-    UnitTypeEnum,
-)
+from api.models.learning_unit import Section, SectionBase, UnitSectionLink
 from api.util.db import get_session
 
 router = APIRouter(prefix="/section", tags=["Sections"])
@@ -32,7 +26,7 @@ async def list_sections(
 
 class LearningUnitType(BaseModel):
     id: Annotated[int, Field(description="ID of the learning unit")]
-    type: UnitTypeEnum | None
+    type: str | None
 
 
 class SectionLevel(BaseModel):

@@ -18,7 +18,8 @@ from api.models.learning_unit import (
     Periodicity,
     Section,
     UnitSectionLink,
-    UnitTypeEnum,
+    UnitType,
+    UnitTypeLegends,
 )
 from scraper.env import Settings
 from scraper.util.keymap import get_key
@@ -32,6 +33,7 @@ from scraper.util.regex_rules import (
     RE_SEMKEZ,
 )
 from scraper.util.table import Table, table_under_header
+from scraper.util.url import delete_url_key, sort_url_params
 
 
 def get_urls(year: int, semester: Literal["W", "S"]):
@@ -60,20 +62,32 @@ class LecturesSpider(scrapy.Spider):
         catalog_semkez = catalog_semkez.group(1)
 
         for link in response.css("a::attr(href)"):
-            unit_id = link.re_first(RE_UNITID)
+            url = link.get()
             semkez = link.re_first(RE_SEMKEZ)
-            if not unit_id or not semkez:
+            if not semkez or not url:
                 continue
-            if catalog_semkez != semkez:
-                # Sometimes courses will link to courses from other semesters. We ignore those links
-                self.logger.warning(
-                    f"Catalog semkez {catalog_semkez} does not match unit semkez {semkez} for unit {unit_id}"
-                )
-                continue
+            unit_id = link.re_first(RE_UNITID)
+            section_id = link.re_first(RE_ABSCHNITTID)
 
-            url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={unit_id}&semkez={catalog_semkez}&ansicht=ALLE"
-            yield response.follow(url + "&lang=en", self.parse_unit)
-            yield response.follow(url + "&lang=de", self.parse_unit)
+            if unit_id:
+                if catalog_semkez != semkez:
+                    # Sometimes courses will link to courses from other semesters. We ignore those links
+                    self.logger.warning(
+                        f"Catalog semkez {catalog_semkez} does not match unit semkez {semkez} for unit {unit_id}"
+                    )
+                    continue
+
+                url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?ansicht=ALLE&lerneinheitId={unit_id}&semkez={catalog_semkez}"
+                yield response.follow(url + "&lang=en", self.parse_unit)
+                yield response.follow(url + "&lang=de", self.parse_unit)
+
+            # Legend pages can be different for different sections:
+            # - https://www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=18&semkez=2001W&lang=de
+            # - https://www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=117361&semkez=2025W&lang=en
+            elif section_id and "legendeStudienplanangaben.view" in url:
+                url = sort_url_params(url)
+                url = delete_url_key(url, "lang")
+                yield response.follow(url + "&lang=de", self.parse_legend)
 
     def parse_unit(self, response: Response):
         try:
@@ -298,6 +312,33 @@ class LecturesSpider(scrapy.Spider):
                 f.write(
                     f"{json.dumps({'error': str(e), 'traceback': traceback.format_exc(), 'url': response.url})}\n"
                 )
+
+    def parse_legend(self, response: Response):
+        semkez = re.search(RE_SEMKEZ, response.url)
+        id = re.search(RE_ABSCHNITTID, response.url)
+        if not semkez or not id:
+            self.logger.error(f"No semkez or id found for {response.url}")
+            return
+        semkez = semkez.group(1)
+        id = int(id.group(1))
+        title = response.css("h1::text").get()
+        if not title:
+            self.logger.error(f"No title found for legend {response.url}")
+            return
+
+        table = Table(response.xpath("//table"))
+        unit_legends: list[UnitType] = []
+        for _, cols in table.rows:
+            type = cols[0].css("::text").get()
+            description = cols[1].css("::text").get()
+            if type and description:
+                unit_legends.append(UnitType(type=type, description=description))
+        yield UnitTypeLegends(
+            id=id,
+            title=title,
+            semkez=semkez,
+            legend=unit_legends,
+        )
 
     def extract_sections(self, response: Response):
         semkez = re.search(RE_SEMKEZ, response.url)
@@ -524,23 +565,16 @@ class LecturesSpider(scrapy.Spider):
             if not id:
                 continue
             type = r[2].css("a::text").get()
-            match type:
-                case "O":
-                    type = UnitTypeEnum.O
-                case "W+":
-                    type = UnitTypeEnum.WPlus
-                case "W":
-                    type = UnitTypeEnum.W
-                case "E-":
-                    type = UnitTypeEnum.EMinus
-                case "Z":
-                    type = UnitTypeEnum.Z
-                case "Dr":
-                    type = UnitTypeEnum.Dr
-                case _:
-                    type = None
+            type_id = r[2].re_first(RE_ABSCHNITTID)
+            if type_id is not None:
+                type_id = int(type_id)
             offered_in.append(
-                UnitSectionLink(section_id=int(id), unit_id=parent_unit_id, type=type)
+                UnitSectionLink(
+                    section_id=int(id),
+                    unit_id=parent_unit_id,
+                    type=type,
+                    type_id=type_id,
+                )
             )
         return offered_in
 

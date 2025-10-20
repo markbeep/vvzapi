@@ -1,5 +1,4 @@
 from enum import Enum
-from pydantic import ConfigDict
 from sqlalchemy import UniqueConstraint
 from sqlmodel import JSON, Field, Column, Relationship
 from api.util.pydantic_type import PydanticType
@@ -170,17 +169,6 @@ class Section(SectionBase, table=True):
                 setattr(self, field, value_other)
 
 
-class UnitTypeEnum(Enum):
-    """www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=117361&semkez=2025W&lang=en"""
-
-    O = 0
-    WPlus = 1  # Eligible for credits and recommended
-    W = 2  # Eligible for credits
-    EMinus = 3  # Recommended, not eligible for credits
-    Z = 4  # Courses outside the curriculum
-    Dr = 5  # Suitable for doctorate
-
-
 class UnitSectionLink(BaseModel, table=True):
     unit_id: int = Field(
         primary_key=True, foreign_key="learningunit.id", ondelete="CASCADE"
@@ -188,7 +176,22 @@ class UnitSectionLink(BaseModel, table=True):
     section_id: int = Field(
         primary_key=True, foreign_key="section.id", ondelete="CASCADE"
     )
-    type: UnitTypeEnum | None = Field(default=None)
+    type: str | None = Field(default=None)
+    type_id: int | None = Field(default=None)
 
     unit: "LearningUnit" = Relationship(back_populates="section_links")
     section: "Section" = Relationship(back_populates="unit_links")
+
+
+class UnitType(BaseModel):
+    type: str
+    description: str
+
+
+class UnitTypeLegends(BaseModel, table=True):
+    id: int = Field(primary_key=True)
+    title: str
+    semkez: str
+    legend: list[UnitType] = Field(
+        default_factory=list, sa_column=Column(PydanticType(list[UnitType]))
+    )

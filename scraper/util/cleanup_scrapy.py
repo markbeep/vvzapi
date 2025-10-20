@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 import argparse
 import re
@@ -9,7 +8,7 @@ import yaml
 
 CACHE_PATH = Path(".scrapy/httpcache")
 
-re_lectures = r"https://www\.vvz\.ethz\.ch/Vorlesungsverzeichnis/lerneinheit\.view\?lerneinheitId=\d+?&semkez=\d{4}\w&ansicht=ALLE&lang=\w\w"
+re_lectures = r"https://www\.vvz\.ethz\.ch/Vorlesungsverzeichnis/lerneinheit\.view\?ansicht=ALLE&lerneinheitId=\d+?&semkez=\d{4}\w&lang=\w\w"
 re_lectures_root = r"https://www\.vvz\.ethz\.ch/Vorlesungsverzeichnis/sucheLehrangebot\.view\?semkez=\d{4}\w&ansicht=1&seite=0"
 re_lecturers_root = r"https://www\.vvz\.ethz\.ch/Vorlesungsverzeichnis/sucheDozierende\.view\?lang=de&semkez=\d{4}\w&seite=0"
 
