@@ -17,6 +17,7 @@ class Periodicity(Enum):
     ONETIME = 0
     ANNUAL = 1
     SEMESTER = 2
+    BIENNIAL = 3
 
 
 class NamedURL(BaseModel):
@@ -36,6 +37,49 @@ class OccurenceEnum(Enum):
     CANCELLED = 2
 
 
+class Level(str, Enum):
+    # NOTE: enum values should match the string. Might break reading/writing into DB otherwise
+    BSC = "BSC"
+    """Bachelor's Degree Program"""
+    DZ = "DZ"
+    """Didactics Certificate"""
+    DS = "DS"
+    """Diploma Programme"""
+    DR = "DR"
+    """Doctorate"""
+    SHE = "SHE"
+    """Teaching Diploma"""
+    MSC = "MSC"
+    """Master's Degree Program"""
+    GS = "GS"
+    """Mobility Students"""
+    WBZ = "WBZ"
+    """Advanced Studies (CAS, DAS)"""
+    NDS = "NDS"
+    """Master of Advanced Studies"""
+
+
+class Department(Enum):
+    """This seems to be hardcoded on the VVZ website"""
+
+    ARCHITECTURE = 1
+    CIVIL_ENVIRONMENTAL_AND_GEOMATIC_ENGINEERING = 2
+    MECHANICAL_AND_PROCESS_ENGINEERING = 3
+    COMPUTER_SCIENCE = 5
+    MANAGEMENT_TECHNOLOGY_AND_ECONOMICS = 7
+    MATHEMATICS = 8
+    PHYSICS = 9
+    BIOLOGY = 11
+    EARTH_AND_PLANETARY_SCIENCES = 13
+    HUMANITIES_SOCIAL_AND_POLITICAL_SCIENCES = 17
+    INFORMATION_TECHNOLOGY_AND_ELECTRICAL_ENGINEERING = 18
+    MATERIALS = 19
+    CHEMISTRY_AND_APPLIED_BIOSCIENCES = 20
+    BIOSYSTEMS_SCIENCE_AND_ENGINEERING = 23
+    HEALTH_SCIENCES_AND_TECHNOLOGY = 24
+    ENVIRONMENTAL_SYSTEMS_SCIENCE = 25
+
+
 class LearningUnit(BaseModel, table=True):
     """
     This is the general learning unit type that includes all the information for a given course.
@@ -43,15 +87,19 @@ class LearningUnit(BaseModel, table=True):
     This is what you see when you visit a VVZ unit: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lang=en&semkez=2025W&ansicht=ALLE&lerneinheitId=193444&
     """
 
-    __table_args__ = (UniqueConstraint("code", "semkez"),)
+    __table_args__ = (UniqueConstraint("number", "semkez"),)
 
     id: int = Field(primary_key=True)
-    code: str | None = Field(default=None)
+    number: str | None = Field(default=None)
     """263-3010-00L type code. Check the `RE_CODE` to more details on the format."""
     title: str | None = Field(default=None)
     title_english: str | None = Field(default=None)
     semkez: str = Field(max_length=5)
     """Semester in the format JJJJS, where JJJJ is the year and either S or W indicates the semester."""
+    levels: list[Level] = Field(default_factory=list, sa_column=Column(JSON))
+    """Levels of the learning unit, e.g., BSC, MSC, etc."""
+    department: Department | None = Field(default=None)
+    """Department offering this learning unit."""
     credits: float | None = Field(default=None)
     two_semester_credits: float | None = Field(default=None)
     literature: str | None = Field(default=None)

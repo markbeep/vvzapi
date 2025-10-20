@@ -14,12 +14,12 @@ class CourseHourEnum(Enum):
 # TODO: There are a few attributes listed on the SOAP docs, that could be hiding out in VVZ somewhere and missing on this model.
 # https://www.bi.id.ethz.ch/soapvvz-2023-1/manual/SoapVVZ.pdf#page=18
 class Course(BaseModel, table=True):
-    __table_args__ = (UniqueConstraint("code", "semkez"),)
+    __table_args__ = (UniqueConstraint("number", "semkez"),)
 
     id: int | None = Field(primary_key=True, default=None)
     unit_id: int = Field(foreign_key="learningunit.id", ondelete="CASCADE")
     """Parent learning unit ID."""
-    code: str | None = Field(default=None)
+    number: str | None = Field(default=None)
     """263-3010-00L type code. Check the `RE_CODE` to more details on the format."""
     title: str | None = Field(default=None)
     """Designation of the course. No english translation available."""

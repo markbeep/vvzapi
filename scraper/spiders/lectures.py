@@ -12,7 +12,9 @@ from scrapy.http import Response
 from api.util.types import CourseSlot, CourseTypeEnum, WeekdayEnum
 from api.models.course import CourseHourEnum, Course
 from api.models.learning_unit import (
+    Department,
     LearningUnit,
+    Level,
     NamedURL,
     OccurenceEnum,
     Periodicity,
@@ -33,13 +35,24 @@ from scraper.util.regex_rules import (
     RE_SEMKEZ,
 )
 from scraper.util.table import Table, table_under_header
+from scraper.util.types import UnitDepartmentMapping, UnitLevelMapping
 from scraper.util.url import delete_url_key, sort_url_params
 
 
 def get_urls(year: int, semester: Literal["W", "S"]):
     # seite=0 shows all results in one page
     url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?semkez={year}{semester}&ansicht=1&seite=0"
-    return [url + "&lang=en", url + "&lang=de"]
+
+    # gets all sections and courses in english/german
+    yield url + "&lang=en"
+    yield url + "&lang=de"
+
+    # find all courses that are part of each department
+    for dept in list(Department):
+        yield url + f"&deptId={dept.value}&lang=en"
+    # find all courses that are part of each level
+    for level in list(Level):
+        yield url + f"&studiengangTyp={level.value}&lang=en"
 
 
 class LecturesSpider(scrapy.Spider):
@@ -61,6 +74,15 @@ class LecturesSpider(scrapy.Spider):
             return
         catalog_semkez = catalog_semkez.group(1)
 
+        level = re.search(r"studiengangTyp=(\w+)", response.url)
+        if level:
+            level = Level(level.group(1))
+        dept = re.search(r"deptId=(\d+)", response.url)
+        if dept:
+            dept = Department(int(dept.group(1)))
+
+        visited_unit_ids = set()
+        visited_section_ids = set()
         for link in response.css("a::attr(href)"):
             url = link.get()
             semkez = link.re_first(RE_SEMKEZ)
@@ -70,6 +92,16 @@ class LecturesSpider(scrapy.Spider):
             section_id = link.re_first(RE_ABSCHNITTID)
 
             if unit_id:
+                if unit_id in visited_unit_ids:
+                    continue
+                visited_unit_ids.add(unit_id)
+                if level:
+                    yield UnitLevelMapping(level=level, unit_id=int(unit_id))
+                    continue
+                if dept:
+                    yield UnitDepartmentMapping(department=dept, unit_id=int(unit_id))
+                    continue
+
                 if catalog_semkez != semkez:
                     # Sometimes courses will link to courses from other semesters. We ignore those links
                     self.logger.warning(
@@ -85,6 +117,9 @@ class LecturesSpider(scrapy.Spider):
             # - https://www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=18&semkez=2001W&lang=de
             # - https://www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=117361&semkez=2025W&lang=en
             elif section_id and "legendeStudienplanangaben.view" in url:
+                if section_id in visited_section_ids:
+                    continue
+                visited_section_ids.add(section_id)
                 url = sort_url_params(url)
                 url = delete_url_key(url, "lang")
                 yield response.follow(url + "&lang=de", self.parse_legend)
@@ -250,7 +285,7 @@ class LecturesSpider(scrapy.Spider):
 
             yield LearningUnit(
                 id=unit_id,
-                code=unit_number,
+                number=unit_number,
                 title=unit_name if lang == "de" else None,
                 title_english=unit_name if lang == "en" else None,
                 semkez=semkez,
@@ -307,7 +342,7 @@ class LecturesSpider(scrapy.Spider):
                         parent_unit=unit_id, semkez=semkez, cols=cols
                     )
         except Exception as e:
-            self.logger.error(f"Error parsing lerneinheit {response.url}: {e}")
+            self.logger.error(f"Error parsing learning unit {response.url}: {e}")
             with open(".scrapy/database_cache/error_pages.jsonl", "a") as f:
                 f.write(
                     f"{json.dumps({'error': str(e), 'traceback': traceback.format_exc(), 'url': response.url})}\n"
@@ -389,11 +424,11 @@ class LecturesSpider(scrapy.Spider):
             number_sel, title_sel, hours_sel, lecturers_sel = cols
             slots_sel = None
 
-        code = number_sel.re_first(RE_CODE)
+        number = number_sel.re_first(RE_CODE)
         course_type = None
-        if code:
-            code = code.replace("\xa0", "")
-            course_type = CourseTypeEnum[code[-1]]
+        if number:
+            number = number.replace("\xa0", "")
+            course_type = CourseTypeEnum[number[-1]]
         title = title_sel.css("::text").get()
         comments = "\n".join(
             [
@@ -436,7 +471,6 @@ class LecturesSpider(scrapy.Spider):
         )
         if slots_sel is not None:
             slots = slots_sel.css("a::text").getall()
-
             while i < len(slots):
                 try:
                     day_info = get_day_info(slots[i])
@@ -444,8 +478,16 @@ class LecturesSpider(scrapy.Spider):
                 except ValueError:
                     pass
 
-                start_time, end_time = slots[i].split("-")
-                building = slots[i + 1]
+                if "-" in slots[i]:
+                    start_time, end_time = slots[i].split("-")
+                else:
+                    start_time, end_time = None, None
+                    # i -= 1
+
+                if len(slots) > i + 1:
+                    building = slots[i + 1]
+                else:
+                    building = None
                 if "»" not in slots:
                     # Courses at UNI do not have floor/room info nor a "»" button for more info
                     floor, room = None, None
@@ -474,7 +516,7 @@ class LecturesSpider(scrapy.Spider):
 
         return Course(
             unit_id=parent_unit,
-            code=code,
+            number=number,
             title=title,
             semkez=semkez,
             type=course_type,
@@ -515,6 +557,7 @@ class LecturesSpider(scrapy.Spider):
                 continue
 
             if len(cols) != 8:
+                # TODO: handle unexpected format
                 continue
             group, day, time, building, _, floor_room = cols[:6]
             floor, room = floor_room.split(" ")

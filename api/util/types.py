@@ -30,9 +30,11 @@ class CourseSlot(BaseModel):
     # some lectures have specific slots for certain dates
     # https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?ansicht=ALLE&lerneinheitId=194056&semkez=2025W&lang=en
     date: str | None = None  # "31.12"
-    start_time: str  # "08:15"
-    end_time: str  # "10:00"
-    building: str
+    # start/end time can be missing for "External" lectures: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?ansicht=ALLE&lerneinheitId=182942&semkez=2024W&lang=en
+    start_time: str | None  # "08:15"
+    end_time: str | None  # "10:00"
+    # building can be missing: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?ansicht=ALLE&lerneinheitId=183720&semkez=2024W&lang=de
+    building: str | None
     floor: str | None
     room: str | None
 

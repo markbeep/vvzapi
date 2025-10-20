@@ -8,6 +8,7 @@ from sqlmodel import Session, col, select
 from api.env import Settings
 from api.models.learning_unit import LearningUnit
 from api.util.db import get_session
+from api.util.unit_filter import VVZFilters, build_query
 
 router = APIRouter(prefix="/unit", tags=["Learning Units"])
 
@@ -33,7 +34,9 @@ async def list_units(
     limit: Annotated[int, Query(gt=0, le=1000)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
     semkez: Annotated[str | None, Query()] = None,
+    filters: VVZFilters = VVZFilters(),
 ) -> Sequence[TitleResponse]:
+    build_query(select(LearningUnit.id, LearningUnit.title), filters)
     return [
         TitleResponse(id=unit[0], title=unit[1])
         for unit in session.exec(
