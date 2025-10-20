@@ -5,6 +5,16 @@ Community-made REST API for [VVZ](https://www.vvz.ethz.ch/Vorlesungsverzeichnis)
 > [!NOTE]  
 > The API is still in it's early stages and very WIP. That means there are currently not as many endpoint options as one might desire.
 
+## Quick Start
+
+Head to https://vvzapi.ch and start playing around with the API.
+
+Currently there's barely any documentation. If you want to help out with documentation, you're always open to opening a pull request.
+
+### Python Example - TBD
+
+### JavaScript Example - TBD
+
 ## Schema
 
 The schema is inspired by the [VVZ Manual](https://www.bi.id.ethz.ch/soapvvz-2023-1/manual/SoapVVZ.pdf#page=18) (starts page 18).
@@ -13,12 +23,12 @@ Attributes have been translated to english, dropped (in cases where the value wa
 
 ## Semester Status
 
-The goal is to scrape every semester to have a full history of all courses.
+The goal is to scrape every semester to have a full history of all courses. Want to help out? Check out the [scrape locally](#scrape-locally) section and get in contact with me over Discord `@sprutz`.
 
 - [x] `2025W`
 - [x] `2025S`
-- [ ] `2024W`
-- [ ] `2024S`
+- [x] `2024W`
+- [x] `2024S`
 - [ ] `2023W`
 - [ ] `2023S`
 - [ ] `2022W`
@@ -64,6 +74,12 @@ The goal is to scrape every semester to have a full history of all courses.
 - [ ] `2002W`
 - [ ] `2002S`
 - [ ] `2001W`
+
+## Future Plans
+
+- [ ] Replicate VVZ filters and aim to display results in the exact same order
+- [ ] Semantic search
+- [ ] ML-based tagging from the lecture abstracts and descriptions. Would allow for easily showing related lectures.
 
 ## Local Development
 
