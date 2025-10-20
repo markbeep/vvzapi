@@ -39,7 +39,7 @@ docker run \
     -e SEMESTER=W \
     -e START_YEAR=2024 \
     -e END_YEAR=2024 \
-    -v $PWD/data:/app/.scrapy/httpcache \
+    -v $PWD/data:/app/.scrapy \
     markbeep/vvzapi-scraper:nightly
 ```
 

@@ -3,7 +3,6 @@ from collections import defaultdict
 import json
 import re
 from typing_extensions import Literal
-from urllib.parse import urljoin
 from parsel import SelectorList, Selector
 from pydantic import BaseModel
 import scrapy
@@ -33,11 +32,6 @@ from scraper.util.regex_rules import (
     RE_SEMKEZ,
 )
 from scraper.util.table import Table, table_under_header
-from scraper.util.url import (
-    delete_url_key,
-    edit_url_key,
-    sort_url_params,
-)
 
 
 def get_urls(year: int, semester: Literal["W", "S"]):
@@ -59,14 +53,27 @@ class LecturesSpider(scrapy.Spider):
         for section in self.extract_sections(response):
             yield section
 
-        for course in response.css("a::attr(href)").getall():
-            if "lerneinheit.view" in course:
-                url = urljoin(response.url, course)
-                url = edit_url_key(url, "ansicht", ["ALLE"])
-                url = delete_url_key(url, "lang")
-                url = sort_url_params(url)
-                yield response.follow(url + "&lang=en", self.parse_unit)
-                yield response.follow(url + "&lang=de", self.parse_unit)
+        catalog_semkez = re.search(RE_SEMKEZ, response.url)
+        if not catalog_semkez:
+            self.logger.error(f"No semkez found for {response.url}")
+            return
+        catalog_semkez = catalog_semkez.group(1)
+
+        for link in response.css("a::attr(href)"):
+            unit_id = link.re_first(RE_UNITID)
+            semkez = link.re_first(RE_SEMKEZ)
+            if not unit_id or not semkez:
+                continue
+            if catalog_semkez != semkez:
+                # Sometimes courses will link to courses from other semesters. We ignore those links
+                self.logger.warning(
+                    f"Catalog semkez {catalog_semkez} does not match unit semkez {semkez} for unit {unit_id}"
+                )
+                continue
+
+            url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={unit_id}&semkez={catalog_semkez}&ansicht=ALLE"
+            yield response.follow(url + "&lang=en", self.parse_unit)
+            yield response.follow(url + "&lang=de", self.parse_unit)
 
     def parse_unit(self, response: Response):
         try:
