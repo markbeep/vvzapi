@@ -24,14 +24,17 @@ jobs:
         with:
           version: "0.9.2"
 
+      - run: uv sync --all-extras
+
       - name: Install sqlite3
         run: |
           sudo apt-get update
-          sudo apt-get install -y sqlite3
+          sudo apt-get install -y sqlite3 gcc
 
-      - run: uv sync --all-extras
-
-      - run: echo "$PWD/.venv/bin" >> $GITHUB_PATH
+      - name: Type check
+        run: |
+          uv run pyright api
+          uv run pyright scraper
 
       - name: Check SQLite Alembic Migrations
         run: |

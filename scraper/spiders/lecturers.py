@@ -2,7 +2,7 @@ from typing import Literal
 import scrapy
 from scrapy.http import Response
 
-from api.models.lecturer import Lecturer
+from api.models import Lecturer
 from scraper.env import Settings
 from scraper.util.regex_rules import RE_DOZIDE
 

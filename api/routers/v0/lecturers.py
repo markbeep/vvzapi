@@ -4,7 +4,7 @@ from fastapi_cache.decorator import cache
 from sqlmodel import Session, col, select
 
 from api.env import Settings
-from api.models.lecturer import Lecturer
+from api.models import Lecturer
 from api.util.db import get_session
 
 router = APIRouter(prefix="/lecturer", tags=["Lecturers"])
@@ -30,6 +30,4 @@ async def list_lecturers(
     query = (
         select(Lecturer).offset(offset).limit(limit).order_by(col(Lecturer.id).asc())
     )
-    if golden_owl is not None:
-        query = query.where(Lecturer.golden_owl == golden_owl)
     return session.exec(query).all()

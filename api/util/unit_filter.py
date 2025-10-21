@@ -5,7 +5,7 @@ from sqlalchemy import ColumnExpressionArgument
 from sqlmodel import Session, and_, col, or_
 from sqlmodel.sql._expression_select_cls import Select
 
-from api.models.learning_unit import (
+from api.models import (
     Department,
     LearningUnit,
     Level,

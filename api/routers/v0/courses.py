@@ -4,7 +4,7 @@ from fastapi_cache.decorator import cache
 from sqlmodel import Session, col, select
 
 from api.env import Settings
-from api.models.course import Course
+from api.models import Course
 from api.util.db import get_session
 
 router = APIRouter(prefix="/course", tags=["Courses"])

@@ -6,9 +6,9 @@ from sqlmodel import select
 import json
 
 from api.util import db
-from api.models.course import Course
-from api.models.learning_unit import LearningUnit, Level, Section, UnitSectionLink
-from api.models.lecturer import Lecturer
+from api.models import Course
+from api.models import LearningUnit, Level, Section, UnitSectionLink
+from api.models import Lecturer
 from scraper.util.types import UnitDepartmentMapping, UnitLevelMapping
 
 CACHE_PATH = "scrapercache"

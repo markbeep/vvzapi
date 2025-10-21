@@ -10,8 +10,8 @@ from scrapy.http import Response
 
 # from api.models import Lecturer
 from api.util.types import CourseSlot, CourseTypeEnum, WeekdayEnum
-from api.models.course import CourseHourEnum, Course
-from api.models.learning_unit import (
+from api.models import CourseHourEnum, Course
+from api.models import (
     Department,
     LearningUnit,
     Level,

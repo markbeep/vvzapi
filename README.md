@@ -156,3 +156,10 @@ uv run scraper/util/cleanup_scrapy.py [--dry-run]
 ```sh
 uv run fastapi dev api/main.py
 ```
+
+### Type Check
+
+```sh
+uv run pyright api
+uv run pyright scraper
+```

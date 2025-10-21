@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from sqlmodel import Session, col, select
 
 from api.env import Settings
-from api.models.learning_unit import LearningUnit
+from api.models import LearningUnit
 from api.util.db import get_session
 from api.util.unit_filter import VVZFilters, build_vvz_filter, get_vvz_filters
 

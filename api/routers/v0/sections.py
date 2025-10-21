@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from sqlmodel import Session, col, select
 
 from api.env import Settings
-from api.models.learning_unit import Section, SectionBase, UnitSectionLink
+from api.models import Section, SectionBase, UnitSectionLink
 from api.util.db import get_session
 from api.util.sections import SectionLevel, get_child_sections, get_parent_sections
 

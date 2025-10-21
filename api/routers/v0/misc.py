@@ -6,10 +6,10 @@ from fastapi_cache.decorator import cache
 from sqlmodel import Session, func, select
 
 from api.env import Settings
-from api.models.base import BaseModel
-from api.models.course import Course
-from api.models.learning_unit import LearningUnit, Section
-from api.models.lecturer import Lecturer
+from api.models import BaseModel
+from api.models import Course
+from api.models import LearningUnit, Section
+from api.models import Lecturer
 from api.util.db import get_session
 from api.util.version import get_api_version
 

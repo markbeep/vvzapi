@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from api.models.learning_unit import Department, Level
+from api.models import Department, Level
 
 
 class UnitDepartmentMapping(BaseModel):
