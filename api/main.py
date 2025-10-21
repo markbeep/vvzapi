@@ -11,7 +11,7 @@ from fastapi_cache.backends.inmemory import InMemoryBackend
 import httpx
 
 from api.env import Settings
-from api.routers.v1_router import router as v1_router
+from api.routers.v0_router import router as v0_router
 from api.util.version import get_api_version
 
 
@@ -22,7 +22,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan, title="VVZ API", version=get_api_version())
-app.include_router(v1_router)
+app.include_router(v0_router)
 
 
 _STATIC_INDEX = Path(__file__).parent / "static" / "index.html"

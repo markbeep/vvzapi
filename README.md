@@ -2,18 +2,16 @@
 
 Community-made REST API for [VVZ](https://www.vvz.ethz.ch/Vorlesungsverzeichnis)
 
-> [!NOTE]  
-> The API is still in it's early stages and very WIP. That means there are currently not as many endpoint options as one might desire.
+> [!CAUTION]  
+> The API is still in alpha and very WIP. That means any endpoints or data-structures are prone to changing and will likely not be fully backwards compatible. _There also might just not be any data or data could be missing in the current state._
+>
+> Wait for version >=1 (meaning api is at `/api/v1`) for a more stable experience or play around with `/api/v0` with the risks in mind.
 
 ## Quick Start
 
 Head to https://vvzapi.ch and start playing around with the API.
 
-Currently there's barely any documentation. If you want to help out with documentation, you're always open to opening a pull request.
-
-### Python Example - TBD
-
-### JavaScript Example - TBD
+Currently there's barely any documentation. If you want to help out with documentation, you're always open to creating a pull request.
 
 ## Schema
 
@@ -23,8 +21,9 @@ Attributes have been translated to english, dropped (in cases where the value wa
 
 ## Semester Status
 
-The goal is to scrape every semester to have a full history of all courses. Want to help out? Check out the [scrape locally](#scrape-locally) section and get in contact with me over Discord `@sprutz`.
+The goal is to scrape every semester to have a full history of all courses. Want to help out? Check out the [scrape locally](#scrape-locally) section and get in contact with me over Discord `@sprutz`. The scraper automatically caches HTML files so that every request only has to ever be executed once. The HTML and error files are all I'm currently interested in.
 
+- [x] `2026S`
 - [x] `2025W`
 - [x] `2025S`
 - [x] `2024W`
@@ -77,11 +76,32 @@ The goal is to scrape every semester to have a full history of all courses. Want
 
 ## Future Plans
 
-- [ ] Replicate VVZ filters and aim to display results in the exact same order
+- [x] Replicate VVZ filters
+- [ ] Flag to display results in the exact same order as on VVZ
+- [ ] Dump endpoints. Get a dump of a whole semester (JSON or SQlite) so that you can more efficiently go over data locally without having to bombard the API.
 - [ ] Semantic search
 - [ ] ML-based tagging from the lecture abstracts and descriptions. Would allow for easily showing related lectures.
 
 ## Local Development
+
+### Alembic Migrations
+
+Locally a SQLite database is used. Running the migrations automatically creates the database.
+
+> [!CAUTION]
+> While in alpha, migration files might be merged or recreated, potentially breaking any local state.
+
+#### Run migrations
+
+```sh
+uv run alembic upgrade heads
+```
+
+#### Create revision
+
+```sh
+uv run alembic revision --autogenerate -m "message"
+```
 
 ### Scraper
 
@@ -121,6 +141,8 @@ docker run \
     markbeep/vvzapi-scraper:nightly
 ```
 
+In the data directory there'll be a `httpcache` directory containing all crawled HTML files and a `scrapercache` directory containing scraper specific files and potentially a file called `error_pages.jsonl` with errors.
+
 #### Cleanup html cache directory
 
 There might be outdated or unused files in the html cache directories. Using the cleanup script everything that is not needed can be removed:
@@ -133,18 +155,4 @@ uv run scraper/util/cleanup_scrapy.py [--dry-run]
 
 ```sh
 uv run fastapi dev api/main.py
-```
-
-### Alembic Migrations
-
-#### Create revision
-
-```sh
-uv run alembic revision --autogenerate -m "message"
-```
-
-#### Run migrations
-
-```sh
-uv run alembic upgrade heads
 ```

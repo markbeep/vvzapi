@@ -11,7 +11,7 @@ from api.models.learning_unit import LearningUnit, Level, Section, UnitSectionLi
 from api.models.lecturer import Lecturer
 from scraper.util.types import UnitDepartmentMapping, UnitLevelMapping
 
-CACHE_PATH = "database_cache"
+CACHE_PATH = "scrapercache"
 SECTION_LINK = f".scrapy/{CACHE_PATH}/unit_section_link.jsonl"
 DEP_LINK = f".scrapy/{CACHE_PATH}/unit_dep_link.jsonl"
 LEVEL_LINK = f".scrapy/{CACHE_PATH}/unit_level_link.jsonl"

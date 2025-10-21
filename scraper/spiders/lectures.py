@@ -246,7 +246,7 @@ class LecturesSpider(scrapy.Spider):
                     occurence = OccurenceEnum.NO
                 else:
                     with open(
-                        ".scrapy/database_cache/unknown_occurences.jsonl", "a"
+                        ".scrapy/scrapercache/unknown_occurences.jsonl", "a"
                     ) as f:
                         f.write(
                             f"{json.dumps({'occurence': occ_text, 'url': response.url})}\n"
@@ -283,9 +283,7 @@ class LecturesSpider(scrapy.Spider):
                     ):
                         continue
                     if get_key(k) == "other":
-                        with open(
-                            ".scrapy/database_cache/unknown_keys.jsonl", "a"
-                        ) as f:
+                        with open(".scrapy/scrapercache/unknown_keys.jsonl", "a") as f:
                             f.write(f"{json.dumps({'key': k, 'url': response.url})}\n")
 
             yield LearningUnit(
@@ -348,7 +346,7 @@ class LecturesSpider(scrapy.Spider):
                     )
         except Exception as e:
             self.logger.error(f"Error parsing learning unit {response.url}: {e}")
-            with open(".scrapy/database_cache/error_pages.jsonl", "a") as f:
+            with open(".scrapy/scrapercache/error_pages.jsonl", "a") as f:
                 f.write(
                     f"{json.dumps({'error': str(e), 'traceback': traceback.format_exc(), 'url': response.url})}\n"
                 )
