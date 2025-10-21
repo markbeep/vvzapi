@@ -28,6 +28,9 @@ class PydanticType[T: BaseModel](sa.types.TypeDecorator):
         return jsonable_encoder(value) if value else None
 
     def process_result_value(self, value: Any, dialect: sa.Dialect):
+        # Concerning the deprecation warning:
+        # parse_obj_as works for Basemodels as well as list/dicts.
+        # The "new" pydantic.TypeAdapter.validate_python does not.
         return parse_obj_as(self.pydantic_type, value) if value else None
 
 

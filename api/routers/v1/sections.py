@@ -2,12 +2,12 @@ from typing import Annotated, Sequence
 from fastapi import APIRouter, Depends, Query
 from fastapi_cache.decorator import cache
 from pydantic import BaseModel, Field
-from sqlalchemy import text
 from sqlmodel import Session, col, select
 
 from api.env import Settings
 from api.models.learning_unit import Section, SectionBase, UnitSectionLink
 from api.util.db import get_session
+from api.util.sections import SectionLevel, get_child_sections, get_parent_sections
 
 router = APIRouter(prefix="/section", tags=["Sections"])
 
@@ -29,11 +29,6 @@ class LearningUnitType(BaseModel):
     type: str | None
 
 
-class SectionLevel(BaseModel):
-    id: int
-    level: int
-
-
 class SectionUnitResponse(SectionBase):
     learning_units: list[LearningUnitType]
     parents: list[SectionLevel] = []
@@ -46,39 +41,8 @@ async def get_section(
     session: Annotated[Session, Depends(get_session)],
     section_id: int,
 ) -> SectionUnitResponse | None:
-    # Find all sections below the given section_id
-    children_sql = """
-        WITH RECURSIVE section_tree AS (
-            SELECT id, parent_id, level
-            FROM Section
-            WHERE parent_id = :root_id
-            UNION ALL
-            SELECT s.id, s.parent_id, s.level
-            FROM Section s
-            INNER JOIN section_tree st ON s.parent_id = st.id
-        )
-        SELECT id, level FROM section_tree;
-    """
-    results = session.execute(text(children_sql), params={"root_id": section_id})
-    child_sections = [
-        SectionLevel(id=row[0], level=row[1]) for row in results.fetchall()
-    ]
-    parents_sql = """
-        WITH RECURSIVE section_tree AS (
-            SELECT id, parent_id, level
-            FROM Section
-            WHERE id = :root_id
-            UNION ALL
-            SELECT s.id, s.parent_id, s.level
-            FROM Section s
-            INNER JOIN section_tree st ON s.id = st.parent_id
-        )
-        SELECT id, level FROM section_tree WHERE id != :root_id;
-    """
-    results = session.execute(text(parents_sql), params={"root_id": section_id})
-    parent_sections = [
-        SectionLevel(id=row[0], level=row[1]) for row in results.fetchall()
-    ]
+    child_sections = get_child_sections(session, section_id)
+    parent_sections = get_parent_sections(session, section_id)
 
     sections = session.get(Section, section_id)
     sub_units = session.exec(

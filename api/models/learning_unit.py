@@ -232,6 +232,7 @@ class UnitSectionLink(BaseModel, table=True):
 
 
 class UnitType(BaseModel):
+    # www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=117361&semkez=2025W&lang=de
     type: str
     description: str
 

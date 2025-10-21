@@ -220,6 +220,11 @@ class LecturesSpider(scrapy.Spider):
                     "every semester recurring course",
                 ]:
                     course_frequency = Periodicity.SEMESTER
+                elif periodicity_text in [
+                    "2-jährlich wiederkehrende Veranstaltung",
+                    "two-yearly recurring course",
+                ]:
+                    course_frequency = Periodicity.BIENNIAL
                 else:
                     course_frequency = Periodicity.ONETIME
             repetition = "".join(table.get_texts("repetition")) or None
