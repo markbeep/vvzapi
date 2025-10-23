@@ -29,8 +29,8 @@ The goal is to scrape every semester to have a full history of all courses. Want
 - [x] `2024W`
 - [x] `2024S`
 - [ ] `2023W`
-- [ ] `2023S`
-- [ ] `2022W`
+- [x] `2023S`
+- [x] `2022W`
 - [ ] `2022S`
 - [ ] `2021W`
 - [ ] `2021S`
