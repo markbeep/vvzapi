@@ -1,6 +1,5 @@
 from typing import Annotated, Sequence
 
-import toml
 from fastapi import APIRouter, Depends
 from fastapi_cache.decorator import cache
 from sqlmodel import Session, func, select
@@ -30,7 +29,7 @@ async def get_metrics(
     session: Annotated[Session, Depends(get_session)],
 ) -> MetricsResponse:
     total_learning_units = session.exec(select(func.Count(LearningUnit.id))).one()
-    total_courses = session.exec(select(func.Count(Course.id))).one()
+    total_courses = session.exec(select(func.Count(Course.number))).one()
     total_lecturers = session.exec(select(func.Count(Lecturer.id))).one()
     total_sections = session.exec(select(func.Count(Section.id))).one()
 

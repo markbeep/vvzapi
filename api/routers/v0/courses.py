@@ -17,6 +17,8 @@ async def get_courses(
     unit_id: int,
 ) -> Sequence[Course]:
     query = (
-        select(Course).where(Course.unit_id == unit_id).order_by(col(Course.id).asc())
+        select(Course)
+        .where(Course.unit_id == unit_id)
+        .order_by(col(Course.number).asc())
     )
     return session.exec(query).all()

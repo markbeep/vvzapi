@@ -1,17 +1,19 @@
-import traceback
-from collections import defaultdict
 import json
 import re
-from typing_extensions import Literal
-from parsel import SelectorList, Selector
-from pydantic import BaseModel
-import scrapy
-from scrapy.http import Response
+import traceback
+from collections import defaultdict
+from typing import Generator
 
-# from api.models import Lecturer
-from api.util.types import CourseSlot, CourseTypeEnum, WeekdayEnum
-from api.models import CourseHourEnum, Course
+import scrapy
+from parsel import Selector, SelectorList
+from pydantic import BaseModel
+from scrapy.http import Response
+from typing_extensions import Literal
+
 from api.models import (
+    Course,
+    CourseHourEnum,
+    CourseLecturerLink,
     Department,
     LearningUnit,
     Level,
@@ -19,23 +21,29 @@ from api.models import (
     OccurenceEnum,
     Periodicity,
     Section,
+    UnitExaminerLink,
+    UnitLecturerLink,
     UnitSectionLink,
     UnitType,
     UnitTypeLegends,
 )
+
+# from api.models import Lecturer
+from api.util.types import CourseSlot, CourseTypeEnum, WeekdayEnum
 from scraper.env import Settings
 from scraper.util.keymap import get_key
+from scraper.util.log_error import append_error
+from scraper.util.mappings import UnitDepartmentMapping, UnitLevelMapping
 from scraper.util.regex_rules import (
     RE_ABSCHNITTID,
     RE_CODE,
     RE_DATE,
     RE_DOZIDE,
     RE_LANG,
-    RE_UNITID,
     RE_SEMKEZ,
+    RE_UNITID,
 )
 from scraper.util.table import Table, table_under_header
-from scraper.util.types import UnitDepartmentMapping, UnitLevelMapping
 from scraper.util.url import delete_url_key, sort_url_params
 
 
@@ -197,10 +205,6 @@ class LecturesSpider(scrapy.Spider):
             competencies = {}
             if comp_cols := table.find("competencies"):
                 competencies = self.extract_competencies(comp_cols)
-            examiners = table.re("examiners", RE_DOZIDE)
-            examiners = [int(pid) for pid in examiners]
-            lecturers = table.re("lecturers", RE_DOZIDE)
-            lecturers = [int(pid) for pid in lecturers]
             regulations = table.get_texts("regulations")
             written_aids = "".join(table.get_texts("written_aids")) or None
             additional_info = "".join(table.get_texts("additional_info")) or None
@@ -259,6 +263,16 @@ class LecturesSpider(scrapy.Spider):
                 yield offered
 
             learning_materials = self.extract_learning_materials(response)
+
+            # handle lecturer links
+            examiners = table.re("examiners", RE_DOZIDE)
+            examiners = [int(pid) for pid in examiners]
+            for id in examiners:
+                yield UnitExaminerLink(unit_id=unit_id, lecturer_id=id)
+            lecturers = table.re("lecturers", RE_DOZIDE)
+            lecturers = [int(pid) for pid in lecturers]
+            for id in lecturers:
+                yield UnitLecturerLink(unit_id=unit_id, lecturer_id=id)
 
             # Print any unknown or missed keys
             if lang == "de":
@@ -322,8 +336,6 @@ class LecturesSpider(scrapy.Spider):
                 exam_mode=exam_mode,
                 exam_language=exam_language,
                 exam_type=exam_type,
-                examiners=examiners,
-                lecturers=lecturers,
                 course_frequency=course_frequency,
                 repetition=repetition,
                 primary_target_group=primary_target_group,
@@ -341,42 +353,44 @@ class LecturesSpider(scrapy.Spider):
             for k, cols in table.rows:
                 course_number = re.match(RE_CODE, k)
                 if course_number:
-                    yield self.extract_course(
-                        parent_unit=unit_id, semkez=semkez, cols=cols
-                    )
+                    for course_or_lecturer in self.extract_course_info(
+                        parent_unit=unit_id, semkez=semkez, cols=cols, url=response.url
+                    ):
+                        yield course_or_lecturer
         except Exception as e:
             self.logger.error(f"Error parsing learning unit {response.url}: {e}")
-            with open(".scrapy/scrapercache/error_pages.jsonl", "a") as f:
-                f.write(
-                    f"{json.dumps({'error': str(e), 'traceback': traceback.format_exc(), 'url': response.url})}\n"
-                )
+            append_error(str(e), traceback=traceback.format_exc(), url=response.url)
 
     def parse_legend(self, response: Response):
-        semkez = re.search(RE_SEMKEZ, response.url)
-        id = re.search(RE_ABSCHNITTID, response.url)
-        if not semkez or not id:
-            self.logger.error(f"No semkez or id found for {response.url}")
-            return
-        semkez = semkez.group(1)
-        id = int(id.group(1))
-        title = response.css("h1::text").get()
-        if not title:
-            self.logger.error(f"No title found for legend {response.url}")
-            return
+        try:
+            semkez = re.search(RE_SEMKEZ, response.url)
+            id = re.search(RE_ABSCHNITTID, response.url)
+            if not semkez or not id:
+                self.logger.error(f"No semkez or id found for {response.url}")
+                return
+            semkez = semkez.group(1)
+            id = int(id.group(1))
+            title = response.css("h1::text").get()
+            if not title:
+                self.logger.error(f"No title found for legend {response.url}")
+                return
 
-        table = Table(response.xpath("//table"))
-        unit_legends: list[UnitType] = []
-        for _, cols in table.rows:
-            type = cols[0].css("::text").get()
-            description = cols[1].css("::text").get()
-            if type and description:
-                unit_legends.append(UnitType(type=type, description=description))
-        yield UnitTypeLegends(
-            id=id,
-            title=title,
-            semkez=semkez,
-            legend=unit_legends,
-        )
+            table = Table(response.xpath("//table"))
+            unit_legends: list[UnitType] = []
+            for _, cols in table.rows:
+                type = cols[0].css("::text").get()
+                description = cols[1].css("::text").get()
+                if type and description:
+                    unit_legends.append(UnitType(type=type, description=description))
+            yield UnitTypeLegends(
+                id=id,
+                title=title,
+                semkez=semkez,
+                legend=unit_legends,
+            )
+        except Exception as e:
+            self.logger.error(f"Error parsing legend {response.url}: {e}")
+            append_error(str(e), traceback=traceback.format_exc(), url=response.url)
 
     def extract_sections(self, response: Response):
         semkez = re.search(RE_SEMKEZ, response.url)
@@ -418,9 +432,9 @@ class LecturesSpider(scrapy.Spider):
                 comment_english=comment if "lang=en" in response.url else None,
             )
 
-    def extract_course(
-        self, parent_unit: int, semkez: str, cols: SelectorList[Selector]
-    ) -> Course:
+    def extract_course_info(
+        self, parent_unit: int, semkez: str, cols: SelectorList[Selector], url: str
+    ) -> Generator[Course | CourseLecturerLink, None, None]:
         if len(cols) == 5:
             number_sel, title_sel, hours_sel, slots_sel, lecturers_sel = cols
         else:
@@ -432,7 +446,18 @@ class LecturesSpider(scrapy.Spider):
         if number:
             number = number.replace("\xa0", "")
             course_type = CourseTypeEnum[number[-1]]
+        else:
+            self.logger.error(f"No course code found for unit {parent_unit}")
+            append_error(
+                "No course number found",
+                parent_unit=str(parent_unit),
+                semkez=semkez,
+                url=url,
+            )
+            return
+
         title = title_sel.css("::text").get()
+        title = title.strip() if title else None
         comments = "\n".join(
             [
                 t.strip()
@@ -441,6 +466,12 @@ class LecturesSpider(scrapy.Spider):
             ]
         )
         lecturer_ids = [int(x) for x in lecturers_sel.re(RE_DOZIDE)]
+
+        for id in lecturer_ids:
+            yield CourseLecturerLink(
+                course_number=number, course_semkez=semkez, lecturer_id=id
+            )
+
         hours_text = hours_sel.css("::text").get()
         hours: float | None = None
         hours_type = None
@@ -517,7 +548,7 @@ class LecturesSpider(scrapy.Spider):
                     )
                 )
 
-        return Course(
+        yield Course(
             unit_id=parent_unit,
             number=number,
             title=title,
@@ -527,7 +558,6 @@ class LecturesSpider(scrapy.Spider):
             hours=hours,
             hour_type=hours_type,
             timeslots=timeslots,
-            lecturers=lecturer_ids,
         )
 
     def extract_competencies(self, cols: SelectorList) -> dict[str, dict[str, str]]:

@@ -1,3 +1,8 @@
+"""
+Mappings for values we get on a separate page, but still want
+to, for example, add to the LearningUnit model
+"""
+
 from pydantic import BaseModel
 
 from api.models import Department, Level

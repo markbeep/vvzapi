@@ -1,6 +1,6 @@
 from enum import Enum
 
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import ForeignKeyConstraint, UniqueConstraint
 from sqlmodel import JSON, Column, Field, Relationship, SQLModel
 
 from api.util.pydantic_type import PydanticType
@@ -9,6 +9,65 @@ from api.util.types import CourseSlot, CourseTypeEnum
 
 class BaseModel(SQLModel):
     pass
+
+
+"""
+
+
+LINK MODELS (many-to-many relationships)
+
+
+"""
+
+
+class UnitExaminerLink(BaseModel, table=True):
+    unit_id: int = Field(
+        primary_key=True, foreign_key="learningunit.id", ondelete="CASCADE"
+    )
+    lecturer_id: int = Field(
+        primary_key=True, foreign_key="lecturer.id", ondelete="CASCADE"
+    )
+
+
+class UnitLecturerLink(BaseModel, table=True):
+    unit_id: int = Field(
+        primary_key=True, foreign_key="learningunit.id", ondelete="CASCADE"
+    )
+    lecturer_id: int = Field(
+        primary_key=True, foreign_key="lecturer.id", ondelete="CASCADE"
+    )
+
+
+class CourseLecturerLink(BaseModel, table=True):
+    course_number: str = Field(primary_key=True)
+    course_semkez: str = Field(primary_key=True)
+    lecturer_id: int = Field(
+        primary_key=True, foreign_key="lecturer.id", ondelete="CASCADE"
+    )
+
+    # FK for composite primary key needs to be defined like this
+    # https://github.com/fastapi/sqlmodel/issues/222
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["course_number", "course_semkez"],
+            ["course.number", "course.semkez"],
+            ondelete="CASCADE",
+        ),
+    )
+
+
+class UnitSectionLink(BaseModel, table=True):
+    unit_id: int = Field(
+        primary_key=True, foreign_key="learningunit.id", ondelete="CASCADE"
+    )
+    section_id: int = Field(
+        primary_key=True, foreign_key="section.id", ondelete="CASCADE"
+    )
+    type: str | None = Field(default=None)
+    type_id: int | None = Field(default=None)
+
+    unit: "LearningUnit" = Relationship(back_populates="section_links")
+    section: "Section" = Relationship(back_populates="unit_links")
 
 
 """
@@ -108,7 +167,7 @@ class LearningUnit(BaseModel, table=True):
     """263-3010-00L type code. Check the `RE_CODE` to more details on the format."""
     title: str | None = Field(default=None)
     title_english: str | None = Field(default=None)
-    semkez: str = Field(max_length=5)
+    semkez: str = Field()
     """Semester in the format JJJJS, where JJJJ is the year and either S or W indicates the semester."""
     levels: list[Level] = Field(default_factory=list, sa_column=Column(JSON))
     """Levels of the learning unit, e.g., BSC, MSC, etc."""
@@ -188,12 +247,13 @@ class LearningUnit(BaseModel, table=True):
     general_restrictions: str | None = Field(default=None)
     """Extra notes on any restrictions for this learning unit."""
 
-    examiners: list[int] = Field(default_factory=list, sa_column=Column(JSON))
-    """IDs of persons who are examiners for this learning unit."""
-    lecturers: list[int] = Field(default_factory=list, sa_column=Column(JSON))
-    """IDs of persons who are the general lecturers for this learning unit."""
-
-    section_links: list["UnitSectionLink"] = Relationship(back_populates="unit")
+    section_links: list[UnitSectionLink] = Relationship(back_populates="unit")
+    examiners: list["Lecturer"] = Relationship(
+        back_populates="exams", link_model=UnitExaminerLink
+    )
+    lecturers: list["Lecturer"] = Relationship(
+        back_populates="units", link_model=UnitLecturerLink
+    )
 
     def overwrite_with(self, other: "LearningUnit"):
         """
@@ -227,7 +287,7 @@ class SectionBase(BaseModel):
 
 
 class Section(SectionBase, table=True):
-    unit_links: list["UnitSectionLink"] = Relationship(back_populates="section")
+    unit_links: list[UnitSectionLink] = Relationship(back_populates="section")
 
     def overwrite_with(self, other: "Section"):
         """
@@ -238,20 +298,6 @@ class Section(SectionBase, table=True):
             value_other = getattr(other, field)
             if value_other is not None:
                 setattr(self, field, value_other)
-
-
-class UnitSectionLink(BaseModel, table=True):
-    unit_id: int = Field(
-        primary_key=True, foreign_key="learningunit.id", ondelete="CASCADE"
-    )
-    section_id: int = Field(
-        primary_key=True, foreign_key="section.id", ondelete="CASCADE"
-    )
-    type: str | None = Field(default=None)
-    type_id: int | None = Field(default=None)
-
-    unit: "LearningUnit" = Relationship(back_populates="section_links")
-    section: "Section" = Relationship(back_populates="unit_links")
 
 
 """
@@ -295,29 +341,29 @@ class CourseHourEnum(Enum):
 # TODO: There are a few attributes listed on the SOAP docs, that could be hiding out in VVZ somewhere and missing on this model.
 # https://www.bi.id.ethz.ch/soapvvz-2023-1/manual/SoapVVZ.pdf#page=18
 class Course(BaseModel, table=True):
-    __table_args__ = (UniqueConstraint("number", "semkez"),)
-
-    id: int | None = Field(primary_key=True, default=None)
-    unit_id: int = Field(foreign_key="learningunit.id", ondelete="CASCADE")
-    """Parent learning unit ID."""
-    number: str | None = Field(default=None)
+    number: str = Field(primary_key=True)
     """263-3010-00L type code. Check the `RE_CODE` to more details on the format."""
+    semkez: str = Field(primary_key=True)
+    """Semester in the format JJJJS, where JJJJ is the year and either S or W indicates the semester."""
     title: str | None = Field(default=None)
     """Designation of the course. No english translation available."""
-    semkez: str | None = Field(default=None, max_length=5)
-    """Semester in the format JJJJS, where JJJJ is the year and either S or W indicates the semester."""
+    unit_id: int = Field(foreign_key="learningunit.id", ondelete="CASCADE")
+    """Parent learning unit ID."""
     type: CourseTypeEnum | None = Field(default=None)
-    hours: float | None = Field(default=None, max_digits=7, decimal_places=2)
+    hours: float | None = Field(default=None)
     """Number of hours per week or semester."""
     hour_type: CourseHourEnum | None = Field(default=None)
     """Describes how to interpret the hours attribute."""
-    comment: str | None = Field(default=None, max_length=1000)
+    comment: str | None = Field(default=None)
     """Comment underneath a course"""
     timeslots: list[CourseSlot] = Field(
         default_factory=list, sa_column=Column(PydanticType(list[CourseSlot]))
     )
-    # TODO: move to separate table
-    lecturers: list[int] = Field(default_factory=list, sa_column=Column(JSON))
+
+    # NOTE: causes issues with SQLAlchemy since we have two foreign keys in CourseLecturerLink
+    # lecturers: list["Lecturer"] = Relationship(
+    #     back_populates="courses", link_model=CourseLecturerLink
+    # )
 
 
 """
@@ -333,3 +379,13 @@ class Lecturer(BaseModel, table=True):
     id: int = Field(primary_key=True)
     surname: str = Field()
     name: str = Field()
+
+    units: list["LearningUnit"] = Relationship(
+        back_populates="lecturers", link_model=UnitLecturerLink
+    )
+    exams: list["LearningUnit"] = Relationship(
+        back_populates="examiners", link_model=UnitExaminerLink
+    )
+    # courses: list["Course"] = Relationship(
+    #     back_populates="lecturers", link_model=CourseLecturerLink
+    # )
