@@ -1,8 +1,8 @@
 """init
 
-Revision ID: a007ce80b4cb
+Revision ID: 0d7e1a32934b
 Revises:
-Create Date: 2025-10-19 14:59:22.063087
+Create Date: 2025-10-23 20:52:05.619116
 
 """
 
@@ -14,7 +14,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = "a007ce80b4cb"
+revision: str = "0d7e1a32934b"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,10 +26,34 @@ def upgrade() -> None:
     op.create_table(
         "learningunit",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("code", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column("number", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
         sa.Column("title", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
         sa.Column("title_english", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-        sa.Column("semkez", sqlmodel.sql.sqltypes.AutoString(length=5), nullable=False),
+        sa.Column("semkez", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("levels", sa.JSON(), nullable=True),
+        sa.Column(
+            "department",
+            sa.Enum(
+                "ARCHITECTURE",
+                "CIVIL_ENVIRONMENTAL_AND_GEOMATIC_ENGINEERING",
+                "MECHANICAL_AND_PROCESS_ENGINEERING",
+                "COMPUTER_SCIENCE",
+                "MANAGEMENT_TECHNOLOGY_AND_ECONOMICS",
+                "MATHEMATICS",
+                "PHYSICS",
+                "BIOLOGY",
+                "EARTH_AND_PLANETARY_SCIENCES",
+                "HUMANITIES_SOCIAL_AND_POLITICAL_SCIENCES",
+                "INFORMATION_TECHNOLOGY_AND_ELECTRICAL_ENGINEERING",
+                "MATERIALS",
+                "CHEMISTRY_AND_APPLIED_BIOSCIENCES",
+                "BIOSYSTEMS_SCIENCE_AND_ENGINEERING",
+                "HEALTH_SCIENCES_AND_TECHNOLOGY",
+                "ENVIRONMENTAL_SYSTEMS_SCIENCE",
+                name="department",
+            ),
+            nullable=True,
+        ),
         sa.Column("credits", sa.Float(), nullable=True),
         sa.Column("two_semester_credits", sa.Float(), nullable=True),
         sa.Column("literature", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
@@ -78,7 +102,7 @@ def upgrade() -> None:
         sa.Column("groups", sa.JSON(), nullable=True),
         sa.Column(
             "course_frequency",
-            sa.Enum("ONETIME", "ANNUAL", "SEMESTER", name="periodicity"),
+            sa.Enum("ONETIME", "ANNUAL", "SEMESTER", "BIENNIAL", name="periodicity"),
             nullable=True,
         ),
         sa.Column("learning_materials", sa.JSON(), nullable=True),
@@ -91,17 +115,14 @@ def upgrade() -> None:
         sa.Column(
             "general_restrictions", sqlmodel.sql.sqltypes.AutoString(), nullable=True
         ),
-        sa.Column("examiners", sa.JSON(), nullable=True),
-        sa.Column("lecturers", sa.JSON(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("code", "semkez"),
+        sa.UniqueConstraint("number", "semkez"),
     )
     op.create_table(
         "lecturer",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("surname", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("golden_owl", sa.Boolean(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
@@ -117,12 +138,19 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
-        "course",
+        "unittypelegends",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("unit_id", sa.Integer(), nullable=False),
-        sa.Column("code", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column("title", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("semkez", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("legend", sa.JSON(), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_table(
+        "course",
+        sa.Column("number", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("semkez", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("title", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-        sa.Column("semkez", sqlmodel.sql.sqltypes.AutoString(length=5), nullable=True),
+        sa.Column("unit_id", sa.Integer(), nullable=False),
         sa.Column(
             "type",
             sa.Enum("V", "G", "U", "S", "K", "P", "A", "D", "R", name="coursetypeenum"),
@@ -134,27 +162,49 @@ def upgrade() -> None:
             sa.Enum("WEEKLY_HOURS", "SEMESTER_HOURS", name="coursehourenum"),
             nullable=True,
         ),
-        sa.Column(
-            "comment", sqlmodel.sql.sqltypes.AutoString(length=1000), nullable=True
-        ),
+        sa.Column("comment", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
         sa.Column("timeslots", sa.JSON(), nullable=True),
-        sa.Column("lecturers", sa.JSON(), nullable=True),
         sa.ForeignKeyConstraint(["unit_id"], ["learningunit.id"], ondelete="CASCADE"),
-        sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("code", "semkez"),
+        sa.PrimaryKeyConstraint("number", "semkez"),
+    )
+    op.create_table(
+        "unitexaminerlink",
+        sa.Column("unit_id", sa.Integer(), nullable=False),
+        sa.Column("lecturer_id", sa.Integer(), nullable=False),
+        sa.ForeignKeyConstraint(["lecturer_id"], ["lecturer.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["unit_id"], ["learningunit.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("unit_id", "lecturer_id"),
+    )
+    op.create_table(
+        "unitlecturerlink",
+        sa.Column("unit_id", sa.Integer(), nullable=False),
+        sa.Column("lecturer_id", sa.Integer(), nullable=False),
+        sa.ForeignKeyConstraint(["lecturer_id"], ["lecturer.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["unit_id"], ["learningunit.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("unit_id", "lecturer_id"),
     )
     op.create_table(
         "unitsectionlink",
         sa.Column("unit_id", sa.Integer(), nullable=False),
         sa.Column("section_id", sa.Integer(), nullable=False),
-        sa.Column(
-            "type",
-            sa.Enum("O", "WPlus", "W", "EMinus", "Z", "Dr", name="unittypeenum"),
-            nullable=True,
-        ),
+        sa.Column("type", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column("type_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(["section_id"], ["section.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["unit_id"], ["learningunit.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("unit_id", "section_id"),
+    )
+    op.create_table(
+        "courselecturerlink",
+        sa.Column("course_number", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("course_semkez", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("lecturer_id", sa.Integer(), nullable=False),
+        sa.ForeignKeyConstraint(
+            ["course_number", "course_semkez"],
+            ["course.number", "course.semkez"],
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(["lecturer_id"], ["lecturer.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("course_number", "course_semkez", "lecturer_id"),
     )
     # ### end Alembic commands ###
 
@@ -162,8 +212,12 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_table("courselecturerlink")
     op.drop_table("unitsectionlink")
+    op.drop_table("unitlecturerlink")
+    op.drop_table("unitexaminerlink")
     op.drop_table("course")
+    op.drop_table("unittypelegends")
     op.drop_table("section")
     op.drop_table("lecturer")
     op.drop_table("learningunit")

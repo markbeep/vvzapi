@@ -3,7 +3,6 @@ import re
 import traceback
 from collections import defaultdict
 from typing import Generator
-import uuid
 
 import scrapy
 from parsel import Selector, SelectorList
@@ -458,6 +457,7 @@ class LecturesSpider(scrapy.Spider):
             return
 
         title = title_sel.css("::text").get()
+        title = title.strip() if title else None
         comments = "\n".join(
             [
                 t.strip()
@@ -466,9 +466,11 @@ class LecturesSpider(scrapy.Spider):
             ]
         )
         lecturer_ids = [int(x) for x in lecturers_sel.re(RE_DOZIDE)]
-        # TODO: get the id of an already existing matching course
+
         for id in lecturer_ids:
-            yield CourseLecturerLink(course_id=uuid.uuid4(), lecturer_id=id)
+            yield CourseLecturerLink(
+                course_number=number, course_semkez=semkez, lecturer_id=id
+            )
 
         hours_text = hours_sel.css("::text").get()
         hours: float | None = None
