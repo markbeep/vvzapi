@@ -1,6 +1,7 @@
 from enum import Enum
+import uuid
 
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import UniqueConstraint, ForeignKey
 from sqlmodel import JSON, Column, Field, Relationship, SQLModel
 
 from api.util.pydantic_type import PydanticType
@@ -9,6 +10,56 @@ from api.util.types import CourseSlot, CourseTypeEnum
 
 class BaseModel(SQLModel):
     pass
+
+
+"""
+
+
+LINK MODELS (many-to-many relationships)
+
+
+"""
+
+
+class UnitExaminerLink(BaseModel, table=True):
+    unit_id: int = Field(
+        primary_key=True, foreign_key="learningunit.id", ondelete="CASCADE"
+    )
+    lecturer_id: int = Field(
+        primary_key=True, foreign_key="lecturer.id", ondelete="CASCADE"
+    )
+
+
+class UnitLecturerLink(BaseModel, table=True):
+    unit_id: int = Field(
+        primary_key=True, foreign_key="learningunit.id", ondelete="CASCADE"
+    )
+    lecturer_id: int = Field(
+        primary_key=True, foreign_key="lecturer.id", ondelete="CASCADE"
+    )
+
+
+class CourseLecturerLink(BaseModel, table=True):
+    course_id: uuid.UUID = Field(
+        primary_key=True, foreign_key="course.id", ondelete="CASCADE"
+    )
+    lecturer_id: int = Field(
+        primary_key=True, foreign_key="lecturer.id", ondelete="CASCADE"
+    )
+
+
+class UnitSectionLink(BaseModel, table=True):
+    unit_id: int = Field(
+        primary_key=True, foreign_key="learningunit.id", ondelete="CASCADE"
+    )
+    section_id: int = Field(
+        primary_key=True, foreign_key="section.id", ondelete="CASCADE"
+    )
+    type: str | None = Field(default=None)
+    type_id: int | None = Field(default=None)
+
+    unit: "LearningUnit" = Relationship(back_populates="section_links")
+    section: "Section" = Relationship(back_populates="unit_links")
 
 
 """
@@ -188,12 +239,13 @@ class LearningUnit(BaseModel, table=True):
     general_restrictions: str | None = Field(default=None)
     """Extra notes on any restrictions for this learning unit."""
 
-    examiners: list[int] = Field(default_factory=list, sa_column=Column(JSON))
-    """IDs of persons who are examiners for this learning unit."""
-    lecturers: list[int] = Field(default_factory=list, sa_column=Column(JSON))
-    """IDs of persons who are the general lecturers for this learning unit."""
-
-    section_links: list["UnitSectionLink"] = Relationship(back_populates="unit")
+    section_links: list[UnitSectionLink] = Relationship(back_populates="unit")
+    examiners: list["Lecturer"] = Relationship(
+        back_populates="exams", link_model=UnitExaminerLink
+    )
+    lecturers: list["Lecturer"] = Relationship(
+        back_populates="units", link_model=UnitLecturerLink
+    )
 
     def overwrite_with(self, other: "LearningUnit"):
         """
@@ -227,7 +279,7 @@ class SectionBase(BaseModel):
 
 
 class Section(SectionBase, table=True):
-    unit_links: list["UnitSectionLink"] = Relationship(back_populates="section")
+    unit_links: list[UnitSectionLink] = Relationship(back_populates="section")
 
     def overwrite_with(self, other: "Section"):
         """
@@ -238,20 +290,6 @@ class Section(SectionBase, table=True):
             value_other = getattr(other, field)
             if value_other is not None:
                 setattr(self, field, value_other)
-
-
-class UnitSectionLink(BaseModel, table=True):
-    unit_id: int = Field(
-        primary_key=True, foreign_key="learningunit.id", ondelete="CASCADE"
-    )
-    section_id: int = Field(
-        primary_key=True, foreign_key="section.id", ondelete="CASCADE"
-    )
-    type: str | None = Field(default=None)
-    type_id: int | None = Field(default=None)
-
-    unit: "LearningUnit" = Relationship(back_populates="section_links")
-    section: "Section" = Relationship(back_populates="unit_links")
 
 
 """
@@ -297,7 +335,8 @@ class CourseHourEnum(Enum):
 class Course(BaseModel, table=True):
     __table_args__ = (UniqueConstraint("number", "semkez"),)
 
-    id: int | None = Field(primary_key=True, default=None)
+    id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)
+
     unit_id: int = Field(foreign_key="learningunit.id", ondelete="CASCADE")
     """Parent learning unit ID."""
     number: str | None = Field(default=None)
@@ -316,8 +355,10 @@ class Course(BaseModel, table=True):
     timeslots: list[CourseSlot] = Field(
         default_factory=list, sa_column=Column(PydanticType(list[CourseSlot]))
     )
-    # TODO: move to separate table
-    lecturers: list[int] = Field(default_factory=list, sa_column=Column(JSON))
+
+    lecturers: list["Lecturer"] = Relationship(
+        back_populates="courses", link_model=CourseLecturerLink
+    )
 
 
 """
@@ -333,3 +374,13 @@ class Lecturer(BaseModel, table=True):
     id: int = Field(primary_key=True)
     surname: str = Field()
     name: str = Field()
+
+    units: list["LearningUnit"] = Relationship(
+        back_populates="lecturers", link_model=UnitLecturerLink
+    )
+    exams: list["LearningUnit"] = Relationship(
+        back_populates="examiners", link_model=UnitExaminerLink
+    )
+    courses: list["Course"] = Relationship(
+        back_populates="lecturers", link_model=CourseLecturerLink
+    )
