@@ -8,8 +8,8 @@ import yaml
 
 CACHE_PATH = Path(".scrapy/httpcache")
 
-re_lectures = r"https://www\.vvz\.ethz\.ch/Vorlesungsverzeichnis/lerneinheit\.view\?ansicht=ALLE&lerneinheitId=\d+?&semkez=\d{4}\w&lang=\w\w"
-re_lectures_root = r"https://www\.vvz\.ethz\.ch/Vorlesungsverzeichnis/sucheLehrangebot\.view\?semkez=\d{4}\w&ansicht=1&seite=0(&deptId=\d+)?(&studiengangTyp=\w+)?&lang=\w\w"
+re_lectures_en = r"https://www\.vvz\.ethz\.ch/Vorlesungsverzeichnis/lerneinheit\.view\?ansicht=ALLE&lerneinheitId=\d+?&semkez=\d{4}\w&lang=en"
+re_lectures_root = r"https://www\.vvz\.ethz\.ch/Vorlesungsverzeichnis/sucheLehrangebot\.view\?semkez=\d{4}\w&ansicht=2&seite=0(&deptId=\d+)?(&studiengangTyp=\w+)?&lang=\w\w"
 re_lecturers_root = r"https://www\.vvz\.ethz\.ch/Vorlesungsverzeichnis/sucheDozierende\.view\?lang=de&semkez=\d{4}\w&seite=0"
 
 
@@ -34,7 +34,7 @@ def cleanup_scrapy(dry_run: bool = False):
     lecturers = CACHE_PATH / "lecturers"
 
     for url, dir in get_files(units, dry_run):
-        if not re.match(re_lectures, url) and not re.match(re_lectures_root, url):
+        if not re.match(re_lectures_en, url) and not re.match(re_lectures_root, url):
             print(f"Delete unit: {dir}: URL mismatch {url}")
             unts += 1
             if not dry_run:

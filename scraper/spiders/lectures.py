@@ -2,7 +2,7 @@ import json
 import re
 import traceback
 from collections import defaultdict
-from typing import Generator
+from typing import Any, Generator
 
 import scrapy
 from parsel import Selector, SelectorList
@@ -27,29 +27,26 @@ from api.models import (
     UnitType,
     UnitTypeLegends,
 )
-
-# from api.models import Lecturer
 from api.util.types import CourseSlot, CourseTypeEnum, WeekdayEnum
 from scraper.env import Settings
-from scraper.util.keymap import get_key
-from scraper.util.log_error import append_error
+from scraper.util.keymap import translations
 from scraper.util.mappings import UnitDepartmentMapping, UnitLevelMapping
 from scraper.util.regex_rules import (
     RE_ABSCHNITTID,
     RE_CODE,
     RE_DATE,
     RE_DOZIDE,
-    RE_LANG,
     RE_SEMKEZ,
     RE_UNITID,
 )
+from scraper.util.scrapercache import CACHE_PATH
 from scraper.util.table import Table, table_under_header
 from scraper.util.url import delete_url_key, sort_url_params
 
 
 def get_urls(year: int, semester: Literal["W", "S"]):
     # seite=0 shows all results in one page
-    url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?semkez={year}{semester}&ansicht=1&seite=0"
+    url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?semkez={year}{semester}&ansicht=2&seite=0"
 
     # gets all sections and courses in english/german
     yield url + "&lang=en"
@@ -64,6 +61,24 @@ def get_urls(year: int, semester: Literal["W", "S"]):
 
 
 class LecturesSpider(scrapy.Spider):
+    """
+    The main lecture scraper that handles scraping all the lecture-specific data that is available on VVZ.
+
+    1.  Initially we scrape the root page with all the catalogue data (ansicht=2). We scrape in both English and German.
+        url: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?semkez=2025W&ansicht=2&seite=0
+    2.  We can read all the course data from that page. But we also need the additional information like literature,
+        assessment, groups, etc. for each lecture. These are the same for both German/English, so we only scrape specific
+        course pages in English.
+    3.  The root page also lists all the programmes and their sections, so we can create a hierarchy of sections and what
+        course is part of which section.
+    4.  The departments (CS, math, etc.) and levels (BSC, MSC, etc.) are not visible on the root page. To figure out what
+        course is part of which dept/level, we also scrape the root page filtered by each department/level and then simply
+        keep track of what courses we see.
+    5.  Courses are some type inside a programme. For example, "Chemie I" in 2025W is "O" (or "Obligatorisch") in the
+        "Agricultural Sciences Bachelor" programme. These legends can be different for each programme and semester, so we
+        additionally scrape these.
+    """
+
     name = "lectures"
     start_urls = [
         url
@@ -71,98 +86,189 @@ class LecturesSpider(scrapy.Spider):
         for semester in Settings().read_semesters()
         for url in get_urls(year, semester)
     ]
+    visited_keys = set()
+
+    def spider_closed(self, spider: scrapy.Spider):
+        with open(CACHE_PATH / "visited_keys.jsonl", "w") as f:
+            for key in sorted(self.visited_keys):
+                f.write(f"{json.dumps({'key': key})}\n")
 
     def parse(self, response: Response):
-        for section in self.extract_sections(response):
-            yield section
-
-        catalog_semkez = re.search(RE_SEMKEZ, response.url)
-        if not catalog_semkez:
-            self.logger.error(f"No semkez found for {response.url}")
-            return
-        catalog_semkez = catalog_semkez.group(1)
-
-        level = re.search(r"studiengangTyp=(\w+)", response.url)
-        if level:
-            level = Level(level.group(1))
-        dept = re.search(r"deptId=(\d+)", response.url)
-        if dept:
-            dept = Department(int(dept.group(1)))
-
-        visited_unit_ids = set()
-        visited_section_ids = set()
-        for link in response.css("a::attr(href)"):
-            url = link.get()
-            semkez = link.re_first(RE_SEMKEZ)
-            if not semkez or not url:
-                continue
-            unit_id = link.re_first(RE_UNITID)
-            section_id = link.re_first(RE_ABSCHNITTID)
-
-            if unit_id:
-                if unit_id in visited_unit_ids:
-                    continue
-                visited_unit_ids.add(unit_id)
-                if level:
-                    yield UnitLevelMapping(level=level, unit_id=int(unit_id))
-                    continue
-                if dept:
-                    yield UnitDepartmentMapping(department=dept, unit_id=int(unit_id))
-                    continue
-
-                if catalog_semkez != semkez:
-                    # Sometimes courses will link to courses from other semesters. We ignore those links
-                    self.logger.warning(
-                        f"Catalog semkez {catalog_semkez} does not match unit semkez {semkez} for unit {unit_id}"
-                    )
-                    continue
-
-                url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?ansicht=ALLE&lerneinheitId={unit_id}&semkez={catalog_semkez}"
-                yield response.follow(url + "&lang=en", self.parse_unit)
-                yield response.follow(url + "&lang=de", self.parse_unit)
-
-            # Legend pages can be different for different sections:
-            # - https://www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=18&semkez=2001W&lang=de
-            # - https://www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=117361&semkez=2025W&lang=en
-            elif section_id and "legendeStudienplanangaben.view" in url:
-                if section_id in visited_section_ids:
-                    continue
-                visited_section_ids.add(section_id)
-                url = sort_url_params(url)
-                url = delete_url_key(url, "lang")
-                yield response.follow(url + "&lang=de", self.parse_legend)
-
-    def parse_unit(self, response: Response):
         try:
-            unit_title = response.css(
-                "section#contentContainer div#contentTop h1::text"
-            ).extract_first()
-            if not unit_title:
-                self.logger.error(f"No course title found for {response.url}")
-                return
-            unit_title = unit_title.split("\n")
-            unit_number = unit_title[0].replace("\xa0", "").strip()
-            unit_name = " ".join(unit_title[1:]).strip()
+            self.logger.info("Test message", extra={"url": response.url})
 
-            semkez = re.search(RE_SEMKEZ, response.url)
-            if not semkez:
+            catalog_semkez = re.search(RE_SEMKEZ, response.url)
+            if not catalog_semkez:
                 self.logger.error(f"No semkez found for {response.url}")
                 return
+            catalog_semkez = catalog_semkez.group(1)
+
+            level = re.search(r"studiengangTyp=(\w+)", response.url)
+            if level:
+                level = Level(level.group(1))
+            dept = re.search(r"deptId=(\d+)", response.url)
+            if dept:
+                dept = Department(int(dept.group(1)))
+
+            # get all the course data
+            tables = self.get_unit_tables(response)
+            for id, rows in tables.items():
+                unit = self.extract_unit_catalogue_data(id, rows, response.url)
+                if not unit:
+                    continue
+                # NOTE: we only view the additional info of a course in English, since those are the same in both languages
+                url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?ansicht=ALLE&lerneinheitId={id}&semkez={catalog_semkez}&lang=en"
+                yield response.follow(url, self.parse_unit, cb_kwargs={"unit": unit})
+
+                if level:
+                    yield UnitLevelMapping(unit_id=id, level=level)
+                if dept:
+                    yield UnitDepartmentMapping(unit_id=id, department=dept)
+
+            # get the full section structure
+            for section in self.extract_sections(response):
+                yield section
+
+            # get the legend pages for each section
+            visited_section_ids = set()
+            for link in response.css("a::attr(href)"):
+                url = link.get()
+                semkez = link.re_first(RE_SEMKEZ)
+                if not semkez or not url:
+                    continue
+                section_id = link.re_first(RE_ABSCHNITTID)
+
+                if section_id and "legendeStudienplanangaben.view" in url:
+                    # Legend pages can be different for different sections and courses:
+                    # - https://www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=18&semkez=2001W&lang=de
+                    # - https://www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=117361&semkez=2025W&lang=en
+                    if section_id in visited_section_ids:
+                        continue
+                    visited_section_ids.add(section_id)
+                    url = sort_url_params(url)
+                    url = delete_url_key(url, "lang")
+                    yield response.follow(url + "&lang=de", self.parse_legend)
+
+        except Exception as e:
+            self.logger.error(
+                "Error parsing catalogue page",
+                extra={
+                    "error": str(e),
+                    "url": response.url,
+                    "traceback": traceback.format_exc(),
+                },
+            )
+
+    def get_unit_tables(self, response: Response) -> dict[int, SelectorList[Selector]]:
+        tables: dict[int, SelectorList[Selector]] = {}
+
+        current_keys: list[Selector] = []
+        current_unit_id: int | None = None
+        for row in response.xpath("//table[@style='wAuto']//tr"):
+            # its the first line of a course
+            if unit_id := row.re_first(RE_UNITID):
+                if current_unit_id is not None:
+                    tables[current_unit_id] = SelectorList(current_keys)
+                current_unit_id = int(unit_id)
+                current_keys = []
+            if current_unit_id is not None:
+                current_keys.append(row)
+
+        if current_unit_id is not None:
+            tables[current_unit_id] = SelectorList(current_keys)
+
+        return tables
+
+    def extract_unit_catalogue_data(
+        self, id: int, rows: SelectorList[Selector], url: str
+    ) -> LearningUnit | None:
+        """
+        Extracts the catalogue data of a course that is available on the main catalogue page.
+        The idea is that the returned unit is then passed along to the specific unit page parser,
+        which then adds any additional data only available on the unit page, before then yielding
+        the final LearningUnit object.
+
+        This function is called for both the German and English versions of the catalogue page for
+        each course. In the item pipeline the data is then merged into a single table.
+        """
+
+        try:
+            semkez = re.search(RE_SEMKEZ, url)
+            if not semkez:
+                self.logger.error(f"No semkez found for {url}")
+                return
             semkez = semkez.group(1)
+            number = rows[0].re_first(RE_CODE)
+            if not number:
+                # If there's no number, that usually just means the row is not actually a "unit" row,
+                # but just some row that has a link to some other course. For example the following URL
+                # has a link to other courses in the "Notice" field which is picked up by our regex:
+                # https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lang=en&semkez=2025W&ansicht=ALLE&lerneinheitId=192500&
+                self.logger.warning(f"No course number found for unit {id}")
+                return
+            number = number.replace("\xa0", "").strip()
+            title = rows[0].css("::text")[1].get()
+            title = title.strip() if title else None
+            lang = "en" if "lang=en" in url else "de"
 
-            unit_id = re.search(RE_UNITID, response.url)
-            if not unit_id:
-                self.logger.warning(f"No lerneinheitId found for {response.url}")
-                unit_id = "unknown"
-            else:
-                unit_id = unit_id.group(1)
-            unit_id = int(unit_id)
+            table = Table(rows, pre_parsed=True)
+            literature = "\n".join(table.get_texts("literature")) or None
+            objective = "\n".join(table.get_texts("learning_objective")) or None
+            content = "\n".join(table.get_texts("content")) or None
+            lecture_notes = "".join(table.get_texts("lecture_notes")) or None
+            additional = "\n".join(table.get_texts("notice")) or None
+            comment = "".join(table.get_texts("comment")) or None
+            abstract = "".join(table.get_texts("abstract")) or None
+            competencies = {}
+            if comp_cols := table.find("competencies"):
+                competencies = self.extract_competencies(comp_cols)
 
-            lang = re.search(RE_LANG, response.url)
-            if not lang:
-                lang = "en"
-            else:
-                lang = lang.group(1)
+            return LearningUnit(
+                id=id,
+                number=number,
+                semkez=semkez,
+                title=title if lang == "de" else None,
+                title_english=title if lang == "en" else None,
+                literature=literature if lang == "de" else None,
+                literature_english=literature if lang == "en" else None,
+                objective=objective if lang == "de" else None,
+                objective_english=objective if lang == "en" else None,
+                content=content if lang == "de" else None,
+                content_english=content if lang == "en" else None,
+                lecture_notes=lecture_notes if lang == "de" else None,
+                lecture_notes_english=lecture_notes if lang == "en" else None,
+                additional=additional if lang == "de" else None,
+                additional_english=additional if lang == "en" else None,
+                comment=comment if lang == "de" else None,
+                comment_english=comment if lang == "en" else None,
+                abstract=abstract if lang == "de" else None,
+                abstract_english=abstract if lang == "en" else None,
+                competencies=competencies if lang == "de" else None,
+                competencies_english=competencies if lang == "en" else None,
+            )
+        except Exception as e:
+            self.logger.error(
+                "Error extracting unit catalogue data",
+                extra={
+                    "error": str(e),
+                    "traceback": traceback.format_exc(),
+                    "url": url,
+                    "id": id,
+                },
+            )
+
+    def parse_unit(self, response: Response, *, unit: LearningUnit):
+        """
+        Extracts information from a unit page that is not available on the main catalogue page.
+
+        Example url: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?semkez=2025W&ansicht=ALLE&lerneinheitId=192945&lang=en
+        """
+        try:
+            lang = "en" if "lang=en" in response.url else "de"
+            if lang == "de":
+                raise ValueError(
+                    f"Unit page should always be in English. url={response.url}"
+                )
 
             table = Table(response)
 
@@ -179,13 +285,6 @@ class LecturesSpider(scrapy.Spider):
                 if two_semester_credits is not None:
                     two_semester_credits = float(two_semester_credits.split("\xa0")[0])
 
-            literature = "\n".join(table.get_texts("literature")) or None
-            objective = "\n".join(table.get_texts("learning_objective")) or None
-            content = "\n".join(table.get_texts("content")) or None
-            lecture_notes = "".join(table.get_texts("lecture_notes")) or None
-            additional = "\n".join(table.get_texts("notice")) or None
-            comment = "".join(table.get_texts("comment")) or None
-
             max_places = table.find("places")
             if max_places is not None:
                 max_places = max_places[1].css("::text").get()
@@ -201,10 +300,6 @@ class LecturesSpider(scrapy.Spider):
             signup_start = table.re_first("registration_start", RE_DATE)
             priority = "".join(table.get_texts("priority")) or None
             language = "".join(table.get_texts("language")) or None
-            abstract = "".join(table.get_texts("abstract")) or None
-            competencies = {}
-            if comp_cols := table.find("competencies"):
-                competencies = self.extract_competencies(comp_cols)
             regulations = table.get_texts("regulations")
             written_aids = "".join(table.get_texts("written_aids")) or None
             additional_info = "".join(table.get_texts("additional_info")) or None
@@ -258,7 +353,7 @@ class LecturesSpider(scrapy.Spider):
                     occurence = None
 
             groups = self.extract_groups(response)
-            offered_in = self.extract_offered_in(response, unit_id)
+            offered_in = self.extract_offered_in(response, unit.id)
             for offered in offered_in:
                 yield offered
 
@@ -268,68 +363,29 @@ class LecturesSpider(scrapy.Spider):
             examiners = table.re("examiners", RE_DOZIDE)
             examiners = [int(pid) for pid in examiners]
             for id in examiners:
-                yield UnitExaminerLink(unit_id=unit_id, lecturer_id=id)
+                yield UnitExaminerLink(unit_id=unit.id, lecturer_id=id)
             lecturers = table.re("lecturers", RE_DOZIDE)
             lecturers = [int(pid) for pid in lecturers]
             for id in lecturers:
-                yield UnitLecturerLink(unit_id=unit_id, lecturer_id=id)
+                yield UnitLecturerLink(unit_id=unit.id, lecturer_id=id)
 
             # Print any unknown or missed keys
-            if lang == "de":
-                for k in table.keys():
-                    if (
-                        k.strip() == ""
-                        or re.match(RE_CODE, k)
-                        or "zusätzlichen Belegungseinschränkungen" in k
-                        or "Information zur Leistungskontrolle" in k
-                        or "Leistungskontrolle als Jahreskurs" in k
-                        or "Falls die Lerneinheit innerhalb" in k
-                        or "Es werden nur die öffentlichen Lernmaterialien aufgeführt"
-                        in k
-                        or "Keine Informationen zu Gruppen vorhanden" in k
-                        or "Semester" in k
-                        or "Leistungskontrolle als Semesterkurs" in k
-                        or "Keine öffentlichen Lernmaterialien verfügbar." in k
-                        or "Gruppe" in k
-                        or k == "unkeyed"
-                        or k in table.accessed_keys
-                        or k in learning_materials.keys()
-                    ):
-                        continue
-                    if get_key(k) == "other":
-                        with open(".scrapy/scrapercache/unknown_keys.jsonl", "a") as f:
-                            f.write(f"{json.dumps({'key': k, 'url': response.url})}\n")
+            for k in table.keys():
+                if (x := k.strip()) and x not in translations.keys():
+                    self.visited_keys.add(x)
 
             yield LearningUnit(
-                id=unit_id,
-                number=unit_number,
-                title=unit_name if lang == "de" else None,
-                title_english=unit_name if lang == "en" else None,
-                semkez=semkez,
+                id=unit.id,
+                number=unit.number,
+                semkez=unit.semkez,
                 credits=credits,
                 two_semester_credits=two_semester_credits,
-                literature=literature if lang == "de" else None,
-                literature_english=literature if lang == "en" else None,
-                objective=objective if lang == "de" else None,
-                objective_english=objective if lang == "en" else None,
-                content=content if lang == "de" else None,
-                content_english=content if lang == "en" else None,
-                lecture_notes=lecture_notes if lang == "de" else None,
-                lecture_notes_english=lecture_notes if lang == "en" else None,
-                additional=additional if lang == "de" else None,
-                additional_english=additional if lang == "en" else None,
-                comment=comment if lang == "de" else None,
-                comment_english=comment if lang == "en" else None,
                 max_places=max_places,
                 waitlist_end=waitlist_end,
                 signup_end=signup_end,
                 signup_start=signup_start,
                 priority=priority,
                 language=language,
-                abstract=abstract if lang == "de" else None,
-                abstract_english=abstract if lang == "en" else None,
-                competencies=competencies if lang == "de" else None,
-                competencies_english=competencies if lang == "en" else None,
                 regulations=regulations,
                 written_aids=written_aids,
                 additional_info=additional_info,
@@ -343,10 +399,9 @@ class LecturesSpider(scrapy.Spider):
                 distance_exam=distance_exam,
                 groups=groups,
                 exam_block=exam_block_for,
-                learning_materials=learning_materials if lang == "de" else None,
-                learning_materials_english=learning_materials if lang == "en" else None,
                 occurence=occurence,
                 general_restrictions=general_restrictions,
+                learning_materials=learning_materials,
             )
 
             # Get courses after the learning unit, to ensure the foreign key exists already
@@ -354,14 +409,26 @@ class LecturesSpider(scrapy.Spider):
                 course_number = re.match(RE_CODE, k)
                 if course_number:
                     for course_or_lecturer in self.extract_course_info(
-                        parent_unit=unit_id, semkez=semkez, cols=cols, url=response.url
+                        parent_unit=unit.id,
+                        semkez=unit.semkez,
+                        cols=cols,
+                        url=response.url,
                     ):
                         yield course_or_lecturer
         except Exception as e:
-            self.logger.error(f"Error parsing learning unit {response.url}: {e}")
-            append_error(str(e), traceback=traceback.format_exc(), url=response.url)
+            self.logger.error(
+                "Error parsing learning unit",
+                extra={
+                    "error": str(e),
+                    "traceback": traceback.format_exc(),
+                    "url": response.url,
+                },
+            )
 
-    def parse_legend(self, response: Response):
+    def parse_legend(self, response: Response) -> Generator[UnitTypeLegends, Any, None]:
+        """
+        Example: www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=117361&semkez=2025W&lang=en
+        """
         try:
             semkez = re.search(RE_SEMKEZ, response.url)
             id = re.search(RE_ABSCHNITTID, response.url)
@@ -389,10 +456,28 @@ class LecturesSpider(scrapy.Spider):
                 legend=unit_legends,
             )
         except Exception as e:
-            self.logger.error(f"Error parsing legend {response.url}: {e}")
-            append_error(str(e), traceback=traceback.format_exc(), url=response.url)
+            self.logger.error(
+                "Error parsing legend",
+                extra={
+                    "error": str(e),
+                    "traceback": traceback.format_exc(),
+                    "url": response.url,
+                },
+            )
 
     def extract_sections(self, response: Response):
+        """
+        Extracts all sections visible on the page.
+        We keep track of the parent for each section based on the level indicator
+        images (small right-facing triangles). We don't care about adding courses to
+        their sections here. That is done in the course-parsing function. On the course
+        page itself only the top-most (named "Programme") and the bottom-most
+        (named "Section") are listed. We only link courses to their
+        immediate/bottom-most section. By then keeping track of the parents, we
+        can create a recursive SQL query that is able to find all recursive
+        children of any (higher-level) section.
+        """
+
         semkez = re.search(RE_SEMKEZ, response.url)
         if not semkez:
             self.logger.error(f"No semkez found for {response.url}")
@@ -447,12 +532,9 @@ class LecturesSpider(scrapy.Spider):
             number = number.replace("\xa0", "")
             course_type = CourseTypeEnum[number[-1]]
         else:
-            self.logger.error(f"No course code found for unit {parent_unit}")
-            append_error(
-                "No course number found",
-                parent_unit=str(parent_unit),
-                semkez=semkez,
-                url=url,
+            self.logger.error(
+                "No course code found for unit",
+                extra={"url": url, "parent_unit": parent_unit},
             )
             return
 
@@ -561,6 +643,8 @@ class LecturesSpider(scrapy.Spider):
         )
 
     def extract_competencies(self, cols: SelectorList) -> dict[str, dict[str, str]]:
+        if len(cols) < 2:
+            return {}
         table = Table(cols[1])
         competencies: dict[str, dict[str, str]] = defaultdict(dict)
         prev_key = ""

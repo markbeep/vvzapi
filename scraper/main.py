@@ -5,7 +5,6 @@ from scraper.spiders.lecturers import LecturersSpider
 from scraper.spiders.lectures import LecturesSpider
 
 process = CrawlerProcess(get_project_settings())
-
 process.crawl(LecturesSpider)
 process.crawl(LecturersSpider)
 process.start()

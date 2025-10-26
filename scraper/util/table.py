@@ -14,8 +14,7 @@ class Table:
     """
 
     def __init__(
-        self,
-        response: SelectorList[Selector] | Response,
+        self, response: SelectorList[Selector] | Response, /, pre_parsed: bool = False
     ) -> None:
         self.response = response
         self.accessed_keys = set()
@@ -24,7 +23,10 @@ class Table:
             if isinstance(response, Response):
                 xpath_rows = response.xpath("//table/tbody/tr")
             else:
-                xpath_rows = response.xpath(".//tr")
+                if pre_parsed:
+                    xpath_rows = response
+                else:
+                    xpath_rows = response.xpath(".//tr")
             for r in xpath_rows:
                 cols = r.xpath("./td")
                 if len(cols) == 0:
@@ -93,7 +95,7 @@ def table_under_header(response: Response, table_header_variants: list[str]) -> 
     )
     table = response.xpath(f"//h3[{ors}]/following-sibling::table[1]")
 
-    return Table(response=table)
+    return Table(table)
 
 
 class TableExtractor:

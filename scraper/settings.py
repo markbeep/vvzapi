@@ -9,7 +9,6 @@
 
 from scraper.env import Settings
 
-
 BOT_NAME = "vvz-scraper"
 
 SPIDER_MODULES = ["scraper.spiders"]
@@ -28,6 +27,12 @@ ROBOTSTXT_OBEY = True
 # CONCURRENT_REQUESTS = 16
 CONCURRENT_REQUESTS_PER_DOMAIN = 1
 DOWNLOAD_DELAY = Settings().delay
+DOWNLOAD_WARNSIZE = 2 << 25  # 64 MiB
+
+
+LOG_FILE = ".scrapy/scrapy.log"
+LOG_FILE_APPEND = False
+LOG_SHORT_NAMES = True
 
 # DEBUGGING LOCALLY
 # CLOSESPIDER_PAGECOUNT = 10

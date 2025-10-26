@@ -163,12 +163,12 @@ class LearningUnit(BaseModel, table=True):
     __table_args__ = (UniqueConstraint("number", "semkez"),)
 
     id: int = Field(primary_key=True)
+    semkez: str
+    """Semester in the format JJJJS, where JJJJ is the year and either S or W indicates the semester."""
     number: str | None = Field(default=None)
     """263-3010-00L type code. Check the `RE_CODE` to more details on the format."""
     title: str | None = Field(default=None)
     title_english: str | None = Field(default=None)
-    semkez: str = Field()
-    """Semester in the format JJJJS, where JJJJ is the year and either S or W indicates the semester."""
     levels: list[Level] = Field(default_factory=list, sa_column=Column(JSON))
     """Levels of the learning unit, e.g., BSC, MSC, etc."""
     department: Department | None = Field(default=None)
@@ -190,7 +190,7 @@ class LearningUnit(BaseModel, table=True):
     """Comment that is also visible on the search page"""
     comment_english: str | None = Field(default=None)
     max_places: int | None = Field(default=None)
-    """Max amount of places available for registration"""
+    """Max amount of places available for registration. Set to -1 if 'Limited number of places. Special selection procedure.'"""
     waitlist_end: str | None = Field(default=None)
     """Until when the waitlist will be kept. Format yyyy-mm-dd"""
     signup_end: str | None = Field(default=None)
@@ -239,10 +239,6 @@ class LearningUnit(BaseModel, table=True):
         default=None, sa_column=Column(PydanticType(dict[str, list[NamedURL]]))
     )
     """Links to learning materials provided for this learning unit."""
-    learning_materials_english: dict[str, list[NamedURL]] | None = Field(
-        default=None,
-        sa_column=Column(PydanticType(dict[str, list[NamedURL]])),
-    )
     occurence: OccurenceEnum | None = Field(default=None)
     general_restrictions: str | None = Field(default=None)
     """Extra notes on any restrictions for this learning unit."""

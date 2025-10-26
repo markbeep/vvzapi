@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 import traceback
 from typing import Any
@@ -19,26 +18,20 @@ from api.models import (
     UnitSectionLink,
 )
 from api.util import db
-from scraper.util.log_error import append_error
 from scraper.util.mappings import UnitDepartmentMapping, UnitLevelMapping
+from scraper.util.scrapercache import CACHE_PATH
 
-CACHE_PATH = "scrapercache"
-SECTION_LINK = f".scrapy/{CACHE_PATH}/unit_section_link.jsonl"
-DEP_LINK = f".scrapy/{CACHE_PATH}/unit_dep_link.jsonl"
-LEVEL_LINK = f".scrapy/{CACHE_PATH}/unit_level_link.jsonl"
-LECTURER_LINK = f".scrapy/{CACHE_PATH}/unit_lecturer_link.jsonl"
-EXAMINER_LINK = f".scrapy/{CACHE_PATH}/unit_examiner_link.jsonl"
-COURSE_LINK = f".scrapy/{CACHE_PATH}/course_lecturer_link.jsonl"
+SECTION_LINK = CACHE_PATH / "unit_section_link.jsonl"
+DEP_LINK = CACHE_PATH / "unit_dep_link.jsonl"
+LEVEL_LINK = CACHE_PATH / "unit_level_link.jsonl"
+LECTURER_LINK = CACHE_PATH / "unit_lecturer_link.jsonl"
+EXAMINER_LINK = CACHE_PATH / "unit_examiner_link.jsonl"
+COURSE_LINK = CACHE_PATH / "course_lecturer_link.jsonl"
 
 
-def append(file_path: str, item: BaseModel):
+def append(file_path: Path, item: BaseModel):
     with open(file_path, "a") as f:
         f.write(item.model_dump_json() + "\n")
-
-
-def append_json(file_path: str, data: dict):
-    with open(file_path, "a") as f:
-        f.write(json.dumps(data) + "\n")
 
 
 def iter_lines(file_path: Path):
@@ -197,59 +190,55 @@ class DatabasePipeline:
 
             return item
         except Exception as e:
-            self.logger.error(f"Error adding item {item}: {e}")
-            append_error(str(e), traceback=traceback.format_exc())
+            self.logger.error(
+                f"Error adding item {item}: {e}. Traceback: {traceback.format_exc()}"
+            )
 
     def close_spider(self, spider: Spider):
         """
         Add links after hopefully all base models have been added
         """
-        sl = Path(SECTION_LINK)
-        if sl.exists():
-            for line in iter_lines(sl):
+        if SECTION_LINK.exists():
+            for line in iter_lines(SECTION_LINK):
                 link = UnitSectionLink.model_validate_json(line)
                 if add_section_link(self.session, link, commit=False):
                     self.logger.debug(
                         f"Adding UnitSectionLink: unit_id={link.unit_id}, section_id={link.section_id}"
                     )
-            sl.unlink()
+            SECTION_LINK.unlink()
 
-        el = Path(EXAMINER_LINK)
-        if el.exists():
-            for line in iter_lines(el):
+        if EXAMINER_LINK.exists():
+            for line in iter_lines(EXAMINER_LINK):
                 link = UnitExaminerLink.model_validate_json(line)
                 if add_examiner_link(self.session, link, commit=False):
                     self.logger.debug(
                         f"Adding UnitExaminerLink: unit_id={link.unit_id}, lecturer_id={link.lecturer_id}"
                     )
-            el.unlink()
+            EXAMINER_LINK.unlink()
 
-        ll = Path(LECTURER_LINK)
-        if ll.exists():
-            for line in iter_lines(ll):
+        if LECTURER_LINK.exists():
+            for line in iter_lines(LECTURER_LINK):
                 link = UnitLecturerLink.model_validate_json(line)
                 if add_lecturer_link(self.session, link, commit=False):
                     self.logger.debug(
                         f"Adding UnitLecturerLink: unit_id={link.unit_id}, lecturer_id={link.lecturer_id}"
                     )
-            ll.unlink()
+            LECTURER_LINK.unlink()
 
-        cl = Path(COURSE_LINK)
-        if cl.exists():
-            for line in iter_lines(cl):
+        if COURSE_LINK.exists():
+            for line in iter_lines(COURSE_LINK):
                 link = CourseLecturerLink.model_validate_json(line)
                 if add_course_link(self.session, link, commit=False):
                     self.logger.debug(
                         f"Adding CourseLecturerLink: course_number={link.course_number}, course_semkez={link.course_semkez}, lecturer_id={link.lecturer_id}"
                     )
-            cl.unlink()
+            COURSE_LINK.unlink()
 
         """
         Update mappings after hopefully all LearningUnits have been added
         """
-        dl = Path(DEP_LINK)
-        if dl.exists():
-            for line in iter_lines(dl):
+        if DEP_LINK.exists():
+            for line in iter_lines(DEP_LINK):
                 mapping = UnitDepartmentMapping.model_validate_json(line)
                 unit = self.session.get(LearningUnit, mapping.unit_id)
                 if unit:
@@ -258,11 +247,10 @@ class DatabasePipeline:
                     )
                     unit.department = mapping.department
                     self.session.add(unit)
-            dl.unlink()
+            DEP_LINK.unlink()
 
-        lel = Path(LEVEL_LINK)
-        if lel.exists():
-            for line in iter_lines(lel):
+        if LEVEL_LINK.exists():
+            for line in iter_lines(LEVEL_LINK):
                 mapping = UnitLevelMapping.model_validate_json(line)
                 unit = self.session.get(LearningUnit, mapping.unit_id)
                 if unit:
@@ -273,7 +261,7 @@ class DatabasePipeline:
                     if mapping.level not in unit.levels:
                         unit.levels.append(mapping.level)
                         self.session.add(unit)
-            lel.unlink()
+            LEVEL_LINK.unlink()
 
         self.session.commit()
         self.session.close()

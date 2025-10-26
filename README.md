@@ -31,11 +31,11 @@ The goal is to scrape every semester to have a full history of all courses. Want
 - [ ] `2023W`
 - [x] `2023S`
 - [x] `2022W`
-- [ ] `2022S`
+- [x] `2022S`
 - [ ] `2021W`
-- [ ] `2021S`
+- [x] `2021S`
 - [ ] `2020W`
-- [ ] `2020S`
+- [x] `2020S`
 - [ ] `2019W`
 - [ ] `2019S`
 - [ ] `2018W`
@@ -115,6 +115,13 @@ uv run scrapy genspider <scraper name> <scraper name>.py
 
 ```sh
 uv run -m scraper.main
+```
+
+Or for just one of the spiders:
+
+```sh
+uv run scrapy crawl lectures
+uv run scrapy crawl lecturers
 ```
 
 #### Run in shell (for debug)
