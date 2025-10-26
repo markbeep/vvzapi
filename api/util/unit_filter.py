@@ -130,13 +130,13 @@ def build_vvz_filter(session: Session, query: Select, filters: VVZFilters) -> Se
         query_filters.append(LearningUnit.number == filters.number)
     if filters.title is not None:
         query_filters.append(col(LearningUnit.title).ilike(f"%{filters.title}%"))
-    if filters.lecturer_id is not None:
-        query_filters.append(
-            or_(
-                col(LearningUnit.lecturers).contains(filters.lecturer_id),
-                col(LearningUnit.examiners).contains(filters.lecturer_id),
-            )
-        )
+    # if filters.lecturer_id is not None:
+    #     query_filters.append(
+    #         or_(
+    #             col(LearningUnit.lecturers).contains(filters.lecturer_id),
+    #             col(LearningUnit.examiners).contains(filters.lecturer_id),
+    #         )
+    #     )
     # TODO: requires lecturers in separate table
     # if filters.lecturer_name is not None:
     #     query = query.where(

@@ -11,7 +11,8 @@
                 "charliermarsh.ruff",
                 "ms-python.python",
                 "esbenp.prettier-vscode",
-                "yzhang.markdown-all-in-one"
+                "yzhang.markdown-all-in-one",
+                "Gruntfuggly.todo-tree"
             ]
         }
     }

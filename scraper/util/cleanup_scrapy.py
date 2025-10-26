@@ -6,7 +6,7 @@ from shutil import rmtree
 import yaml
 
 
-CACHE_PATH = Path(".scrapy/httpcache")
+HTTP_CACHE_PATH = Path(".scrapy/httpcache")
 
 re_lectures_en = r"https://www\.vvz\.ethz\.ch/Vorlesungsverzeichnis/lerneinheit\.view\?ansicht=ALLE&lerneinheitId=\d+?&semkez=\d{4}\w&lang=en"
 re_lectures_root = r"https://www\.vvz\.ethz\.ch/Vorlesungsverzeichnis/sucheLehrangebot\.view\?semkez=\d{4}\w&ansicht=2&seite=0(&deptId=\d+)?(&studiengangTyp=\w+)?&lang=\w\w"
@@ -30,8 +30,8 @@ def get_files(path: Path, dry_run: bool):
 
 def cleanup_scrapy(dry_run: bool = False):
     unts, lecrs = 0, 0
-    units = CACHE_PATH / "lectures"
-    lecturers = CACHE_PATH / "lecturers"
+    units = HTTP_CACHE_PATH / "lectures"
+    lecturers = HTTP_CACHE_PATH / "lecturers"
 
     for url, dir in get_files(units, dry_run):
         if not re.match(re_lectures_en, url) and not re.match(re_lectures_root, url):

@@ -31,8 +31,9 @@ DOWNLOAD_WARNSIZE = 2 << 25  # 64 MiB
 
 
 LOG_FILE = ".scrapy/scrapy.log"
-LOG_FILE_APPEND = False
+LOG_FILE_APPEND = Settings().log_append
 LOG_SHORT_NAMES = True
+LOG_LEVEL = Settings().log_level.upper()
 
 # DEBUGGING LOCALLY
 # CLOSESPIDER_PAGECOUNT = 10

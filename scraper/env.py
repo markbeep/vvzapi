@@ -1,5 +1,6 @@
 from datetime import date
 from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,12 +10,15 @@ class Settings(BaseSettings):
     )
 
     refresh_html: bool = False
-    """If html files, that are already present locally, should be refetched"""
+    """If html files, that are already cached locally, should be refetched"""
     start_year: int = date.today().year
     # automatically include next year (if it exists)
     end_year: int = date.today().year + 1
     semester: str = "W"
     delay: float = 5.0
+    """Amount of seconds to at least wait between requests"""
+    log_level: str = "INFO"
+    log_append: bool = True
 
     def read_semesters(self) -> list[Literal["W", "S"]]:
         semesters: list[Literal["W", "S"]] = []

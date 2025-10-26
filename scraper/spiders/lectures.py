@@ -4,7 +4,6 @@ import traceback
 from collections import defaultdict
 from typing import Any, Generator
 
-import scrapy
 from parsel import Selector, SelectorList
 from pydantic import BaseModel
 from scrapy.http import Response
@@ -29,7 +28,7 @@ from api.models import (
 )
 from api.util.types import CourseSlot, CourseTypeEnum, WeekdayEnum
 from scraper.env import Settings
-from scraper.util.keymap import translations
+from scraper.util.logging import KeywordLoggerSpider
 from scraper.util.mappings import UnitDepartmentMapping, UnitLevelMapping
 from scraper.util.regex_rules import (
     RE_ABSCHNITTID,
@@ -60,7 +59,7 @@ def get_urls(year: int, semester: Literal["W", "S"]):
         yield url + f"&studiengangTyp={level.value}&lang=en"
 
 
-class LecturesSpider(scrapy.Spider):
+class LecturesSpider(KeywordLoggerSpider):
     """
     The main lecture scraper that handles scraping all the lecture-specific data that is available on VVZ.
 
@@ -86,20 +85,12 @@ class LecturesSpider(scrapy.Spider):
         for semester in Settings().read_semesters()
         for url in get_urls(year, semester)
     ]
-    visited_keys = set()
-
-    def spider_closed(self, spider: scrapy.Spider):
-        with open(CACHE_PATH / "visited_keys.jsonl", "w") as f:
-            for key in sorted(self.visited_keys):
-                f.write(f"{json.dumps({'key': key})}\n")
 
     def parse(self, response: Response):
         try:
-            self.logger.info("Test message", extra={"url": response.url})
-
             catalog_semkez = re.search(RE_SEMKEZ, response.url)
             if not catalog_semkez:
-                self.logger.error(f"No semkez found for {response.url}")
+                self.logger.error("No semkez found", extra={"url": response.url})
                 return
             catalog_semkez = catalog_semkez.group(1)
 
@@ -110,8 +101,28 @@ class LecturesSpider(scrapy.Spider):
             if dept:
                 dept = Department(int(dept.group(1)))
 
+            self.logger.info(
+                "Parsing catalogue page",
+                extra={
+                    "semkez": catalog_semkez,
+                    "level": level,
+                    "dept": dept,
+                    "url": response.url,
+                },
+            )
+
             # get all the course data
             tables = self.get_unit_tables(response)
+            self.logger.info(
+                "Found unit tables",
+                extra={
+                    "count": len(tables),
+                    "semkez": catalog_semkez,
+                    "dept": dept,
+                    "level": level,
+                },
+            )
+
             for id, rows in tables.items():
                 unit = self.extract_unit_catalogue_data(id, rows, response.url)
                 if not unit:
@@ -126,8 +137,15 @@ class LecturesSpider(scrapy.Spider):
                     yield UnitDepartmentMapping(unit_id=id, department=dept)
 
             # get the full section structure
+            sec_count = 0
             for section in self.extract_sections(response):
                 yield section
+                sec_count += 1
+
+            self.logger.info(
+                "Parsed all sections",
+                extra={"count": sec_count, "semkez": catalog_semkez},
+            )
 
             # get the legend pages for each section
             visited_section_ids = set()
@@ -148,6 +166,10 @@ class LecturesSpider(scrapy.Spider):
                     url = sort_url_params(url)
                     url = delete_url_key(url, "lang")
                     yield response.follow(url + "&lang=de", self.parse_legend)
+            self.logger.info(
+                "Visited all legend pages",
+                extra={"count": len(visited_section_ids), "semkez": catalog_semkez},
+            )
 
         except Exception as e:
             self.logger.error(
@@ -195,7 +217,7 @@ class LecturesSpider(scrapy.Spider):
         try:
             semkez = re.search(RE_SEMKEZ, url)
             if not semkez:
-                self.logger.error(f"No semkez found for {url}")
+                self.logger.error("No semkez found", extra={"url": url})
                 return
             semkez = semkez.group(1)
             number = rows[0].re_first(RE_CODE)
@@ -204,7 +226,9 @@ class LecturesSpider(scrapy.Spider):
                 # but just some row that has a link to some other course. For example the following URL
                 # has a link to other courses in the "Notice" field which is picked up by our regex:
                 # https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lang=en&semkez=2025W&ansicht=ALLE&lerneinheitId=192500&
-                self.logger.warning(f"No course number found for unit {id}")
+                self.logger.warning(
+                    "No course number found for unit", extra={"unit_id": id}
+                )
                 return
             number = number.replace("\xa0", "").strip()
             title = rows[0].css("::text")[1].get()
@@ -257,7 +281,18 @@ class LecturesSpider(scrapy.Spider):
                 },
             )
 
-    def parse_unit(self, response: Response, *, unit: LearningUnit):
+    def parse_unit(
+        self, response: Response, *, unit: LearningUnit
+    ) -> Generator[
+        UnitExaminerLink
+        | UnitLecturerLink
+        | LearningUnit
+        | Course
+        | CourseLecturerLink
+        | UnitSectionLink,
+        Any,
+        None,
+    ]:
         """
         Extracts information from a unit page that is not available on the main catalogue page.
 
@@ -344,9 +379,7 @@ class LecturesSpider(scrapy.Spider):
                 ]:
                     occurence = OccurenceEnum.NO
                 else:
-                    with open(
-                        ".scrapy/scrapercache/unknown_occurences.jsonl", "a"
-                    ) as f:
+                    with open(CACHE_PATH / "unknown_occurences.jsonl", "a") as f:
                         f.write(
                             f"{json.dumps({'occurence': occ_text, 'url': response.url})}\n"
                         )
@@ -369,10 +402,7 @@ class LecturesSpider(scrapy.Spider):
             for id in lecturers:
                 yield UnitLecturerLink(unit_id=unit.id, lecturer_id=id)
 
-            # Print any unknown or missed keys
-            for k in table.keys():
-                if (x := k.strip()) and x not in translations.keys():
-                    self.visited_keys.add(x)
+            # TODO: take note of all keys that were not processed
 
             yield LearningUnit(
                 id=unit.id,
@@ -433,13 +463,15 @@ class LecturesSpider(scrapy.Spider):
             semkez = re.search(RE_SEMKEZ, response.url)
             id = re.search(RE_ABSCHNITTID, response.url)
             if not semkez or not id:
-                self.logger.error(f"No semkez or id found for {response.url}")
+                self.logger.error("No semkez or id found", extra={"url": response.url})
                 return
             semkez = semkez.group(1)
             id = int(id.group(1))
             title = response.css("h1::text").get()
             if not title:
-                self.logger.error(f"No title found for legend {response.url}")
+                self.logger.error(
+                    "No title found for legend", extra={"url": response.url}
+                )
                 return
 
             table = Table(response.xpath("//table"))
@@ -480,7 +512,7 @@ class LecturesSpider(scrapy.Spider):
 
         semkez = re.search(RE_SEMKEZ, response.url)
         if not semkez:
-            self.logger.error(f"No semkez found for {response.url}")
+            self.logger.error("No semkez found", extra={"url": response.url})
             return
         semkez = semkez.group(1)
 
