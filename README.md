@@ -21,58 +21,14 @@ Attributes have been translated to english, dropped (in cases where the value wa
 
 ## Semester Status
 
-The goal is to scrape every semester to have a full history of all courses. Want to help out? Check out the [scrape locally](#scrape-locally) section and get in contact with me over Discord `@sprutz`. The scraper automatically caches HTML files so that every request only has to ever be executed once. The HTML and error files are all I'm currently interested in.
-
-- [x] `2026S`
-- [x] `2025W`
-- [x] `2025S`
-- [x] `2024W`
-- [x] `2024S`
-- [ ] `2023W`
-- [x] `2023S`
-- [x] `2022W`
-- [x] `2022S`
-- [ ] `2021W`
-- [x] `2021S`
-- [ ] `2020W`
-- [x] `2020S`
-- [ ] `2019W`
-- [ ] `2019S`
-- [ ] `2018W`
-- [ ] `2018S`
-- [ ] `2017W`
-- [ ] `2017S`
-- [ ] `2016W`
-- [ ] `2016S`
-- [ ] `2015W`
-- [ ] `2015S`
-- [ ] `2014W`
-- [ ] `2014S`
-- [ ] `2013W`
-- [ ] `2013S`
-- [ ] `2012W`
-- [ ] `2012S`
-- [ ] `2011W`
-- [ ] `2011S`
-- [ ] `2010W`
-- [ ] `2010S`
-- [ ] `2009W`
-- [ ] `2009S`
-- [ ] `2008W`
-- [ ] `2008S`
-- [ ] `2007W`
-- [ ] `2007S`
-- [ ] `2006W`
-- [ ] `2006S`
-- [ ] `2005W`
-- [ ] `2005S`
-- [ ] `2004W`
-- [ ] `2004S`
-- [ ] `2003W`
-- [ ] `2003S`
-- [ ] `2002W`
-- [ ] `2002S`
-- [ ] `2001W`
+> [!NOTE]  
+> Every available semester has been cached (2001W-2008W and 2018S-2026S). Thank you everyone for helping out!
+> Now it's only a matter of time before the DB models are finalized and all the data is pushed to be available on the API endpoints.
+>
+> For some reason all semesters 2009-2017 (both S and W) are simply not available. Accessing any of them throws a 403 Forbidden. I wonder if this
+> is just some short-term problem or if they'll never come back. Some of the data (for all courses) is available in the
+> [Complete Catalogue](https://www.vvz.ethz.ch/Vorlesungsverzeichnis/gesamtverzeichnis.view?lang=en), but I currently do not have any plans
+> of parsing data from PDFs.
 
 ## Future Plans
 
