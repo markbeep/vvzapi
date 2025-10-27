@@ -1,5 +1,6 @@
 from enum import Enum
 import time
+from typing import Any
 
 from pydantic import BaseModel as PydanticBaseModel
 from sqlmodel import INTEGER, JSON, Column, Field, SQLModel
@@ -23,8 +24,7 @@ class Overwriteable:
             return
         for field in other.model_fields_set:
             value_other = getattr(other, field)
-            if value_other is not None:
-                setattr(self, field, value_other)
+            setattr(self, field, value_other)
 
 
 """
@@ -369,3 +369,13 @@ class Lecturer(BaseModel, Overwriteable, table=True):
         default_factory=lambda: int(time.time()),
         sa_column=Column(INTEGER, nullable=False, server_onupdate="unixepoch()"),
     )
+
+
+class UnitChanges(BaseModel, table=True):
+    """We keep track of changes that get applied to learning units"""
+
+    id: int | None = Field(default=None, primary_key=True)
+    unit_id: int
+    changes: dict[str, Any] = Field(sa_column=Column(JSON()))
+    scraped_at: int
+    """The scraped_at before the changes were applied"""

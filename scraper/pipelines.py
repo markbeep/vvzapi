@@ -1,3 +1,4 @@
+import time
 import traceback
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,7 @@ from api.models import (
     UnitTypeLegends,
 )
 from api.util import db
+from scraper.util.difference import find_unit_differences
 from scraper.util.mappings import UnitDepartmentMapping, UnitLevelMapping
 from scraper.util.scrapercache import CACHE_PATH
 
@@ -102,9 +104,19 @@ class DatabasePipeline:
                 self.session.add(item)
                 self.session.commit()
             elif isinstance(old, Overwriteable):
-                # we assume old has been modified in place
-                # TODO: log what was changed
+                if isinstance(old, LearningUnit) and isinstance(item, LearningUnit):
+                    if differences := find_unit_differences(old, item):
+                        self.logger.info(
+                            "LearningUnit changes detected",
+                            extra={
+                                "unit_id": old.id,
+                                "changes": differences.changes,
+                            },
+                        )
+                        self.session.add(differences)
+
                 old.overwrite_with(item)
+                old.scraped_at = int(time.time())
                 self.session.add(old)
                 self.session.commit()
 
