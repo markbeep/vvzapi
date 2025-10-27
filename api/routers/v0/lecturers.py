@@ -25,7 +25,6 @@ async def list_lecturers(
     session: Annotated[Session, Depends(get_session)],
     limit: Annotated[int, Query(gt=0, le=1000)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
-    golden_owl: bool | None = None,
 ) -> Sequence[Lecturer]:
     query = (
         select(Lecturer).offset(offset).limit(limit).order_by(col(Lecturer.id).asc())

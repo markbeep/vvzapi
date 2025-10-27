@@ -24,8 +24,7 @@ class Overwriteable:
             return
         for field in other.model_fields_set:
             value_other = getattr(other, field)
-            if value_other is not None:
-                setattr(self, field, value_other)
+            setattr(self, field, value_other)
 
 
 """
@@ -249,7 +248,6 @@ class LearningUnit(BaseModel, Overwriteable, table=True):
         default_factory=lambda: int(time.time()),
         sa_column=Column(INTEGER, nullable=False, server_onupdate="unixepoch()"),
     )
-    scraped_both_languages: bool = Field(default=False)
 
 
 """

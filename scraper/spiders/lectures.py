@@ -127,9 +127,11 @@ class LecturesSpider(KeywordLoggerSpider):
                 unit = self.extract_unit_catalogue_data(id, rows, response.url)
                 if not unit:
                     continue
+                yield unit
                 # NOTE: we only view the additional info of a course in English, since those are the same in both languages
+                # In total we yield 3 units. 1 German catalogue data, 1 English catalogue data, 1 English additional data
                 url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?ansicht=ALLE&lerneinheitId={id}&semkez={catalog_semkez}&lang=en"
-                yield response.follow(url, self.parse_unit, cb_kwargs={"unit": unit})
+                yield response.follow(url, self.parse_unit)
 
                 if level:
                     yield UnitLevelMapping(unit_id=id, level=level)
@@ -226,8 +228,9 @@ class LecturesSpider(KeywordLoggerSpider):
                 # but just some row that has a link to some other course. For example the following URL
                 # has a link to other courses in the "Notice" field which is picked up by our regex:
                 # https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lang=en&semkez=2025W&ansicht=ALLE&lerneinheitId=192500&
-                self.logger.warning(
-                    "No course number found for unit", extra={"unit_id": id}
+                self.logger.debug(
+                    "No course number found for unit. Skipping...",
+                    extra={"unit_id": id},
                 )
                 return
             number = number.replace("\xa0", "").strip()
@@ -247,29 +250,38 @@ class LecturesSpider(KeywordLoggerSpider):
             if comp_cols := table.find("competencies"):
                 competencies = self.extract_competencies(comp_cols)
 
-            return LearningUnit(
-                id=id,
-                number=number,
-                semkez=semkez,
-                title=title if lang == "de" else None,
-                title_english=title if lang == "en" else None,
-                literature=literature if lang == "de" else None,
-                literature_english=literature if lang == "en" else None,
-                objective=objective if lang == "de" else None,
-                objective_english=objective if lang == "en" else None,
-                content=content if lang == "de" else None,
-                content_english=content if lang == "en" else None,
-                lecture_notes=lecture_notes if lang == "de" else None,
-                lecture_notes_english=lecture_notes if lang == "en" else None,
-                additional=additional if lang == "de" else None,
-                additional_english=additional if lang == "en" else None,
-                comment=comment if lang == "de" else None,
-                comment_english=comment if lang == "en" else None,
-                abstract=abstract if lang == "de" else None,
-                abstract_english=abstract if lang == "en" else None,
-                competencies=competencies if lang == "de" else None,
-                competencies_english=competencies if lang == "en" else None,
-            )
+            if lang == "de":
+                return LearningUnit(
+                    id=id,
+                    number=number,
+                    semkez=semkez,
+                    title=title,
+                    literature=literature,
+                    objective=objective,
+                    content=content,
+                    lecture_notes=lecture_notes,
+                    additional=additional,
+                    comment=comment,
+                    abstract=abstract,
+                    competencies=competencies,
+                )
+
+            else:
+                return LearningUnit(
+                    id=id,
+                    number=number,
+                    semkez=semkez,
+                    title_english=title,
+                    literature_english=literature,
+                    objective_english=objective,
+                    content_english=content,
+                    lecture_notes_english=lecture_notes,
+                    additional_english=additional,
+                    comment_english=comment,
+                    abstract_english=abstract,
+                    competencies_english=competencies,
+                )
+
         except Exception as e:
             self.logger.error(
                 "Error extracting unit catalogue data",
@@ -282,7 +294,7 @@ class LecturesSpider(KeywordLoggerSpider):
             )
 
     def parse_unit(
-        self, response: Response, *, unit: LearningUnit
+        self, response: Response
     ) -> Generator[
         UnitExaminerLink
         | UnitLecturerLink
@@ -301,10 +313,23 @@ class LecturesSpider(KeywordLoggerSpider):
         try:
             if "red9.ethz.ch" in response.url:
                 self.logger.info(
-                    "Skipping red9 error page",
-                    extra={"url": response.url, "unit_id": unit.id},
+                    "Skipping red9 error page", extra={"url": response.url}
                 )
                 return
+
+            unit_id = re.search(RE_UNITID, response.url)
+            if not unit_id:
+                self.logger.error(
+                    "No unit id found in url", extra={"url": response.url}
+                )
+                return
+            unit_id = int(unit_id.group(1))
+
+            semkez = re.search(RE_SEMKEZ, response.url)
+            if not semkez:
+                self.logger.error("No semkez found", extra={"url": response.url})
+                return
+            semkez = semkez.group(1)
 
             lang = "en" if "lang=en" in response.url else "de"
             if lang == "de":
@@ -395,28 +420,27 @@ class LecturesSpider(KeywordLoggerSpider):
                 occurence = None
 
             groups = self.extract_groups(response)
-            offered_in = self.extract_offered_in(response, unit.id)
+            offered_in = self.extract_offered_in(response, unit_id)
             for offered in offered_in:
                 yield offered
 
-            learning_materials = self.extract_learning_materials(response)
+            learning_materials = self.extract_learning_materials(response) or None
 
             # handle lecturer links
             examiners = table.re("examiners", RE_DOZIDE)
             examiners = [int(pid) for pid in examiners]
             for id in examiners:
-                yield UnitExaminerLink(unit_id=unit.id, lecturer_id=id)
+                yield UnitExaminerLink(unit_id=unit_id, lecturer_id=id)
             lecturers = table.re("lecturers", RE_DOZIDE)
             lecturers = [int(pid) for pid in lecturers]
             for id in lecturers:
-                yield UnitLecturerLink(unit_id=unit.id, lecturer_id=id)
+                yield UnitLecturerLink(unit_id=unit_id, lecturer_id=id)
 
             # TODO: take note of all keys that were not processed
 
             yield LearningUnit(
-                id=unit.id,
-                number=unit.number,
-                semkez=unit.semkez,
+                id=unit_id,
+                semkez=semkez,
                 credits=credits,
                 two_semester_credits=two_semester_credits,
                 max_places=max_places,
@@ -448,8 +472,8 @@ class LecturesSpider(KeywordLoggerSpider):
                 course_number = re.match(RE_CODE, k)
                 if course_number:
                     for course_or_lecturer in self.extract_course_info(
-                        parent_unit=unit.id,
-                        semkez=unit.semkez,
+                        parent_unit=unit_id,
+                        semkez=semkez,
                         cols=cols,
                         url=response.url,
                     ):
@@ -642,6 +666,10 @@ class LecturesSpider(KeywordLoggerSpider):
                 try:
                     day_info = get_day_info(slots[i])
                     i += 1
+                    if day_info.weekday == WeekdayEnum.ByAppointment and i >= len(
+                        slots
+                    ):
+                        break
                 except ValueError:
                     pass
 
@@ -724,7 +752,10 @@ class LecturesSpider(KeywordLoggerSpider):
                 continue
 
             if len(cols) != 8:
-                # TODO: handle unexpected format
+                self.logger.error(
+                    "Unexpected number of columns in groups table",
+                    extra={"count": len(cols), "url": response.url, "cols": cols},
+                )
                 continue
             group, day, time, building, _, floor_room = cols[:6]
             floor, room = floor_room.split(" ")

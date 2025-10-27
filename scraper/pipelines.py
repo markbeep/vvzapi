@@ -1,3 +1,4 @@
+import time
 import traceback
 from pathlib import Path
 from typing import Any
@@ -104,24 +105,18 @@ class DatabasePipeline:
                 self.session.commit()
             elif isinstance(old, Overwriteable):
                 if isinstance(old, LearningUnit) and isinstance(item, LearningUnit):
-                    # TODO: find a reliable way to check if a course has been scraped in both languages
-                    # Currently we assume that we'll get units in both english and german, which will have
-                    # some differing fields. After we get both of what we assume a German and English version,
-                    # we'll mark scraped_both_languages = True, enabling changes to be added to the DB.
                     if differences := find_unit_differences(old, item):
-                        if old.scraped_both_languages:
-                            self.logger.info(
-                                "LearningUnit changes detected",
-                                extra={
-                                    "unit_id": old.id,
-                                    "changes": differences.changes,
-                                },
-                            )
-                            self.session.add(differences)
-                        else:
-                            old.scraped_both_languages = True
+                        self.logger.info(
+                            "LearningUnit changes detected",
+                            extra={
+                                "unit_id": old.id,
+                                "changes": differences.changes,
+                            },
+                        )
+                        self.session.add(differences)
 
                 old.overwrite_with(item)
+                old.scraped_at = int(time.time())
                 self.session.add(old)
                 self.session.commit()
 
