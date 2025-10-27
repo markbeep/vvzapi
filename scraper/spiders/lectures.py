@@ -648,7 +648,9 @@ class LecturesSpider(KeywordLoggerSpider):
                     floor, room = None, None
                     i += 2
                 elif len(slots) > i + 2 and " " in slots[i + 2]:
-                    floor, room = slots[i + 2].split(" ")
+                    parts = slots[i + 2].split(" ", 1)
+                    floor = parts[0]
+                    room = parts[1] if len(parts) > 1 else None
                     i += 4
                 else:
                     floor, room = None, None
