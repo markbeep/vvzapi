@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.1-alpha](https://github.com/markbeep/vvzapi/compare/v0.2.0-alpha...v0.2.1-alpha) (2025-10-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* Requires old database to be deleted.
+
+### Bug Fixes
+
+* remove unique constraint on unit semkez/number. ([4e410c7](https://github.com/markbeep/vvzapi/commit/4e410c71e6ed6090df2a2d3c8b12ab5d25a91de7))
+
 ## 0.2.0-alpha (2025-10-26)
 
 
