@@ -1,8 +1,8 @@
-"""init
+"""init v0.2.1
 
-Revision ID: 16d7816424e7
+Revision ID: 788bae6774a2
 Revises:
-Create Date: 2025-10-26 19:37:06.205729
+Create Date: 2025-10-27 06:21:29.185802
 
 """
 
@@ -14,7 +14,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = "16d7816424e7"
+revision: str = "788bae6774a2"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -143,7 +143,6 @@ def upgrade() -> None:
             "general_restrictions", sqlmodel.sql.sqltypes.AutoString(), nullable=True
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("number", "semkez"),
     )
     op.create_table(
         "lecturer",

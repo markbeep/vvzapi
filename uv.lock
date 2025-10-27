@@ -1338,7 +1338,7 @@ wheels = [
 
 [[package]]
 name = "vvzapi"
-version = "0.0.1a0"
+version = "0.2.0a0"
 source = { virtual = "." }
 dependencies = [
     { name = "alembic" },

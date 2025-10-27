@@ -1,7 +1,6 @@
 from enum import Enum
 
 from pydantic import BaseModel as PydanticBaseModel
-from sqlalchemy import UniqueConstraint
 from sqlmodel import JSON, Column, Field, SQLModel
 
 from api.util.pydantic_type import PydanticType
@@ -157,9 +156,12 @@ class LearningUnit(BaseModel, Overwriteable, table=True):
     This is the general learning unit type that includes all the information for a given course.
 
     This is what you see when you visit a VVZ unit: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lang=en&semkez=2025W&ansicht=ALLE&lerneinheitId=193444&
-    """
 
-    __table_args__ = (UniqueConstraint("number", "semkez"),)
+    We do not set any unique constraints, since it's possible for two courses to have the same number
+    in the same semester. For example:
+    - https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?semkez=2005W&ansicht=ALLE&lerneinheitId=32830&lang=de
+    - https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?semkez=2005W&ansicht=ALLE&lerneinheitId=32831&lang=de
+    """
 
     id: int = Field(primary_key=True)
     semkez: str

@@ -299,6 +299,13 @@ class LecturesSpider(KeywordLoggerSpider):
         Example url: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?semkez=2025W&ansicht=ALLE&lerneinheitId=192945&lang=en
         """
         try:
+            if "red9.ethz.ch" in response.url:
+                self.logger.info(
+                    "Skipping red9 error page",
+                    extra={"url": response.url, "unit_id": unit.id},
+                )
+                return
+
             lang = "en" if "lang=en" in response.url else "de"
             if lang == "de":
                 raise ValueError(
