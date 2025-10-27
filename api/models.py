@@ -333,6 +333,10 @@ class Course(BaseModel, Overwriteable, table=True):
     title: str | None = Field(default=None)
     """Designation of the course. No english translation available."""
     type: CourseTypeEnum | None = Field(default=None)
+    """
+    Course types can be missing/null, like here:
+    https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?ansicht=ALLE&lerneinheitId=25212&semkez=2005W&lang=en
+    """
     hours: float | None = Field(default=None)
     """Number of hours per week or semester."""
     hour_type: CourseHourEnum | None = Field(default=None)

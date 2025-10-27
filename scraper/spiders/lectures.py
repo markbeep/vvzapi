@@ -569,7 +569,10 @@ class LecturesSpider(KeywordLoggerSpider):
         course_type = None
         if number:
             number = number.replace("\xa0", "")
-            course_type = CourseTypeEnum[number[-1]]
+            try:
+                course_type = CourseTypeEnum[number[-1]]
+            except KeyError:
+                course_type = None
         else:
             self.logger.error(
                 "No course code found for unit",
@@ -628,7 +631,11 @@ class LecturesSpider(KeywordLoggerSpider):
             biweekly=False,
         )
         if slots_sel is not None:
-            slots = slots_sel.css("a::text").getall()
+            slots = [
+                x.replace("\xa0", " ").strip()
+                for x in slots_sel.css("::text").getall()
+                if x.strip()
+            ]
             while i < len(slots):
                 try:
                     day_info = get_day_info(slots[i])
@@ -640,7 +647,6 @@ class LecturesSpider(KeywordLoggerSpider):
                     start_time, end_time = slots[i].split("-")
                 else:
                     start_time, end_time = None, None
-                    # i -= 1
 
                 if len(slots) > i + 1:
                     building = slots[i + 1]
