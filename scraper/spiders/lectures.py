@@ -378,7 +378,7 @@ class LecturesSpider(KeywordLoggerSpider):
                 "".join(table.get_texts("general_restrictions")) or None
             )
 
-            if occurence is not None:
+            if occurence and len(occurence) >= 2:
                 occ_text = occurence[1].css("::text").get()
                 if occ_text in [
                     "Does not take place this semester.",
@@ -391,6 +391,8 @@ class LecturesSpider(KeywordLoggerSpider):
                             f"{json.dumps({'occurence': occ_text, 'url': response.url})}\n"
                         )
                     occurence = None
+            else:
+                occurence = None
 
             groups = self.extract_groups(response)
             offered_in = self.extract_offered_in(response, unit.id)
