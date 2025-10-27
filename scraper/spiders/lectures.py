@@ -613,6 +613,9 @@ class LecturesSpider(KeywordLoggerSpider):
 
         Or ['Di', '14:15-16:00', 'HG', 'E 7', '»', 'Mi', '09:15-10:00', 'HG', 'E 5', '»']
         To extract a tuesday and wednesday slot.
+
+        USZ rooms have additional room and floor details:
+        ['Tue', '17:00-18:00', 'USZ', 'C PAT 22', '»']
         """
         timeslots: list[CourseSlot] = []
         i = 0
@@ -648,7 +651,7 @@ class LecturesSpider(KeywordLoggerSpider):
                     floor, room = None, None
                     i += 2
                 elif len(slots) > i + 2 and " " in slots[i + 2]:
-                    floor, room = slots[i + 2].split(" ")
+                    floor, room = slots[i + 2].split(" ", 1)
                     i += 4
                 else:
                     floor, room = None, None
