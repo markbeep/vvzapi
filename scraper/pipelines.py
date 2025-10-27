@@ -76,6 +76,7 @@ class DatabasePipeline:
                     select(Course).where(
                         Course.number == item.number,
                         Course.semkez == item.semkez,
+                        Course.unit_id == item.unit_id,
                     )
                 ).first()
             elif isinstance(item, UnitSectionLink):

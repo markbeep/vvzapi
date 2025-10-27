@@ -1,7 +1,8 @@
 from enum import Enum
+import time
 
 from pydantic import BaseModel as PydanticBaseModel
-from sqlmodel import JSON, Column, Field, SQLModel
+from sqlmodel import INTEGER, JSON, Column, Field, SQLModel
 
 from api.util.pydantic_type import PydanticType
 from api.util.types import CourseSlot, CourseTypeEnum
@@ -243,6 +244,10 @@ class LearningUnit(BaseModel, Overwriteable, table=True):
     occurence: OccurenceEnum | None = Field(default=None)
     general_restrictions: str | None = Field(default=None)
     """Extra notes on any restrictions for this learning unit."""
+    scraped_at: int = Field(
+        default_factory=lambda: int(time.time()),
+        sa_column=Column(INTEGER, nullable=False, server_onupdate="unixepoch()"),
+    )
 
 
 """
@@ -263,6 +268,10 @@ class SectionBase(BaseModel, Overwriteable):
     level: int | None = Field(default=None)
     comment: str | None = Field(default=None)
     comment_english: str | None = Field(default=None)
+    scraped_at: int = Field(
+        default_factory=lambda: int(time.time()),
+        sa_column=Column(INTEGER, nullable=False, server_onupdate="unixepoch()"),
+    )
 
 
 class Section(SectionBase, table=True):
@@ -291,6 +300,10 @@ class UnitTypeLegends(BaseModel, Overwriteable, table=True):
     legend: list[UnitType] = Field(
         default_factory=list, sa_column=Column(PydanticType(list[UnitType]))
     )
+    scraped_at: int = Field(
+        default_factory=lambda: int(time.time()),
+        sa_column=Column(INTEGER, nullable=False, server_onupdate="unixepoch()"),
+    )
 
 
 """
@@ -314,10 +327,11 @@ class Course(BaseModel, Overwriteable, table=True):
     """263-3010-00L type code. Check the `RE_CODE` to more details on the format."""
     semkez: str = Field(primary_key=True)
     """Semester in the format JJJJS, where JJJJ is the year and either S or W indicates the semester."""
+    # TODO: add foreign key back to unit_id if we need it = Field(foreign_key="learningunit.id", ondelete="CASCADE")
+    unit_id: int = Field(primary_key=True)
+    """Parent learning unit ID."""
     title: str | None = Field(default=None)
     """Designation of the course. No english translation available."""
-    unit_id: int  # TODO: add foreign key back if we need this = Field(foreign_key="learningunit.id", ondelete="CASCADE")
-    """Parent learning unit ID."""
     type: CourseTypeEnum | None = Field(default=None)
     hours: float | None = Field(default=None)
     """Number of hours per week or semester."""
@@ -327,6 +341,10 @@ class Course(BaseModel, Overwriteable, table=True):
     """Comment underneath a course"""
     timeslots: list[CourseSlot] = Field(
         default_factory=list, sa_column=Column(PydanticType(list[CourseSlot]))
+    )
+    scraped_at: int = Field(
+        default_factory=lambda: int(time.time()),
+        sa_column=Column(INTEGER, nullable=False, server_onupdate="unixepoch()"),
     )
 
 
@@ -343,3 +361,7 @@ class Lecturer(BaseModel, Overwriteable, table=True):
     id: int = Field(primary_key=True)
     surname: str = Field()
     name: str = Field()
+    scraped_at: int = Field(
+        default_factory=lambda: int(time.time()),
+        sa_column=Column(INTEGER, nullable=False, server_onupdate="unixepoch()"),
+    )
