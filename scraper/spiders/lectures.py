@@ -112,7 +112,15 @@ class LecturesSpider(KeywordLoggerSpider):
         try:
             catalog_semkez = re.search(RE_SEMKEZ, response.url)
             if not catalog_semkez:
-                self.logger.error("No semkez found", extra={"url": response.url})
+                self.logger.error(
+                    "No semkez found",
+                    extra={
+                        "url": response.url,
+                        "request_url": response.request.url
+                        if response.request
+                        else None,
+                    },
+                )
                 return
             catalog_semkez = catalog_semkez.group(1)
 
@@ -164,6 +172,7 @@ class LecturesSpider(KeywordLoggerSpider):
                 extra={
                     "error": str(e),
                     "url": response.url,
+                    "request_url": response.request.url if response.request else None,
                     "traceback": traceback.format_exc(),
                 },
             )
@@ -298,7 +307,24 @@ class LecturesSpider(KeywordLoggerSpider):
         try:
             if "red9.ethz.ch" in response.url:
                 self.logger.info(
-                    "Skipping red9 error page", extra={"url": response.url}
+                    "Skipping red9 error page",
+                    extra={
+                        "url": response.url,
+                        "request_url": response.request.url
+                        if response.request
+                        else None,
+                    },
+                )
+                return
+            elif "cookietest=true" in response.url:
+                self.logger.info(
+                    "Skipping cookietest page",
+                    extra={
+                        "url": response.url,
+                        "request_url": response.request.url
+                        if response.request
+                        else None,
+                    },
                 )
                 return
 
@@ -481,7 +507,15 @@ class LecturesSpider(KeywordLoggerSpider):
             semkez = re.search(RE_SEMKEZ, response.url)
             id = re.search(RE_ABSCHNITTID, response.url)
             if not semkez or not id:
-                self.logger.error("No semkez or id found", extra={"url": response.url})
+                self.logger.error(
+                    "No semkez or id found",
+                    extra={
+                        "url": response.url,
+                        "request_url": response.request.url
+                        if response.request
+                        else None,
+                    },
+                )
                 return
             semkez = semkez.group(1)
             id = int(id.group(1))
@@ -512,6 +546,7 @@ class LecturesSpider(KeywordLoggerSpider):
                     "error": str(e),
                     "traceback": traceback.format_exc(),
                     "url": response.url,
+                    "request_url": response.request.url if response.request else None,
                 },
             )
 
@@ -530,7 +565,13 @@ class LecturesSpider(KeywordLoggerSpider):
 
         semkez = re.search(RE_SEMKEZ, response.url)
         if not semkez:
-            self.logger.error("No semkez found", extra={"url": response.url})
+            self.logger.error(
+                "No semkez found",
+                extra={
+                    "url": response.url,
+                    "request_url": response.request.url if response.request else None,
+                },
+            )
             return
         semkez = semkez.group(1)
 
