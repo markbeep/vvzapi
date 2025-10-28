@@ -1,9 +1,9 @@
-from typing import cast
+from typing import Any, cast
 from fastapi import Request
 from pydantic import BaseModel
 from sqlalchemy import ColumnExpressionArgument
 from sqlmodel import Session, and_, col, or_
-from sqlmodel.sql._expression_select_cls import Select
+from sqlmodel.sql._expression_select_cls import Select, SelectOfScalar
 
 from api.models import (
     Department,
@@ -94,7 +94,9 @@ def get_vvz_filters(request: Request) -> VVZFilters:
     return filters
 
 
-def build_vvz_filter(session: Session, query: Select, filters: VVZFilters) -> Select:
+def build_vvz_filter[T: Select[Any] | SelectOfScalar[Any]](
+    session: Session, query: T, filters: VVZFilters
+) -> T:
     match filters.periodicity:
         case 0:
             periodicity = Periodicity.ONETIME

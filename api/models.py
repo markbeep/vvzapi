@@ -3,8 +3,10 @@ import time
 from typing import Any
 
 from pydantic import BaseModel as PydanticBaseModel
-from sqlmodel import INTEGER, JSON, Column, Field, SQLModel
 
+# TODO: remove type ignore when future SQLModel version fixes unknown type of Field
+# https://github.com/fastapi/sqlmodel/discussions/797
+from sqlmodel import INTEGER, JSON, Column, Field, SQLModel  # pyright: ignore[reportUnknownVariableType]
 from api.util.pydantic_type import PydanticType
 from api.util.types import CourseSlot, CourseTypeEnum
 

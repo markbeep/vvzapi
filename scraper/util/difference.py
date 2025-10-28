@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 from api.models import LearningUnit, UnitChanges
 
 
@@ -45,7 +45,7 @@ def find_unit_differences(old: LearningUnit, new: LearningUnit) -> UnitChanges |
         # specific values of the same language as the new item.
         return None
 
-    diffs = {}
+    diffs: dict[str, Any] = {}
     # only iterate over explicitly set fields to avoid checking default/None values
     for field in new.model_fields_set:
         val_old = getattr(old, field)

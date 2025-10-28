@@ -705,7 +705,9 @@ class LecturesSpider(KeywordLoggerSpider):
             timeslots=timeslots,
         )
 
-    def extract_competencies(self, cols: SelectorList) -> dict[str, dict[str, str]]:
+    def extract_competencies(
+        self, cols: SelectorList[Selector]
+    ) -> dict[str, dict[str, str]]:
         if len(cols) < 2:
             return {}
         table = Table(cols[1])

@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlmodel import Session, text
 
 from api.env import Settings
-from api.util.pydantic_type import json_serializer
+from api.util.pydantic_type import json_serializer  # pyright: ignore[reportUnknownVariableType]
 
 
 engine = create_engine(
