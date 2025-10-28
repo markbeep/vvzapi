@@ -7,6 +7,8 @@ from typing import Any, Generator
 from parsel import Selector, SelectorList
 from pydantic import BaseModel
 from scrapy.http import Response
+from scrapy.spiders import Rule
+from scrapy.linkextractors import LinkExtractor
 from typing_extensions import Literal
 
 from api.models import (
@@ -40,7 +42,7 @@ from scraper.util.regex_rules import (
 )
 from scraper.util.scrapercache import CACHE_PATH
 from scraper.util.table import Table, table_under_header
-from scraper.util.url import delete_url_key, sort_url_params
+from scraper.util.url import edit_url_key
 
 
 def get_urls(year: int, semester: Literal["W", "S"]):
@@ -85,6 +87,26 @@ class LecturesSpider(KeywordLoggerSpider):
         for semester in Settings().read_semesters()
         for url in get_urls(year, semester)
     ]
+    rules = (
+        Rule(
+            LinkExtractor(
+                # Only view the english version of a full lecture details page
+                allow=r"lerneinheit\.view\?lerneinheitId=\d+&semkez=\d{4}\w&ansicht=LEHRVERANSTALTUNGEN&lang=en",
+                canonicalize=True,
+                process_value=lambda url: edit_url_key(url, "ansicht", ["ALLE"]),
+            ),
+            follow=True,
+            callback="parse_unit",
+        ),
+        Rule(
+            LinkExtractor(
+                allow=r"legendeStudienplanangaben\.view\?abschnittId=\d+&semkez=\d{4}\w&lang=en",
+                canonicalize=True,
+            ),
+            follow=True,
+            callback="parse_legend",
+        ),
+    )
 
     def parse(self, response: Response):
         try:
@@ -101,16 +123,6 @@ class LecturesSpider(KeywordLoggerSpider):
             if dept:
                 dept = Department(int(dept.group(1)))
 
-            self.logger.info(
-                "Parsing catalogue page",
-                extra={
-                    "semkez": catalog_semkez,
-                    "level": level,
-                    "dept": dept,
-                    "url": response.url,
-                },
-            )
-
             # get all the course data
             tables = self.get_unit_tables(response)
             self.logger.info(
@@ -120,6 +132,7 @@ class LecturesSpider(KeywordLoggerSpider):
                     "semkez": catalog_semkez,
                     "dept": dept,
                     "level": level,
+                    "url": response.url,
                 },
             )
 
@@ -128,10 +141,6 @@ class LecturesSpider(KeywordLoggerSpider):
                 if not unit:
                     continue
                 yield unit
-                # NOTE: we only view the additional info of a course in English, since those are the same in both languages
-                # In total we yield 3 units. 1 German catalogue data, 1 English catalogue data, 1 English additional data
-                url = f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?ansicht=ALLE&lerneinheitId={id}&semkez={catalog_semkez}&lang=en"
-                yield response.follow(url, self.parse_unit)
 
                 if level:
                     yield UnitLevelMapping(unit_id=id, level=level)
@@ -147,30 +156,6 @@ class LecturesSpider(KeywordLoggerSpider):
             self.logger.info(
                 "Parsed all sections",
                 extra={"count": sec_count, "semkez": catalog_semkez},
-            )
-
-            # get the legend pages for each section
-            visited_section_ids = set()
-            for link in response.css("a::attr(href)"):
-                url = link.get()
-                semkez = link.re_first(RE_SEMKEZ)
-                if not semkez or not url:
-                    continue
-                section_id = link.re_first(RE_ABSCHNITTID)
-
-                if section_id and "legendeStudienplanangaben.view" in url:
-                    # Legend pages can be different for different sections and courses:
-                    # - https://www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=18&semkez=2001W&lang=de
-                    # - https://www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=117361&semkez=2025W&lang=en
-                    if section_id in visited_section_ids:
-                        continue
-                    visited_section_ids.add(section_id)
-                    url = sort_url_params(url)
-                    url = delete_url_key(url, "lang")
-                    yield response.follow(url + "&lang=de", self.parse_legend)
-            self.logger.info(
-                "Visited all legend pages",
-                extra={"count": len(visited_section_ids), "semkez": catalog_semkez},
             )
 
         except Exception as e:

@@ -1,4 +1,4 @@
-import scrapy
+from scrapy.spiders import CrawlSpider
 from scrapy.utils.log import SpiderLoggerAdapter
 
 
@@ -13,7 +13,7 @@ class KeywordLoggerAdapter(SpiderLoggerAdapter):
         return msg, kwargs
 
 
-class KeywordLoggerSpider(scrapy.Spider):
+class KeywordLoggerSpider(CrawlSpider):
     @property
     def logger(self):
         from scraper.util.logging import KeywordLoggerAdapter
