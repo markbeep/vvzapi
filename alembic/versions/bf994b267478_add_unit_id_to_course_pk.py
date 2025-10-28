@@ -49,19 +49,39 @@ def upgrade() -> None:
     )
 
     with op.batch_alter_table("course", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("scraped_at", sa.Integer(), nullable=False))
+        batch_op.add_column(
+            sa.Column(
+                "scraped_at", sa.Integer(), nullable=False, server_default=sa.text("0")
+            )
+        )
 
     with op.batch_alter_table("learningunit", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("scraped_at", sa.Integer(), nullable=False))
+        batch_op.add_column(
+            sa.Column(
+                "scraped_at", sa.Integer(), nullable=False, server_default=sa.text("0")
+            )
+        )
 
     with op.batch_alter_table("lecturer", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("scraped_at", sa.Integer(), nullable=False))
+        batch_op.add_column(
+            sa.Column(
+                "scraped_at", sa.Integer(), nullable=False, server_default=sa.text("0")
+            )
+        )
 
     with op.batch_alter_table("section", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("scraped_at", sa.Integer(), nullable=False))
+        batch_op.add_column(
+            sa.Column(
+                "scraped_at", sa.Integer(), nullable=False, server_default=sa.text("0")
+            )
+        )
 
     with op.batch_alter_table("unittypelegends", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("scraped_at", sa.Integer(), nullable=False))
+        batch_op.add_column(
+            sa.Column(
+                "scraped_at", sa.Integer(), nullable=False, server_default=sa.text("0")
+            )
+        )
     # ### end Alembic commands ###
 
 
