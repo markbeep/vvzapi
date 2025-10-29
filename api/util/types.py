@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import NewType
 from pydantic import BaseModel
 
 
@@ -24,7 +25,7 @@ class WeekdayEnum(Enum):
     Invalid = 9
 
 
-class CourseSlot(BaseModel):
+class TimeSlot(BaseModel):
     weekday: WeekdayEnum
 
     # some lectures have specific slots for certain dates
@@ -37,12 +38,27 @@ class CourseSlot(BaseModel):
     building: str | None
     floor: str | None
     room: str | None
+    """
+    Slots for groups can belong to a specific course, which is indicated
+    by this flag. Alternatively this is also used to indicate the course
+    a slot is part of.
+    """
 
     # If lectures only take place in the first/second half of a semester
     # https://ethz.ch/applications/teaching/en/applications/vvz/key.html
     first_half_semester: bool
     second_half_semester: bool
     biweekly: bool
+
+
+class Group(BaseModel):
+    name: str
+    timeslots: list[TimeSlot]
+    number: str | None
+    restriction: str | None
+
+
+GroupSignupEnd = NewType("GroupSignupEnd", str)
 
 
 class CourseTypeEnum(Enum):

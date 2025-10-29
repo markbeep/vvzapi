@@ -1,4 +1,4 @@
-RE_CODE = r"\d{3}-\d{4}-?\w{0,2}\xa0?\w?"
+RE_NUMBER = r"\d{3}-\d{4}-?\w{0,2}\xa0?\w?"
 """
 - Standard: 262-0201-00L
 - Slightly cursed: 101-0515-AAR

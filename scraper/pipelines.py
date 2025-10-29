@@ -10,6 +10,7 @@ from sqlmodel import select
 from api.models import (
     Course,
     CourseLecturerLink,
+    FinishedScrapingSemester,
     LearningUnit,
     Lecturer,
     Level,
@@ -21,6 +22,7 @@ from api.models import (
     UnitTypeLegends,
 )
 from api.util import db
+from scraper.spiders.units import UnitsSpider
 from scraper.util.difference import find_unit_differences
 from scraper.util.mappings import UnitDepartmentMapping, UnitLevelMapping
 from scraper.util.scrapercache import CACHE_PATH
@@ -100,11 +102,27 @@ class DatabasePipeline:
                 self.logger.error("Unknown item type", extra={"item": item})
                 return item
 
+            if isinstance(item, LearningUnit) and isinstance(spider, UnitsSpider):
+                # check off the course as having been added
+                if item.id in (ids := spider.course_ids[item.semkez]):
+                    ids.remove(item.id)
+                    if len(ids) == 0:
+                        if not self.session.get(FinishedScrapingSemester, item.semkez):
+                            self.session.add(
+                                FinishedScrapingSemester(semkez=item.semkez)
+                            )
+                            self.session.commit()
+                        self.logger.info(
+                            "Finished scraping all courses for semester",
+                            extra={"semkez": item.semkez},
+                        )
+
             if not old:
                 self.session.add(item)
                 self.session.commit()
             elif isinstance(old, Overwriteable):
                 if isinstance(old, LearningUnit) and isinstance(item, LearningUnit):
+                    # determine if there are any differences
                     if differences := find_unit_differences(old, item):
                         self.logger.info(
                             "LearningUnit changes detected",
@@ -173,3 +191,11 @@ class DatabasePipeline:
 
         self.session.commit()
         self.session.close()
+
+        if isinstance(spider, UnitsSpider):
+            for semkez, semester in spider.course_ids.items():
+                if len(semester) > 0:
+                    self.logger.warning(
+                        "Not all courses were added for semester",
+                        extra={"semkez": semkez, "remaining_courses": semester},
+                    )

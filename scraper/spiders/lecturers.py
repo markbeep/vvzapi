@@ -1,5 +1,5 @@
 import re
-from typing import Literal
+from typing import Literal, Any, override
 
 from scrapy.http import Response
 
@@ -24,7 +24,8 @@ class LecturersSpider(KeywordLoggerSpider):
         for url in get_urls(year, semester)
     ]
 
-    def parse(self, response: Response):
+    @override
+    def parse_start_url(self, response: Response, **kwargs: Any):
         semkez = re.search(RE_SEMKEZ, response.url)
         if not semkez:
             self.logger.error(

@@ -1,14 +1,21 @@
-from enum import Enum
 import time
+from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel as PydanticBaseModel
 
 # TODO: remove type ignore when future SQLModel version fixes unknown type of Field
 # https://github.com/fastapi/sqlmodel/discussions/797
-from sqlmodel import INTEGER, JSON, Column, Field, SQLModel  # pyright: ignore[reportUnknownVariableType]
+from sqlmodel import (
+    INTEGER,
+    JSON,
+    Column,
+    Field,  # pyright: ignore[reportUnknownVariableType]
+    SQLModel,
+)
+
 from api.util.pydantic_type import PydanticType
-from api.util.types import CourseSlot, CourseTypeEnum
+from api.util.types import CourseTypeEnum, Group, TimeSlot
 
 
 class BaseModel(SQLModel):
@@ -236,10 +243,9 @@ class LearningUnit(BaseModel, Overwriteable, table=True):
     """Note about whether the exam can be taken as a distance exam."""
     repetition: str | None = Field(default=None)
     """Information about if and how the exam can be repeated."""
-    groups: dict[str, CourseSlot | None] = Field(
-        default_factory=dict, sa_column=Column(JSON)
-    )
+    groups: list[Group] = Field(default_factory=list, sa_column=Column(JSON))
     """Groups can have no slot nor any info: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lang=de&lerneinheitId=193540&semkez=2025W&ansicht=ALLE&"""
+    groups_signup_end: str | None = Field(default=None)
     course_frequency: Periodicity | None = Field(default=None)
     learning_materials: dict[str, list[NamedURL]] | None = Field(
         default=None, sa_column=Column(PydanticType(dict[str, list[NamedURL]]))
@@ -347,8 +353,8 @@ class Course(BaseModel, Overwriteable, table=True):
     """Describes how to interpret the hours attribute."""
     comment: str | None = Field(default=None)
     """Comment underneath a course"""
-    timeslots: list[CourseSlot] = Field(
-        default_factory=list, sa_column=Column(PydanticType(list[CourseSlot]))
+    timeslots: list[TimeSlot] = Field(
+        default_factory=list, sa_column=Column(PydanticType(list[TimeSlot]))
     )
     scraped_at: int = Field(
         default_factory=lambda: int(time.time()),
@@ -375,6 +381,15 @@ class Lecturer(BaseModel, Overwriteable, table=True):
     )
 
 
+"""
+
+
+MISCELLANEOUS
+
+
+"""
+
+
 class UnitChanges(BaseModel, table=True):
     """We keep track of changes that get applied to learning units"""
 
@@ -383,3 +398,9 @@ class UnitChanges(BaseModel, table=True):
     changes: dict[str, Any] = Field(sa_column=Column(JSON()))
     scraped_at: int
     """The scraped_at before the changes were applied"""
+
+
+class FinishedScrapingSemester(BaseModel, table=True):
+    """Keeps track of which semesters have been fully scraped already."""
+
+    semkez: str = Field(primary_key=True)

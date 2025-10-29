@@ -2,13 +2,13 @@ import json
 import re
 import traceback
 from collections import defaultdict
-from typing import Any, Generator
+from typing import Any, Generator, override
 
 from parsel import Selector, SelectorList
 from pydantic import BaseModel
 from scrapy.http import Response
-from scrapy.spiders import Rule
 from scrapy.linkextractors import LinkExtractor
+from scrapy.spiders import Rule
 from typing_extensions import Literal
 
 from api.models import (
@@ -28,15 +28,15 @@ from api.models import (
     UnitType,
     UnitTypeLegends,
 )
-from api.util.types import CourseSlot, CourseTypeEnum, WeekdayEnum
+from api.util.types import CourseTypeEnum, Group, GroupSignupEnd, TimeSlot, WeekdayEnum
 from scraper.env import Settings
 from scraper.util.logging import KeywordLoggerSpider
 from scraper.util.mappings import UnitDepartmentMapping, UnitLevelMapping
 from scraper.util.regex_rules import (
     RE_ABSCHNITTID,
-    RE_CODE,
     RE_DATE,
     RE_DOZIDE,
+    RE_NUMBER,
     RE_SEMKEZ,
     RE_UNITID,
 )
@@ -109,8 +109,10 @@ class UnitsSpider(KeywordLoggerSpider):
             callback="parse_legend",
         ),
     )
+    course_ids: dict[str, set[int]] = defaultdict(set)
 
-    def parse(self, response: Response):
+    @override
+    def parse_start_url(self, response: Response, **kwargs: Any):
         try:
             catalog_semkez = re.search(RE_SEMKEZ, response.url)
             if not catalog_semkez:
@@ -145,6 +147,16 @@ class UnitsSpider(KeywordLoggerSpider):
                     "url": response.url,
                 },
             )
+
+            if "lang=en" in response.url and level is None and dept is None:
+                self.course_ids[catalog_semkez] = set(tables.keys())
+                self.logger.info(
+                    "Tracking courses for semester",
+                    extra={
+                        "semkez": catalog_semkez,
+                        "course_count": len(tables),
+                    },
+                )
 
             for id, rows in tables.items():
                 unit = self.extract_unit_catalogue_data(id, rows, response.url)
@@ -218,16 +230,17 @@ class UnitsSpider(KeywordLoggerSpider):
                 self.logger.error("No semkez found", extra={"url": url})
                 return
             semkez = semkez.group(1)
-            number = rows[0].re_first(RE_CODE)
+            number = rows[0].re_first(RE_NUMBER)
             if not number:
                 # If there's no number, that usually just means the row is not actually a "unit" row,
                 # but just some row that has a link to some other course. For example the following URL
                 # has a link to other courses in the "Notice" field which is picked up by our regex:
                 # https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lang=en&semkez=2025W&ansicht=ALLE&lerneinheitId=192500&
                 self.logger.debug(
-                    "No course number found for unit. Skipping...",
+                    "No course number found for unit. Ignoring.",
                     extra={"unit_id": id},
                 )
+                self.course_ids[semkez].remove(id)
                 return
             number = number.replace("\xa0", "").strip()
             title = rows[0].css("::text")[1].get()
@@ -432,7 +445,7 @@ class UnitsSpider(KeywordLoggerSpider):
             else:
                 occurence = None
 
-            groups = self.extract_groups(response)
+            groups_signup_end, groups = self.extract_groups(response)
             offered_in = self.extract_offered_in(response, unit_id)
             for offered in offered_in:
                 yield offered
@@ -474,6 +487,7 @@ class UnitsSpider(KeywordLoggerSpider):
                 digital=digital,
                 distance_exam=distance_exam,
                 groups=groups,
+                groups_signup_end=groups_signup_end,
                 exam_block=exam_block_for,
                 occurence=occurence,
                 general_restrictions=general_restrictions,
@@ -482,7 +496,7 @@ class UnitsSpider(KeywordLoggerSpider):
 
             # Get courses after the learning unit, to ensure the foreign key exists already
             for k, cols in table.rows:
-                course_number = re.match(RE_CODE, k)
+                course_number = re.match(RE_NUMBER, k)
                 if course_number:
                     for course_or_lecturer in self.extract_course_info(
                         parent_unit=unit_id,
@@ -580,7 +594,7 @@ class UnitsSpider(KeywordLoggerSpider):
         table = Table(response.xpath("//table"))
         parent_level: list[tuple[int, int]] = []
         for key, cols in table.rows:
-            if re.match(RE_CODE, key) or key.startswith("»"):
+            if re.match(RE_NUMBER, key) or key.startswith("»"):
                 continue
             id = cols.re_first(RE_ABSCHNITTID)
             if not id:
@@ -610,6 +624,79 @@ class UnitsSpider(KeywordLoggerSpider):
                 comment_english=comment if "lang=en" in response.url else None,
             )
 
+    def extract_single_slot_info(self, slots: list[str]) -> tuple[int, TimeSlot]:
+        """
+        Gets the course time slots
+
+        Iterates over slot value like: ['Thu', '08:00-09:45', 'UNI', '12:15-13:45', 'UNI']
+        To then extract two slots on thursday at different times.
+
+        Or ['Di', '14:15-16:00', 'HG', 'E 7', '»', 'Mi', '09:15-10:00', 'HG', 'E 5', '»']
+        To extract a tuesday and wednesday slot.
+
+        USZ rooms have additional room and floor details:
+        ['Tue', '17:00-18:00', 'USZ', 'C PAT 22', '»']
+        """
+
+        i = 0
+        try:
+            day_info = get_day_info(slots[i])
+            i += 1
+            if day_info.weekday == WeekdayEnum.ByAppointment:
+                return i, TimeSlot(
+                    weekday=day_info.weekday,
+                    date=day_info.date,
+                    start_time=None,
+                    end_time=None,
+                    building=None,
+                    floor=None,
+                    room=None,
+                    first_half_semester=day_info.first_half_semester,
+                    second_half_semester=day_info.second_half_semester,
+                    biweekly=day_info.biweekly,
+                )
+        except ValueError:
+            day_info = DayInfo(
+                weekday=WeekdayEnum.Invalid,
+                date=None,
+                first_half_semester=False,
+                second_half_semester=False,
+                biweekly=False,
+            )
+
+        if "-" in slots[i]:
+            start_time, end_time = slots[i].split("-")
+        else:
+            start_time, end_time = None, None
+
+        if len(slots) > i + 1:
+            building = slots[i + 1]
+        else:
+            building = None
+        if "»" not in slots:
+            # Courses at UNI do not have floor/room info nor a "»" button for more info
+            floor, room = None, None
+            i += 2
+        elif len(slots) > i + 2 and " " in slots[i + 2]:
+            floor, room = slots[i + 2].split(" ", 1)
+            i += 4
+        else:
+            floor, room = None, None
+            i += 3
+
+        return i, TimeSlot(
+            weekday=day_info.weekday,
+            date=day_info.date,
+            start_time=start_time,
+            end_time=end_time,
+            building=building,
+            floor=floor,
+            room=room,
+            first_half_semester=day_info.first_half_semester,
+            second_half_semester=day_info.second_half_semester,
+            biweekly=day_info.biweekly,
+        )
+
     def extract_course_info(
         self, parent_unit: int, semkez: str, cols: SelectorList[Selector], url: str
     ) -> Generator[Course | CourseLecturerLink, None, None]:
@@ -619,7 +706,7 @@ class UnitsSpider(KeywordLoggerSpider):
             number_sel, title_sel, hours_sel, lecturers_sel = cols
             slots_sel = None
 
-        number = number_sel.re_first(RE_CODE)
+        number = number_sel.re_first(RE_NUMBER)
         course_type = None
         if number:
             number = number.replace("\xa0", "")
@@ -662,79 +749,21 @@ class UnitsSpider(KeywordLoggerSpider):
                 hours_type = CourseHourEnum.WEEKLY_HOURS
                 hours = float(hours_str)
 
-        """
-        Gets the course time slots
-        
-        Iterates over slot value like: ['Thu', '08:00-09:45', 'UNI', '12:15-13:45', 'UNI']
-        To then extract two slots on thursday at different times.
-
-        Or ['Di', '14:15-16:00', 'HG', 'E 7', '»', 'Mi', '09:15-10:00', 'HG', 'E 5', '»']
-        To extract a tuesday and wednesday slot.
-
-        USZ rooms have additional room and floor details:
-        ['Tue', '17:00-18:00', 'USZ', 'C PAT 22', '»']
-        """
-        timeslots: list[CourseSlot] = []
-        i = 0
-
-        day_info = DayInfo(
-            weekday=WeekdayEnum.Invalid,
-            date=None,
-            first_half_semester=False,
-            second_half_semester=False,
-            biweekly=False,
-        )
+        timeslots: list[TimeSlot] = []
         if slots_sel is not None:
             slots = [
                 x.replace("\xa0", " ").strip()
                 for x in slots_sel.css("::text").getall()
                 if x.strip()
             ]
+
+            i = 0
             while i < len(slots):
-                try:
-                    day_info = get_day_info(slots[i])
-                    i += 1
-                    if day_info.weekday == WeekdayEnum.ByAppointment and i >= len(
-                        slots
-                    ):
-                        break
-                except ValueError:
-                    pass
-
-                if "-" in slots[i]:
-                    start_time, end_time = slots[i].split("-")
-                else:
-                    start_time, end_time = None, None
-
-                if len(slots) > i + 1:
-                    building = slots[i + 1]
-                else:
-                    building = None
-                if "»" not in slots:
-                    # Courses at UNI do not have floor/room info nor a "»" button for more info
-                    floor, room = None, None
-                    i += 2
-                elif len(slots) > i + 2 and " " in slots[i + 2]:
-                    floor, room = slots[i + 2].split(" ", 1)
-                    i += 4
-                else:
-                    floor, room = None, None
-                    i += 3
-
-                timeslots.append(
-                    CourseSlot(
-                        weekday=day_info.weekday,
-                        date=day_info.date,
-                        start_time=start_time,
-                        end_time=end_time,
-                        building=building,
-                        floor=floor,
-                        room=room,
-                        first_half_semester=day_info.first_half_semester,
-                        second_half_semester=day_info.second_half_semester,
-                        biweekly=day_info.biweekly,
-                    )
-                )
+                inc, slot = self.extract_single_slot_info(slots[i:])
+                i += inc
+                timeslots.append(slot)
+                if slot.weekday in [WeekdayEnum.ByAppointment, WeekdayEnum.Invalid]:
+                    break
 
         yield Course(
             unit_id=parent_unit,
@@ -765,46 +794,76 @@ class UnitsSpider(KeywordLoggerSpider):
                 competencies[prev_key][columns[0].strip()] = columns[1].strip()
         return competencies
 
-    def extract_groups(self, response: Response) -> dict[str, CourseSlot | None]:
-        groups: dict[str, CourseSlot | None] = {}
-        table = table_under_header(response, ["Gruppen", "Groups"])
-        for _, r in table.rows:
-            cols = r.css("::text").getall()
-            if len(cols) > 0 and (
-                cols[0].startswith("Gruppe") or cols[0].startswith("Groups")
+    def extract_groups(
+        self, response: Response
+    ) -> tuple[GroupSignupEnd | None, list[Group]]:
+        rows = response.xpath(
+            '//h3[contains(text(), "Groups")]/following-sibling::table[1]/tbody/tr'
+        )
+
+        groups: list[Group] = []
+        found_first_group = False
+
+        course_number: str | None = rows.re_first(RE_NUMBER)
+        if course_number:
+            course_number = course_number.replace("\xa0", "").strip()
+        signup_end: str | None = None
+
+        for r in rows:
+            cols = [
+                x.replace("\xa0", " ").strip()
+                for x in r.css("::text").getall()
+                if x.strip()
+            ]
+            if len(cols) == 0:
+                continue
+
+            if m := re.match(
+                r"Registration for groups in myStudies is possible until (\d{2}\.\d{2}\.\d{4})",
+                cols[0],
             ):
+                signup_end = m.group(1)
+                continue
+
+            # Cut the "Groups" from ['Groups', 'Group 1', '18.10.', '08:15-17:00', 'WEV', 'F 109', '»']
+            if cols[0] == "Groups":
+                found_first_group = True
                 cols = cols[1:]
-
-            # Handles cases where theres no information given for groups
-            # https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lang=de&lerneinheitId=193540&semkez=2025W&ansicht=ALLE&
-            if len(cols) == 1:
-                groups[cols[0]] = None
+            elif not found_first_group:
                 continue
 
-            if len(cols) != 8:
-                self.logger.error(
-                    "Unexpected number of columns in groups table",
-                    extra={"count": len(cols), "url": response.url, "cols": cols},
+            try:
+                only_for = cols.index("only for")
+                restriction = cols[only_for + 1]
+                cols = cols[:only_for]
+            except ValueError:
+                restriction = None
+                pass
+
+            # Cut the group name from ['Group 2', '19.10.', '08:15-17:00', ... ]
+            group = cols[0]
+            cols = cols[1:]
+
+            timeslots: list[TimeSlot] = []
+            i = 0
+            while i < len(cols):
+                inc, slot = self.extract_single_slot_info(cols[i:])
+                i += inc + 1
+                timeslots.append(slot)
+                if slot.weekday in [WeekdayEnum.ByAppointment, WeekdayEnum.Invalid]:
+                    break
+
+            groups.append(
+                Group(
+                    name=group,
+                    timeslots=timeslots,
+                    number=course_number,
+                    restriction=restriction,
                 )
-                continue
-            group, day, time, building, _, floor_room = cols[:6]
-            floor, room = floor_room.split(" ")
-
-            day_info = get_day_info(day)
-
-            groups[group] = CourseSlot(
-                weekday=day_info.weekday,
-                date=day_info.date,
-                start_time=time.split("-")[0],
-                end_time=time.split("-")[1],
-                building=building,
-                floor=floor,
-                room=room,
-                first_half_semester=day_info.first_half_semester,
-                second_half_semester=day_info.second_half_semester,
-                biweekly=day_info.biweekly,
             )
-        return groups
+
+        end = GroupSignupEnd(signup_end) if signup_end else None
+        return end, groups
 
     def extract_learning_materials(
         self, response: Response
