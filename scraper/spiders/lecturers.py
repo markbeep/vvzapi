@@ -40,13 +40,18 @@ class LecturersSpider(KeywordLoggerSpider):
         self.logger.info(
             "Found lecturer rows", extra={"count": len(rows), "semkez": semkez}
         )
+        count = 0
         for row in rows:
             dozid = row.css("a::attr(href)").re_first(RE_DOZIDE)
             surname = row.css("a::text").get()
             name = row.css("b::text").get()
             if dozid and surname and name:
+                count += 1
                 yield Lecturer(
                     id=int(dozid),
                     surname=surname,
                     name=name,
                 )
+        self.logger.info(
+            "Extracted lecturers", extra={"count": count, "semkez": semkez}
+        )

@@ -91,7 +91,8 @@ class LecturesSpider(KeywordLoggerSpider):
         Rule(
             LinkExtractor(
                 # Only view the english version of a full lecture details page
-                allow=r"lerneinheit\.view\?lerneinheitId=\d+&semkez=\d{4}\w&ansicht=LEHRVERANSTALTUNGEN&lang=en",
+                allow=r"lerneinheit\.view",
+                deny=r"lang=de",
                 canonicalize=True,
                 process_value=lambda url: edit_url_key(url, "ansicht", ["ALLE"]),
             ),
@@ -100,7 +101,8 @@ class LecturesSpider(KeywordLoggerSpider):
         ),
         Rule(
             LinkExtractor(
-                allow=r"legendeStudienplanangaben\.view\?abschnittId=\d+&semkez=\d{4}\w&lang=en",
+                allow=r"legendeStudienplanangaben\.view",
+                deny=r"lang=de",
                 canonicalize=True,
             ),
             follow=True,
