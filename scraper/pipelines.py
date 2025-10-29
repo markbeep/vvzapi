@@ -1,7 +1,7 @@
 import time
 import traceback
 from pathlib import Path
-from typing import Any
+from typing import Any, NewType
 
 from pydantic import BaseModel
 from scrapy import Spider
@@ -10,11 +10,13 @@ from sqlmodel import select
 from api.models import (
     Course,
     CourseLecturerLink,
+    FinishedScrapingSemester,
     LearningUnit,
     Lecturer,
     Level,
     Overwriteable,
     Section,
+    SemesterCourses,
     UnitExaminerLink,
     UnitLecturerLink,
     UnitSectionLink,
@@ -38,6 +40,10 @@ def iter_lines(file_path: Path):
     with open(file_path, "r") as f:
         for line in f:
             yield line
+
+
+Semkez = NewType("Semkez", str)
+semester_courses: dict[Semkez, SemesterCourses] = {}
 
 
 class DatabasePipeline:
@@ -68,6 +74,12 @@ class DatabasePipeline:
                         self.session.add(unit)
                 else:
                     append(LEVEL_LINK, item)
+                return item
+            elif (
+                isinstance(item, SemesterCourses)
+                and item.semkez not in semester_courses
+            ):
+                semester_courses[Semkez(item.semkez)] = item
                 return item
 
             # Then we process models that get added to the database
@@ -105,6 +117,23 @@ class DatabasePipeline:
                 self.session.commit()
             elif isinstance(old, Overwriteable):
                 if isinstance(old, LearningUnit) and isinstance(item, LearningUnit):
+                    # check off the course as having been added
+                    semester = semester_courses.get(Semkez(item.semkez))
+                    if semester and item.id in semester.courses:
+                        semester.courses.remove(item.id)
+                        if len(semester.courses) == 0:
+                            if not self.session.get(
+                                FinishedScrapingSemester, item.semkez
+                            ):
+                                self.session.add(
+                                    FinishedScrapingSemester(semkez=item.semkez)
+                                )
+                            self.logger.info(
+                                "Finished scraping all courses for semester",
+                                extra={"semkez": item.semkez},
+                            )
+
+                    # determine if there are any differences
                     if differences := find_unit_differences(old, item):
                         self.logger.info(
                             "LearningUnit changes detected",

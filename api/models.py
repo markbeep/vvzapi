@@ -375,6 +375,15 @@ class Lecturer(BaseModel, Overwriteable, table=True):
     )
 
 
+"""
+
+
+MISCELLANEOUS
+
+
+"""
+
+
 class UnitChanges(BaseModel, table=True):
     """We keep track of changes that get applied to learning units"""
 
@@ -383,3 +392,14 @@ class UnitChanges(BaseModel, table=True):
     changes: dict[str, Any] = Field(sa_column=Column(JSON()))
     scraped_at: int
     """The scraped_at before the changes were applied"""
+
+
+class SemesterCourses(BaseModel):
+    semkez: str
+    courses: set[int]
+
+
+class FinishedScrapingSemester(BaseModel, table=True):
+    """Keeps track of which semesters have been fully scraped already."""
+
+    semkez: str = Field(primary_key=True)

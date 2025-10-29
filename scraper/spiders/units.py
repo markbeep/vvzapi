@@ -22,6 +22,7 @@ from api.models import (
     OccurenceEnum,
     Periodicity,
     Section,
+    SemesterCourses,
     UnitExaminerLink,
     UnitLecturerLink,
     UnitSectionLink,
@@ -167,6 +168,20 @@ class UnitsSpider(KeywordLoggerSpider):
                 "Parsed all sections",
                 extra={"count": sec_count, "semkez": catalog_semkez},
             )
+
+            course_ids = response.css("a::attr(href)")
+            course_ids = set(
+                [
+                    int(cid.re_first(RE_UNITID) or "-1")
+                    for cid in course_ids
+                    if cid.re_first(RE_UNITID) and catalog_semkez in cid.get()
+                ]
+            )
+            if "lang=en" in response.url:
+                yield SemesterCourses(
+                    semkez=catalog_semkez,
+                    courses=course_ids,
+                )
 
         except Exception as e:
             self.logger.error(
