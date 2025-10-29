@@ -38,7 +38,7 @@ class Table:
                 key = key.replace("\xa0", "").strip()
             else:
                 key = "unkeyed"
-            self.rows.append((key, SelectorList(cols)))
+            self.rows.append((key, cols))
 
     def find(
         self,

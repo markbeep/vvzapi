@@ -43,13 +43,13 @@ def iter_lines(file_path: Path):
 
 
 Semkez = NewType("Semkez", str)
-semester_courses: dict[Semkez, SemesterCourses] = {}
 
 
 class DatabasePipeline:
     def open_spider(self, spider: Spider):
         self.session = next(db.get_session())
         self.logger = spider.logger
+        self.semester_courses: dict[Semkez, SemesterCourses] = {}
         CACHE_PATH.mkdir(parents=True, exist_ok=True)
 
     def process_item(self, item: Any, spider: Spider):
@@ -77,9 +77,9 @@ class DatabasePipeline:
                 return item
             elif (
                 isinstance(item, SemesterCourses)
-                and item.semkez not in semester_courses
+                and item.semkez not in self.semester_courses
             ):
-                semester_courses[Semkez(item.semkez)] = item
+                self.semester_courses[Semkez(item.semkez)] = item
                 return item
 
             # Then we process models that get added to the database
@@ -118,7 +118,7 @@ class DatabasePipeline:
             elif isinstance(old, Overwriteable):
                 if isinstance(old, LearningUnit) and isinstance(item, LearningUnit):
                     # check off the course as having been added
-                    semester = semester_courses.get(Semkez(item.semkez))
+                    semester = self.semester_courses.get(Semkez(item.semkez))
                     if semester and item.id in semester.courses:
                         semester.courses.remove(item.id)
                         if len(semester.courses) == 0:
@@ -202,3 +202,13 @@ class DatabasePipeline:
 
         self.session.commit()
         self.session.close()
+
+        for semkez, semester in self.semester_courses.items():
+            if len(semester.courses) > 0:
+                self.logger.warning(
+                    "Not all courses were added for semester",
+                    extra={
+                        "semkez": semkez,
+                        "remaining_courses": semester.courses,
+                    },
+                )
