@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     """Amount of seconds to at least wait between requests"""
     log_level: str = "INFO"
     log_append: bool = True
+    disable_log_file: bool = False
 
     def read_semesters(self) -> list[Literal["W", "S"]]:
         semesters: list[Literal["W", "S"]] = []
