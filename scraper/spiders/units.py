@@ -61,9 +61,9 @@ def get_urls(year: int, semester: Literal["W", "S"]):
         yield url + f"&studiengangTyp={level.value}&lang=en"
 
 
-class LecturesSpider(KeywordLoggerSpider):
+class UnitsSpider(KeywordLoggerSpider):
     """
-    The main lecture scraper that handles scraping all the lecture-specific data that is available on VVZ.
+    The main learning unit (lerneinheit) scraper that handles scraping all the lecture-specific data that is available on VVZ.
 
     1.  Initially we scrape the root page with all the catalogue data (ansicht=2). We scrape in both English and German.
         url: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?semkez=2025W&ansicht=2&seite=0
@@ -80,7 +80,7 @@ class LecturesSpider(KeywordLoggerSpider):
         additionally scrape these.
     """
 
-    name = "lectures"
+    name = "units"
     start_urls = [
         url
         for year in range(Settings().start_year, Settings().end_year + 1)

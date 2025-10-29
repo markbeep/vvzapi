@@ -76,7 +76,7 @@ uv run -m scraper.main
 Or for just one of the spiders:
 
 ```sh
-uv run scrapy crawl lectures
+uv run scrapy crawl units
 uv run scrapy crawl lecturers
 ```
 
@@ -89,8 +89,8 @@ uv run scrapy shell "<url>"
 #### Debug spider
 
 ```sh
-uv run scrapy parse --spider=lectures -c <cb func> "<url>"
-uv run scrapy parse --spider=lectures -c parse_unit "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?semkez=2025W&ansicht=ALLE&lerneinheitId=192945&lang=en"
+uv run scrapy parse --spider=units -c <cb func> "<url>"
+uv run scrapy parse --spider=units -c parse_unit "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?semkez=2025W&ansicht=ALLE&lerneinheitId=192945&lang=en"
 ```
 
 #### Scrape locally

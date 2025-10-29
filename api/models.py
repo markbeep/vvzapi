@@ -76,6 +76,8 @@ class UnitSectionLink(BaseModel, table=True):
 
 LEARNING UNITS / LECTURES
 
+We use the literal translation of "Lerneinheit" for a clear distinction from "Course"
+and also to avoid the similarity with "Lecturer".
 
 """
 

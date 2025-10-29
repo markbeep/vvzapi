@@ -30,7 +30,7 @@ def get_files(path: Path, dry_run: bool):
 
 def cleanup_scrapy(dry_run: bool = False):
     unts, lecrs = 0, 0
-    units = HTTP_CACHE_PATH / "lectures"
+    units = HTTP_CACHE_PATH / "units"
     lecturers = HTTP_CACHE_PATH / "lecturers"
 
     for url, dir in get_files(units, dry_run):

@@ -6,7 +6,7 @@ import logging
 import sys
 
 from scraper.spiders.lecturers import LecturersSpider
-from scraper.spiders.lectures import LecturesSpider
+from scraper.spiders.units import UnitsSpider
 
 
 def add_stdout_logging(settings: Settings):
@@ -29,6 +29,6 @@ settings = get_project_settings()
 add_stdout_logging(settings)
 
 process = CrawlerProcess(settings)
-process.crawl(LecturesSpider)
+process.crawl(UnitsSpider)
 process.crawl(LecturersSpider)
 process.start()
