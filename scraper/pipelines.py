@@ -1,7 +1,7 @@
 import time
 import traceback
 from pathlib import Path
-from typing import Any, NewType
+from typing import Any
 
 from pydantic import BaseModel
 from scrapy import Spider
@@ -16,13 +16,13 @@ from api.models import (
     Level,
     Overwriteable,
     Section,
-    SemesterCourses,
     UnitExaminerLink,
     UnitLecturerLink,
     UnitSectionLink,
     UnitTypeLegends,
 )
 from api.util import db
+from scraper.spiders.units import UnitsSpider
 from scraper.util.difference import find_unit_differences
 from scraper.util.mappings import UnitDepartmentMapping, UnitLevelMapping
 from scraper.util.scrapercache import CACHE_PATH
@@ -42,14 +42,10 @@ def iter_lines(file_path: Path):
             yield line
 
 
-Semkez = NewType("Semkez", str)
-
-
 class DatabasePipeline:
     def open_spider(self, spider: Spider):
         self.session = next(db.get_session())
         self.logger = spider.logger
-        self.semester_courses: dict[Semkez, SemesterCourses] = {}
         CACHE_PATH.mkdir(parents=True, exist_ok=True)
 
     def process_item(self, item: Any, spider: Spider):
@@ -74,12 +70,6 @@ class DatabasePipeline:
                         self.session.add(unit)
                 else:
                     append(LEVEL_LINK, item)
-                return item
-            elif (
-                isinstance(item, SemesterCourses)
-                and item.semkez not in self.semester_courses
-            ):
-                self.semester_courses[Semkez(item.semkez)] = item
                 return item
 
             # Then we process models that get added to the database
@@ -112,27 +102,26 @@ class DatabasePipeline:
                 self.logger.error("Unknown item type", extra={"item": item})
                 return item
 
+            if isinstance(item, LearningUnit) and isinstance(spider, UnitsSpider):
+                # check off the course as having been added
+                if item.id in (ids := spider.course_ids[item.semkez]):
+                    ids.remove(item.id)
+                    if len(ids) == 0:
+                        if not self.session.get(FinishedScrapingSemester, item.semkez):
+                            self.session.add(
+                                FinishedScrapingSemester(semkez=item.semkez)
+                            )
+                            self.session.commit()
+                        self.logger.info(
+                            "Finished scraping all courses for semester",
+                            extra={"semkez": item.semkez},
+                        )
+
             if not old:
                 self.session.add(item)
                 self.session.commit()
             elif isinstance(old, Overwriteable):
                 if isinstance(old, LearningUnit) and isinstance(item, LearningUnit):
-                    # check off the course as having been added
-                    semester = self.semester_courses.get(Semkez(item.semkez))
-                    if semester and item.id in semester.courses:
-                        semester.courses.remove(item.id)
-                        if len(semester.courses) == 0:
-                            if not self.session.get(
-                                FinishedScrapingSemester, item.semkez
-                            ):
-                                self.session.add(
-                                    FinishedScrapingSemester(semkez=item.semkez)
-                                )
-                            self.logger.info(
-                                "Finished scraping all courses for semester",
-                                extra={"semkez": item.semkez},
-                            )
-
                     # determine if there are any differences
                     if differences := find_unit_differences(old, item):
                         self.logger.info(
@@ -203,12 +192,10 @@ class DatabasePipeline:
         self.session.commit()
         self.session.close()
 
-        for semkez, semester in self.semester_courses.items():
-            if len(semester.courses) > 0:
-                self.logger.warning(
-                    "Not all courses were added for semester",
-                    extra={
-                        "semkez": semkez,
-                        "remaining_courses": semester.courses,
-                    },
-                )
+        if isinstance(spider, UnitsSpider):
+            for semkez, semester in spider.course_ids.items():
+                if len(semester) > 0:
+                    self.logger.warning(
+                        "Not all courses were added for semester",
+                        extra={"semkez": semkez, "remaining_courses": semester},
+                    )

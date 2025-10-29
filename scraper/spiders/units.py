@@ -2,7 +2,7 @@ import json
 import re
 import traceback
 from collections import defaultdict
-from typing import Any, Generator
+from typing import Any, Generator, override
 
 from parsel import Selector, SelectorList
 from pydantic import BaseModel
@@ -22,7 +22,6 @@ from api.models import (
     OccurenceEnum,
     Periodicity,
     Section,
-    SemesterCourses,
     UnitExaminerLink,
     UnitLecturerLink,
     UnitSectionLink,
@@ -110,8 +109,10 @@ class UnitsSpider(KeywordLoggerSpider):
             callback="parse_legend",
         ),
     )
+    course_ids: dict[str, set[int]] = defaultdict(set)
 
-    def parse(self, response: Response):
+    @override
+    def parse_start_url(self, response: Response, **kwargs: Any):
         try:
             catalog_semkez = re.search(RE_SEMKEZ, response.url)
             if not catalog_semkez:
@@ -147,6 +148,16 @@ class UnitsSpider(KeywordLoggerSpider):
                 },
             )
 
+            if "lang=en" in response.url and level is None and dept is None:
+                self.course_ids[catalog_semkez] = set(tables.keys())
+                self.logger.info(
+                    "Tracking courses for semester",
+                    extra={
+                        "semkez": catalog_semkez,
+                        "course_count": len(tables),
+                    },
+                )
+
             for id, rows in tables.items():
                 unit = self.extract_unit_catalogue_data(id, rows, response.url)
                 if not unit:
@@ -168,20 +179,6 @@ class UnitsSpider(KeywordLoggerSpider):
                 "Parsed all sections",
                 extra={"count": sec_count, "semkez": catalog_semkez},
             )
-
-            course_ids = response.css("a::attr(href)")
-            course_ids = set(
-                [
-                    int(cid.re_first(RE_UNITID) or "-1")
-                    for cid in course_ids
-                    if cid.re_first(RE_UNITID) and catalog_semkez in cid.get()
-                ]
-            )
-            if "lang=en" in response.url:
-                yield SemesterCourses(
-                    semkez=catalog_semkez,
-                    courses=course_ids,
-                )
 
         except Exception as e:
             self.logger.error(
@@ -240,9 +237,10 @@ class UnitsSpider(KeywordLoggerSpider):
                 # has a link to other courses in the "Notice" field which is picked up by our regex:
                 # https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lang=en&semkez=2025W&ansicht=ALLE&lerneinheitId=192500&
                 self.logger.debug(
-                    "No course number found for unit. Skipping...",
+                    "No course number found for unit. Ignoring.",
                     extra={"unit_id": id},
                 )
+                self.course_ids[semkez].remove(id)
                 return
             number = number.replace("\xa0", "").strip()
             title = rows[0].css("::text")[1].get()

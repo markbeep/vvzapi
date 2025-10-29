@@ -1,14 +1,21 @@
-from enum import Enum
 import time
+from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel as PydanticBaseModel
 
 # TODO: remove type ignore when future SQLModel version fixes unknown type of Field
 # https://github.com/fastapi/sqlmodel/discussions/797
-from sqlmodel import INTEGER, JSON, Column, Field, SQLModel  # pyright: ignore[reportUnknownVariableType]
+from sqlmodel import (
+    INTEGER,
+    JSON,
+    Column,
+    Field,  # pyright: ignore[reportUnknownVariableType]
+    SQLModel,
+)
+
 from api.util.pydantic_type import PydanticType
-from api.util.types import Group, TimeSlot, CourseTypeEnum
+from api.util.types import CourseTypeEnum, Group, TimeSlot
 
 
 class BaseModel(SQLModel):
@@ -391,11 +398,6 @@ class UnitChanges(BaseModel, table=True):
     changes: dict[str, Any] = Field(sa_column=Column(JSON()))
     scraped_at: int
     """The scraped_at before the changes were applied"""
-
-
-class SemesterCourses(BaseModel):
-    semkez: str
-    courses: set[int]
 
 
 class FinishedScrapingSemester(BaseModel, table=True):
