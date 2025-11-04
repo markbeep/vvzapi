@@ -92,7 +92,7 @@ class UnitsSpider(KeywordLoggerSpider):
             LinkExtractor(
                 # Only view the english version of a full lecture details page
                 allow=r"lerneinheit\.view",
-                deny=r"lang=de",
+                deny=[r"lang=de", r"cookietest=true", r"red9.ethz.ch"],
                 canonicalize=True,
                 process_value=lambda url: edit_url_key(url, "ansicht", ["ALLE"]),
             ),
@@ -102,7 +102,7 @@ class UnitsSpider(KeywordLoggerSpider):
         Rule(
             LinkExtractor(
                 allow=r"legendeStudienplanangaben\.view",
-                deny=r"lang=de",
+                deny=[r"lang=de", r"cookietest=true", r"red9.ethz.ch"],
                 canonicalize=True,
             ),
             follow=True,
@@ -240,7 +240,8 @@ class UnitsSpider(KeywordLoggerSpider):
                     "No course number found for unit. Ignoring.",
                     extra={"unit_id": id},
                 )
-                self.course_ids[semkez].remove(id)
+                if id in (ids := self.course_ids[semkez]):
+                    ids.remove(id)
                 return
             number = number.replace("\xa0", "").strip()
             title = rows[0].css("::text")[1].get()
