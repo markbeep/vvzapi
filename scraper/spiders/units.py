@@ -230,7 +230,8 @@ class UnitsSpider(KeywordLoggerSpider):
                 self.logger.error("No semkez found", extra={"url": url})
                 return
             semkez = semkez.group(1)
-            number = rows[0].re_first(RE_NUMBER)
+            potential_number = rows[0].css("::text").get() or ""
+            number = re.match(RE_NUMBER, potential_number)
             if not number:
                 # If there's no number, that usually just means the row is not actually a "unit" row,
                 # but just some row that has a link to some other course. For example the following URL
@@ -238,12 +239,13 @@ class UnitsSpider(KeywordLoggerSpider):
                 # https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lang=en&semkez=2025W&ansicht=ALLE&lerneinheitId=192500&
                 self.logger.debug(
                     "No course number found for unit. Ignoring.",
-                    extra={"unit_id": id},
+                    extra={"unit_id": id, "potential_number": potential_number},
                 )
                 if id in (ids := self.course_ids[semkez]):
                     ids.remove(id)
                 return
-            number = number.replace("\xa0", "").strip()
+            number = number.group(0)
+            number = number.replace("\xa0", " ").strip()
             title = rows[0].css("::text")[1].get()
             title = title.strip() if title else None
             lang = "en" if "lang=en" in url else "de"
@@ -710,7 +712,7 @@ class UnitsSpider(KeywordLoggerSpider):
         number = number_sel.re_first(RE_NUMBER)
         course_type = None
         if number:
-            number = number.replace("\xa0", "")
+            number = number.replace("\xa0", " ")
             try:
                 course_type = CourseTypeEnum[number[-1]]
             except KeyError:
@@ -807,7 +809,7 @@ class UnitsSpider(KeywordLoggerSpider):
 
         course_number: str | None = rows.re_first(RE_NUMBER)
         if course_number:
-            course_number = course_number.replace("\xa0", "").strip()
+            course_number = course_number.replace("\xa0", " ").strip()
         signup_end: str | None = None
 
         for r in rows:

@@ -90,6 +90,7 @@ uv run scrapy shell "<url>"
 
 ```sh
 uv run scrapy parse --spider=units -c <cb func> "<url>"
+uv run scrapy parse --spider=units -c parse_start_url "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?lang=de&semkez=2003S&seite=0"
 uv run scrapy parse --spider=units -c parse_unit "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?semkez=2025W&ansicht=ALLE&lerneinheitId=192945&lang=en"
 ```
 

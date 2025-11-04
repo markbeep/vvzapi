@@ -256,7 +256,7 @@ class LearningUnit(BaseModel, Overwriteable, table=True):
     """Extra notes on any restrictions for this learning unit."""
     scraped_at: int = Field(
         default_factory=lambda: int(time.time()),
-        sa_column=Column(INTEGER, nullable=False, server_onupdate="unixepoch()"),
+        sa_column=Column(INTEGER, nullable=False),
     )
 
 
@@ -280,7 +280,7 @@ class SectionBase(BaseModel, Overwriteable):
     comment_english: str | None = Field(default=None)
     scraped_at: int = Field(
         default_factory=lambda: int(time.time()),
-        sa_column=Column(INTEGER, nullable=False, server_onupdate="unixepoch()"),
+        sa_column=Column(INTEGER, nullable=False),
     )
 
 
@@ -312,7 +312,7 @@ class UnitTypeLegends(BaseModel, Overwriteable, table=True):
     )
     scraped_at: int = Field(
         default_factory=lambda: int(time.time()),
-        sa_column=Column(INTEGER, nullable=False, server_onupdate="unixepoch()"),
+        sa_column=Column(INTEGER, nullable=False),
     )
 
 
@@ -358,7 +358,7 @@ class Course(BaseModel, Overwriteable, table=True):
     )
     scraped_at: int = Field(
         default_factory=lambda: int(time.time()),
-        sa_column=Column(INTEGER, nullable=False, server_onupdate="unixepoch()"),
+        sa_column=Column(INTEGER, nullable=False),
     )
 
 
@@ -377,7 +377,7 @@ class Lecturer(BaseModel, Overwriteable, table=True):
     name: str = Field()
     scraped_at: int = Field(
         default_factory=lambda: int(time.time()),
-        sa_column=Column(INTEGER, nullable=False, server_onupdate="unixepoch()"),
+        sa_column=Column(INTEGER, nullable=False),
     )
 
 
