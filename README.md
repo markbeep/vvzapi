@@ -109,10 +109,10 @@ In the data directory there'll be a `httpcache` directory containing all crawled
 
 #### Cleanup html cache directory
 
-There might be outdated or unused files in the html cache directories. Using the cleanup script everything that is not needed can be removed:
+There might be outdated or unused files in the html cache directories. Using the cleanup script everything that is not needed can be removed. Additionally it can also be used to purposely delete at most `amount` valid cached files from one or more `semester`s that are older than `age-seconds`.
 
 ```sh
-uv run scraper/util/cleanup_scrapy.py [--dry-run]
+uv run scraper/util/cleanup_scrapy.py [--dry-run] [--amount <int>] [--age-seconds <int>] [-d <semester>]*
 ```
 
 ### API Server

@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     log_append: bool = True
     disable_log_file: bool = False
 
+    # delete valid cached files
+    enable_rescrape: bool = False
+    rescrape_amount: int = 500
+    rescrape_age_seconds: int = 24 * 3600 * 14  # 14 days
+
     def read_semesters(self) -> list[Literal["W", "S"]]:
         semesters: list[Literal["W", "S"]] = []
         for s in self.semester.split(","):

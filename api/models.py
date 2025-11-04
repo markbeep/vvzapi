@@ -404,3 +404,13 @@ class FinishedScrapingSemester(BaseModel, table=True):
     """Keeps track of which semesters have been fully scraped already."""
 
     semkez: str = Field(primary_key=True)
+
+
+class LastCleanup(BaseModel, table=True):
+    """Keeps track of when the last cleanup of the scrapy cache was performed."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    timestamp: int = Field(
+        default_factory=lambda: int(time.time()),
+        sa_column=Column(INTEGER, nullable=False),
+    )

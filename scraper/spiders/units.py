@@ -88,13 +88,16 @@ class UnitsSpider(KeywordLoggerSpider):
         for url in get_urls(year, semester)
     ]
     rules = (
+        # VVZ uses both https://www.vorlesungen.ethz.ch/ and https://www.vvz.ethz.ch/ domains, but both point to the same locations.
         Rule(
             LinkExtractor(
                 # Only view the english version of a full lecture details page
                 allow=r"lerneinheit\.view",
                 deny=[r"lang=de", r"cookietest=true", r"red9.ethz.ch"],
                 canonicalize=True,
-                process_value=lambda url: edit_url_key(url, "ansicht", ["ALLE"]),
+                process_value=lambda url: edit_url_key(url, "ansicht", ["ALLE"])
+                .replace(".vorlesungen.", ".vvz.")
+                .replace("http://", "https://"),
             ),
             follow=True,
             callback="parse_unit",
@@ -104,6 +107,9 @@ class UnitsSpider(KeywordLoggerSpider):
                 allow=r"legendeStudienplanangaben\.view",
                 deny=[r"lang=de", r"cookietest=true", r"red9.ethz.ch"],
                 canonicalize=True,
+                process_value=lambda url: url.replace(".vorlesungen.", ".vvz.").replace(
+                    "http://", "https://"
+                ),
             ),
             follow=True,
             callback="parse_legend",
