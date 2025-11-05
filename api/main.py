@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 import httpx
 
 from api.env import Settings
-from api.routers.v0_router import router as v0_router
+from api.routers.v1_router import router as v0_router
 from api.util.version import get_api_version
 
 

@@ -2,11 +2,6 @@
 
 Community-made REST API for [VVZ](https://www.vvz.ethz.ch/Vorlesungsverzeichnis)
 
-> [!CAUTION]  
-> The API is still in alpha and very WIP. That means any endpoints or data-structures are prone to changing and will likely not be fully backwards compatible. _There also might just not be any data or data could be missing in the current state._
->
-> Wait for version >=1 (meaning api is at `/api/v1`) for a more stable experience or play around with `/api/v0` with the risks in mind.
-
 ## Quick Start
 
 Head to https://vvzapi.ch and start playing around with the API.
@@ -26,6 +21,10 @@ Attributes have been translated to english, dropped (in cases where the value wa
 > is just some short-term problem or if they'll never come back. Some of the data (for all courses) is available in the
 > [Complete Catalogue](https://www.vvz.ethz.ch/Vorlesungsverzeichnis/gesamtverzeichnis.view?lang=en), but I currently do not have any plans
 > of parsing data from PDFs.
+
+## Versioning
+
+This project uses semantic versioning. Breaking changes will result in a bump of the major version. There should not be any breaking changes to the endpoints of any endpoints that are the same or lower version than the major version. If the current version is `2.x.x`, the endpoints under `/v1` and `/v2` will not be _intentionally_ updated in a way that would break or completely change their usage. But `/v3` would then still be in prerelease and might change anytime.
 
 ---
 
