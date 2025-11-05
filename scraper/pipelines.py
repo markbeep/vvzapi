@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel
 from scrapy import Spider
-from sqlmodel import select
+from sqlmodel import col, select
 
 from api.models import (
     Course,
@@ -16,6 +16,7 @@ from api.models import (
     Level,
     Overwriteable,
     Section,
+    UnitChanges,
     UnitExaminerLink,
     UnitLecturerLink,
     UnitSectionLink,
@@ -124,14 +125,33 @@ class DatabasePipeline:
                 if isinstance(old, LearningUnit) and isinstance(item, LearningUnit):
                     # determine if there are any differences
                     if differences := find_unit_differences(old, item):
-                        self.logger.info(
-                            "LearningUnit changes detected",
-                            extra={
-                                "unit_id": old.id,
-                                "changes": differences.changes,
-                            },
-                        )
-                        self.session.add(differences)
+                        old_changes = self.session.exec(
+                            select(UnitChanges)
+                            .where(
+                                UnitChanges.changes == differences.changes,
+                                UnitChanges.unit_id == differences.unit_id,
+                            )
+                            .order_by(col(UnitChanges.scraped_at).desc())
+                        ).one_or_none()
+                        if old_changes:
+                            self.logger.warning(
+                                "Detecting duplicate changes. Only updating scraped_at",
+                                extra={
+                                    "unit_id": old.id,
+                                    "changes": differences.changes,
+                                    "changes_id": old_changes.id,
+                                },
+                            )
+                            old_changes.scraped_at = differences.scraped_at
+                        else:
+                            self.logger.info(
+                                "LearningUnit changes detected",
+                                extra={
+                                    "unit_id": old.id,
+                                    "changes": differences.changes,
+                                },
+                            )
+                            self.session.add(differences)
 
                 old.overwrite_with(item)
                 old.scraped_at = int(time.time())
