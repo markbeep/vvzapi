@@ -1,4 +1,5 @@
 import time
+from typing import Sequence
 from sqlmodel import col, distinct, select
 from api.models import LastCleanup, LearningUnit
 from api.util.db import get_session
@@ -6,7 +7,7 @@ from scraper.env import Settings
 from scraper.util.cleanup_scrapy import cleanup_scrapy
 
 
-def delete_cached():
+def delete_cached() -> Sequence[str]:
     print("Checking if cached files should be deleted...")
     with next(get_session()) as session:
         last_cleanup = session.exec(
@@ -20,7 +21,7 @@ def delete_cached():
             print(
                 "Last cleanup was performed less than 22 hours ago, skipping cleanup."
             )
-            return
+            return []
 
         last_semesters = session.exec(
             select(distinct(LearningUnit.semkez))
@@ -29,7 +30,7 @@ def delete_cached():
         ).all()
         if not last_semesters:
             print("No semesters found in database, skipping cleanup.")
-            return
+            return []
 
         print(f"Performing cleanup of cached files for semesters: {last_semesters}")
 
@@ -42,3 +43,6 @@ def delete_cached():
 
         last_cleanup = LastCleanup(timestamp=now)
         session.add(last_cleanup)
+        session.commit()
+
+    return last_semesters

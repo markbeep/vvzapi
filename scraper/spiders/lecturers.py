@@ -17,12 +17,22 @@ def get_urls(year: int, semester: Literal["W", "S"]):
 
 class LecturersSpider(KeywordLoggerSpider):
     name = "lecturers"
-    start_urls = [
-        url
-        for year in range(Settings().start_year, Settings().end_year + 1)
-        for semester in Settings().read_semesters()
-        for url in get_urls(year, semester)
-    ]
+
+    def __init__(self, semkezs: list[str] | None = None, *a: Any, **kw: Any):
+        if semkezs is not None:
+            self.start_urls = [
+                url
+                for semkez in semkezs
+                for url in get_urls(int(semkez[:-1]), "S" if semkez[-1] == "S" else "W")
+            ]
+        else:
+            self.start_urls = [
+                url
+                for year in range(Settings().start_year, Settings().end_year + 1)
+                for semester in Settings().read_semesters()
+                for url in get_urls(year, semester)
+            ]
+        super().__init__(*a, **kw)
 
     @override
     def parse_start_url(self, response: Response, **kwargs: Any):

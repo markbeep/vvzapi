@@ -30,11 +30,14 @@ def add_stdout_logging(settings: Settings):
 settings = get_project_settings()
 add_stdout_logging(settings)
 
+process = CrawlerProcess(settings)
+
 # cleanup cache if required
 if EnvSettings().enable_rescrape:
-    delete_cached()
-
-process = CrawlerProcess(settings)
-process.crawl(UnitsSpider)
-process.crawl(LecturersSpider)
+    semkezs = delete_cached()
+    process.crawl(UnitsSpider, semkezs=semkezs)
+    process.crawl(LecturersSpider, semkezs=semkezs)
+else:
+    process.crawl(UnitsSpider)
+    process.crawl(LecturersSpider)
 process.start()

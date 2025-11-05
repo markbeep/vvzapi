@@ -81,12 +81,6 @@ class UnitsSpider(KeywordLoggerSpider):
     """
 
     name = "units"
-    start_urls = [
-        url
-        for year in range(Settings().start_year, Settings().end_year + 1)
-        for semester in Settings().read_semesters()
-        for url in get_urls(year, semester)
-    ]
     rules = (
         # VVZ uses both https://www.vorlesungen.ethz.ch/ and https://www.vvz.ethz.ch/ domains, but both point to the same locations.
         Rule(
@@ -116,6 +110,22 @@ class UnitsSpider(KeywordLoggerSpider):
         ),
     )
     course_ids: dict[str, set[int]] = defaultdict(set)
+
+    def __init__(self, semkezs: list[str] | None = None, *a: Any, **kw: Any):
+        if semkezs is not None:
+            self.start_urls = [
+                url
+                for semkez in semkezs
+                for url in get_urls(int(semkez[:-1]), "S" if semkez[-1] == "S" else "W")
+            ]
+        else:
+            self.start_urls = [
+                url
+                for year in range(Settings().start_year, Settings().end_year + 1)
+                for semester in Settings().read_semesters()
+                for url in get_urls(year, semester)
+            ]
+        super().__init__(*a, **kw)
 
     @override
     def parse_start_url(self, response: Response, **kwargs: Any):

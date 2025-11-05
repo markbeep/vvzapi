@@ -11,10 +11,15 @@ class Settings(BaseSettings):
 
     refresh_html: bool = False
     """If html files, that are already cached locally, should be refetched"""
+
+    # Semester settings only apply to newly scraped semesters
+    # RESCRAPE_AMOUNT will overwrite this and cause only the last
+    # two already scraped semesters to be rescraped
     start_year: int = date.today().year
     # automatically include next year (if it exists)
     end_year: int = date.today().year + 1
     semester: str = "W"
+
     delay: float = 5.0
     """Amount of seconds to at least wait between requests"""
     log_level: str = "INFO"
