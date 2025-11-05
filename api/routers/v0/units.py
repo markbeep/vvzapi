@@ -2,31 +2,85 @@ from typing import Annotated, Sequence
 
 from fastapi import APIRouter, Depends, Query
 from fastapi_cache.decorator import cache
-from pydantic import BaseModel
 from sqlmodel import Session, col, select
 
 from api.env import Settings
-from api.models import Department, LearningUnit, Level, Periodicity
+from api.models import (
+    Department,
+    LearningUnit,
+    Level,
+    Periodicity,
+    UnitExaminerLink,
+    UnitLecturerLink,
+    UnitSectionLink,
+)
 from api.util.db import get_session
 from api.util.unit_filter import VVZFilters, build_vvz_filter
 
 router = APIRouter(prefix="/unit", tags=["Learning Units"])
 
 
-@router.get("/get/{unit_id}", response_model=LearningUnit | None)
+@router.get("/{unit_id}/get", response_model=LearningUnit | None)
 @cache(expire=Settings().cache_expiry)
 async def get_unit(
     unit_id: int,
     session: Annotated[Session, Depends(get_session)],
 ) -> LearningUnit | None:
-    # TODO: return section ids unit is in
-    # TODO: return lecturer/examiner ids
     return session.get(LearningUnit, unit_id)
 
 
-class TitleResponse(BaseModel):
-    id: int
-    title: str | None
+@router.get("/{unit_id}/sections", response_model=Sequence[int])
+@cache(expire=Settings().cache_expiry)
+async def get_unit_sections(
+    unit_id: int,
+    session: Annotated[Session, Depends(get_session)],
+    limit: Annotated[int, Query(gt=0, le=1000)] = 100,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> Sequence[int]:
+    query = (
+        select(UnitSectionLink.section_id)
+        .where(UnitSectionLink.unit_id == unit_id)
+        .offset(offset)
+        .limit(limit)
+    )
+    results = session.exec(query).all()
+    return results
+
+
+@router.get("/{unit_id}/lecturers", response_model=Sequence[int])
+@cache(expire=Settings().cache_expiry)
+async def get_unit_lecturers(
+    unit_id: int,
+    session: Annotated[Session, Depends(get_session)],
+    limit: Annotated[int, Query(gt=0, le=1000)] = 100,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> Sequence[int]:
+    query = (
+        select(UnitLecturerLink.lecturer_id)
+        .where(UnitLecturerLink.unit_id == unit_id)
+        .offset(offset)
+        .limit(limit)
+    )
+    results = session.exec(query).all()
+    return results
+
+
+@router.get("/{unit_id}/examiners", response_model=Sequence[int])
+@cache(expire=Settings().cache_expiry)
+async def get_unit_examiners(
+    unit_id: int,
+    session: Annotated[Session, Depends(get_session)],
+    limit: Annotated[int, Query(gt=0, le=1000)] = 100,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> Sequence[int]:
+    query = (
+        select(UnitExaminerLink.lecturer_id)
+        .where(UnitExaminerLink.unit_id == unit_id)
+        .offset(offset)
+        .limit(limit)
+    )
+    results = session.exec(query).all()
+    return results
 
 
 @router.get(
@@ -114,5 +168,5 @@ async def list_units(
     )
     query = build_vvz_filter(session, select(LearningUnit.id), filters)
     return session.exec(
-        query.offset(offset).limit(limit).order_by(col(LearningUnit.id).asc())
+        query.order_by(col(LearningUnit.id).asc()).offset(offset).limit(limit)
     ).all()

@@ -93,7 +93,7 @@ class SectionUnitResponse(SectionBase):
     children: list[SectionLevel] = []
 
 
-@router.get("/get/{section_id}", response_model=SectionUnitResponse | None)
+@router.get("/{section_id}/get", response_model=SectionUnitResponse | None)
 @cache(expire=Settings().cache_expiry)
 async def get_section(
     session: Annotated[Session, Depends(get_session)],

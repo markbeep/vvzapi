@@ -272,6 +272,7 @@ Section
 class SectionBase(BaseModel, Overwriteable):
     id: int = Field(primary_key=True)
     parent_id: int | None = Field(default=None)
+    """Parent section ID for hierarchical sections."""
     semkez: str
     name: str | None = Field(default=None)
     name_english: str | None = Field(default=None)
