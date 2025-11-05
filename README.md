@@ -34,9 +34,6 @@ This project uses semantic versioning. Breaking changes will result in a bump of
 
 Locally a SQLite database is used. Running the migrations automatically creates the database.
 
-> [!CAUTION]
-> While in alpha, migration files might be merged or recreated, potentially breaking any local state.
-
 #### Run migrations
 
 ```sh
