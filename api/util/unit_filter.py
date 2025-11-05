@@ -1,5 +1,4 @@
 from typing import Any, cast
-from fastapi import Request
 from pydantic import BaseModel
 from sqlalchemy import ColumnExpressionArgument
 from sqlmodel import Session, and_, col, or_
@@ -8,9 +7,12 @@ from sqlmodel.sql._expression_select_cls import Select, SelectOfScalar
 from api.models import (
     Department,
     LearningUnit,
+    Lecturer,
     Level,
     Periodicity,
     Section,
+    UnitExaminerLink,
+    UnitLecturerLink,
     UnitSectionLink,
 )
 from api.util.sections import get_child_sections
@@ -35,7 +37,7 @@ class VVZFilters(BaseModel):
     type: str | None = None
     """Unit type: O, W+, W, E-, Z, Dr"""
     language: str | None = None
-    periodicity: int | None = None
+    periodicity: Periodicity | None = None
     """
     - ONETIME = 0
     - ANNUAL = 1
@@ -51,69 +53,33 @@ class VVZFilters(BaseModel):
     """Sort the same way as vvz"""
 
 
-def get_vvz_filters(request: Request) -> VVZFilters:
-    params = request.query_params
-
-    level = params.get("level")
-    if level is not None:
-        try:
-            level = Level(level)
-        except ValueError:
-            level = None
-
-    department = params.get("department")
-    if department is not None:
-        try:
-            department = Department(int(department))
-        except ValueError:
-            department = None
-
-    ects_min = params.get("ects_min")
-    ects_min = float(ects_min) if ects_min is not None else None
-    ects_max = params.get("ects_max")
-    ects_max = float(ects_max) if ects_max is not None else None
-
-    filters = VVZFilters(
-        semkez=params.get("semkez"),
-        level=level,
-        department=department,
-        section=int(params["section"]) if "section" in params else None,
-        number=params.get("number"),
-        title=params.get("title"),
-        lecturer_id=int(params["lecturer_id"]) if "lecturer_id" in params else None,
-        lecturer_name=params.get("lecturer_name"),
-        lecturer_surname=params.get("lecturer_surname"),
-        type=params.get("type"),
-        language=params.get("language"),
-        periodicity=int(params["periodicity"]) if "periodicity" in params else None,
-        ects_min=ects_min,
-        ects_max=ects_max,
-        content_search=params.get("content_search"),
-        vvz_sort=params.get("vvz_sort", "").lower() in ["true", "1", "yes"],
-    )
-    return filters
-
-
 def build_vvz_filter[T: Select[Any] | SelectOfScalar[Any]](
     session: Session, query: T, filters: VVZFilters
 ) -> T:
-    match filters.periodicity:
-        case 0:
-            periodicity = Periodicity.ONETIME
-        case 1:
-            periodicity = Periodicity.ANNUAL
-        case 2:
-            periodicity = Periodicity.SEMESTER
-        case 3:
-            periodicity = Periodicity.BIENNIAL
-        case _:
-            periodicity = None
-
     if filters.section is not None or filters.type is not None or filters.vvz_sort:
         query = query.join(UnitSectionLink)
     if filters.vvz_sort:
         query = query.join(Section).order_by(
             col(Section.name).asc(), col(LearningUnit.title).asc()
+        )
+    if (
+        filters.lecturer_id is not None
+        or filters.lecturer_name is not None
+        or filters.lecturer_surname is not None
+    ):
+        query = query.join(
+            UnitExaminerLink, onclause=col(LearningUnit.id) == UnitExaminerLink.unit_id
+        ).join(
+            UnitLecturerLink, onclause=col(LearningUnit.id) == UnitLecturerLink.unit_id
+        )
+    if filters.lecturer_name is not None or filters.lecturer_surname is not None:
+        # No need to join lecturers to filter by id only
+        query = query.join(
+            Lecturer,
+            onclause=or_(
+                col(UnitExaminerLink.lecturer_id) == Lecturer.id,
+                col(UnitLecturerLink.lecturer_id) == Lecturer.id,
+            ),
         )
 
     query_filters: list[ColumnExpressionArgument[bool] | bool] = []
@@ -132,28 +98,26 @@ def build_vvz_filter[T: Select[Any] | SelectOfScalar[Any]](
         query_filters.append(LearningUnit.number == filters.number)
     if filters.title is not None:
         query_filters.append(col(LearningUnit.title).ilike(f"%{filters.title}%"))
-    # if filters.lecturer_id is not None:
-    #     query_filters.append(
-    #         or_(
-    #             col(LearningUnit.lecturers).contains(filters.lecturer_id),
-    #             col(LearningUnit.examiners).contains(filters.lecturer_id),
-    #         )
-    #     )
-    # TODO: requires lecturers in separate table
-    # if filters.lecturer_name is not None:
-    #     query = query.where(
-    #         LearningUnit.lecturer_name.ilike(f"%{filters.lecturer_name}%")
-    #     )
-    # if filters.lecturer_surname is not None:
-    #     query = query.where(
-    #         LearningUnit.lecturer_surname.ilike(f"%{filters.lecturer_surname}%")
-    #     )
+    if filters.lecturer_id is not None:
+        query_filters.append(
+            or_(
+                UnitExaminerLink.lecturer_id == filters.lecturer_id,
+                UnitLecturerLink.lecturer_id == filters.lecturer_id,
+            )
+        )
+    if filters.lecturer_name is not None:
+        query_filters.append(col(Lecturer.name).ilike(f"%{filters.lecturer_surname}%"))
+        query = query.where()
+    if filters.lecturer_surname is not None:
+        query_filters.append(
+            col(Lecturer.surname).ilike(f"%{filters.lecturer_surname}%")
+        )
     if filters.type is not None:
         query_filters.append(UnitSectionLink.type == filters.type)
     if filters.language is not None:
         query_filters.append(col(LearningUnit.language).ilike(f"%{filters.language}%"))
-    if periodicity is not None:
-        query_filters.append(LearningUnit.course_frequency == periodicity)
+    if filters.periodicity is not None:
+        query_filters.append(LearningUnit.course_frequency == filters.periodicity)
     if filters.ects_min is not None:
         query_filters.append(
             and_(
