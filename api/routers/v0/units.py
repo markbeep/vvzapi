@@ -10,6 +10,7 @@ from api.models import (
     LearningUnit,
     Level,
     Periodicity,
+    UnitChanges,
     UnitExaminerLink,
     UnitLecturerLink,
     UnitSectionLink,
@@ -58,6 +59,31 @@ async def get_unit_lecturers(
     query = (
         select(UnitLecturerLink.lecturer_id)
         .where(UnitLecturerLink.unit_id == unit_id)
+        .offset(offset)
+        .limit(limit)
+    )
+    results = session.exec(query).all()
+    return results
+
+
+@router.get(
+    "/{unit_id}/changes",
+    response_model=Sequence[UnitChanges],
+    description="Get a list of changes that the course details have undergone. "
+    "Changes are a JSON object that describe what the values were before they "
+    "got updated to either the next change or whatever the model currently has.",
+)
+@cache(expire=Settings().cache_expiry)
+async def get_unit_changes(
+    unit_id: int,
+    session: Annotated[Session, Depends(get_session)],
+    limit: Annotated[int, Query(gt=0, le=1000)] = 100,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> Sequence[UnitChanges]:
+    query = (
+        select(UnitChanges)
+        .where(UnitChanges.unit_id == unit_id)
+        .order_by(col(UnitChanges.scraped_at).desc())
         .offset(offset)
         .limit(limit)
     )
