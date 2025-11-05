@@ -10,7 +10,6 @@ from api.models import (
     Lecturer,
     Level,
     Periodicity,
-    Section,
     UnitExaminerLink,
     UnitLecturerLink,
     UnitSectionLink,
@@ -49,19 +48,12 @@ class VVZFilters(BaseModel):
     content_search: str | None = None
     """Called 'Catalogue data' on VVZ"""
 
-    vvz_sort: bool = False
-    """Sort the same way as vvz"""
-
 
 def build_vvz_filter[T: Select[Any] | SelectOfScalar[Any]](
     session: Session, query: T, filters: VVZFilters
 ) -> T:
-    if filters.section is not None or filters.type is not None or filters.vvz_sort:
+    if filters.section is not None or filters.type is not None:
         query = query.join(UnitSectionLink)
-    if filters.vvz_sort:
-        query = query.join(Section).order_by(
-            col(Section.name).asc(), col(LearningUnit.title).asc()
-        )
     if (
         filters.lecturer_id is not None
         or filters.lecturer_name is not None

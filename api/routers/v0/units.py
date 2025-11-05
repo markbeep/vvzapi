@@ -60,7 +60,9 @@ async def list_units(
     # VVZ filters: "Structure"
     section: Annotated[
         int | None,
-        Query(description="Only a single section is required, unlike on VVZ"),
+        Query(
+            description="Section ID to limit results to. Only a single section is required, unlike on VVZ"
+        ),
     ] = None,
     # VVZ filters: "Further criteria"
     number: Annotated[str | None, Query(description="Unit number")] = None,
@@ -92,11 +94,6 @@ async def list_units(
     content_search: Annotated[
         str | None, Query(description="Search within 'Catalogue data' on VVZ")
     ] = None,
-    # VVZ filters: vvz-like sorting
-    # TODO: add vvz sorting
-    vvz_sort: Annotated[
-        bool, Query(description="Sort the same way as VVZ. Does not currently work.")
-    ] = False,
 ) -> Sequence[int]:
     filters = VVZFilters(
         semkez=semkez,
@@ -114,7 +111,6 @@ async def list_units(
         ects_min=ects_min,
         ects_max=ects_max,
         content_search=content_search,
-        vvz_sort=vvz_sort,
     )
     query = build_vvz_filter(session, select(LearningUnit.id), filters)
     return session.exec(

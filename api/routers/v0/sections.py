@@ -2,7 +2,7 @@ from typing import Annotated, Sequence
 from fastapi import APIRouter, Depends, Query
 from fastapi_cache.decorator import cache
 from pydantic import BaseModel, Field
-from sqlmodel import Session, col, select
+from sqlmodel import Session, case, col, func, or_, select
 
 from api.env import Settings
 from api.models import Section, SectionBase, UnitSectionLink
@@ -12,16 +12,74 @@ from api.util.sections import SectionLevel, get_child_sections, get_parent_secti
 router = APIRouter(prefix="/section", tags=["Sections"])
 
 
-@router.get("/list", response_model=list[Section])
+@router.get("/list", response_model=list[int])
 @cache(expire=Settings().cache_expiry)
 async def list_sections(
     session: Annotated[Session, Depends(get_session)],
     limit: Annotated[int, Query(gt=0, le=1000)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
-) -> Sequence[Section]:
-    return session.exec(
-        select(Section).offset(offset).limit(limit).order_by(col(Section.id).asc())
-    ).all()
+    # VVZ filters
+    semkez: Annotated[
+        str | None,
+        Query(
+            description="Year + semester (Summer/Winter). Format is YYYY[S/W]. Example: 2025S, 2025W."
+        ),
+    ] = None,
+    sort_lex: Annotated[
+        bool,
+        Query(
+            description="Sort sections alphabetically in ascending order as is done on VVZ. Numbers are at the end. If disabled, sorts by section ID."
+        ),
+    ] = False,
+    # Custom filters
+    level: Annotated[int | None, Query(description="Level of the section")] = None,
+    name_search: Annotated[
+        str | None, Query(description="Search string for section names")
+    ] = None,
+    comment_search: Annotated[
+        str | None, Query(description="Search string for section comments")
+    ] = None,
+    parent_id: Annotated[
+        int | None, Query(description="Filter sections by **direct** parent section ID")
+    ] = None,
+) -> Sequence[int]:
+    query = (
+        select(
+            Section.id,
+            name := func.COALESCE(Section.name_english, Section.name),
+        )
+        .where(
+            Section.semkez == semkez if semkez is not None else True,
+            Section.level == level if level is not None else True,
+            or_(
+                col(Section.name).ilike(f"%{name_search}%"),
+                col(Section.name_english).ilike(f"%{name_search}%"),
+            )
+            if name_search is not None
+            else True,
+            or_(
+                col(Section.comment).ilike(f"%{comment_search}%"),
+                col(Section.comment_english).ilike(f"%{comment_search}%"),
+            )
+            if comment_search is not None
+            else True,
+            Section.parent_id == parent_id if parent_id is not None else True,
+        )
+        .offset(offset)
+        .limit(limit)
+    )
+
+    if sort_lex:
+        query = query.order_by(
+            case((name.is_not(None), 1), else_=0).desc(),  # null last
+            col(Section.level).asc(),
+            name.op("GLOB")("[^0-9]*").desc(),  # text before numeric
+            func.LOWER(name).asc(),
+        )
+    else:
+        query = query.order_by(col(Section.id).asc())
+
+    return [section_id for section_id, _ in session.exec(query).all()]
 
 
 class LearningUnitType(BaseModel):
