@@ -1,20 +1,20 @@
 {
-    "name": "Existing Dockerfile",
-    "build": {
-        "context": "..",
-        "dockerfile": "./Dockerfile"
-    },
-    "runArgs": ["--network=host"],
-    "customizations": {
-        "vscode": {
-            "extensions": [
-                "charliermarsh.ruff",
-                "ms-python.python",
-                "esbenp.prettier-vscode",
-                "yzhang.markdown-all-in-one",
-                "Gruntfuggly.todo-tree",
-                "tamasfe.even-better-toml"
-            ]
-        }
+  "name": "Existing Dockerfile",
+  "build": {
+    "context": "..",
+    "dockerfile": "./Dockerfile"
+  },
+  "forwardPorts": [8000],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "charliermarsh.ruff",
+        "ms-python.python",
+        "esbenp.prettier-vscode",
+        "yzhang.markdown-all-in-one",
+        "Gruntfuggly.todo-tree",
+        "tamasfe.even-better-toml"
+      ]
     }
+  }
 }
