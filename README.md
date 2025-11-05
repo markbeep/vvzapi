@@ -22,21 +22,12 @@ Attributes have been translated to english, dropped (in cases where the value wa
 ## Semester Status
 
 > [!NOTE]  
-> Every available semester has been cached (2001W-2008W and 2018S-2026S). Thank you everyone for helping out!
-> Now it's only a matter of time before the DB models are finalized and all the data is pushed to be available on the API endpoints.
->
-> For some reason all semesters 2009-2017 (both S and W) are simply not available. Accessing any of them throws a 403 Forbidden. I wonder if this
+> For some reason all semesters 2009-2019 (both S and W) are simply not available. Accessing any of them throws a 403 Forbidden. I wonder if this
 > is just some short-term problem or if they'll never come back. Some of the data (for all courses) is available in the
 > [Complete Catalogue](https://www.vvz.ethz.ch/Vorlesungsverzeichnis/gesamtverzeichnis.view?lang=en), but I currently do not have any plans
 > of parsing data from PDFs.
 
-## Future Plans
-
-- [x] Replicate VVZ filters
-- [ ] Flag to display results in the exact same order as on VVZ
-- [ ] Dump endpoints. Get a dump of a whole semester (JSON or SQlite) so that you can more efficiently go over data locally without having to bombard the API.
-- [ ] Semantic search
-- [ ] ML-based tagging from the lecture abstracts and descriptions. Would allow for easily showing related lectures.
+---
 
 ## Local Development
 
