@@ -1,9 +1,7 @@
 from typing import Annotated, Sequence
 from fastapi import APIRouter, Depends
-from fastapi_cache.decorator import cache
 from sqlmodel import Session, col, select
 
-from api.env import Settings
 from api.models import Course
 from api.util.db import get_session
 
@@ -11,7 +9,6 @@ router = APIRouter(prefix="/course", tags=["Courses"])
 
 
 @router.get("/get/{unit_id}", response_model=list[Course])
-@cache(expire=Settings().cache_expiry)
 async def get_courses(
     session: Annotated[Session, Depends(get_session)],
     unit_id: int,

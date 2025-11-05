@@ -1,10 +1,8 @@
 from typing import Annotated, Sequence
 from fastapi import APIRouter, Depends, Query
-from fastapi_cache.decorator import cache
 from pydantic import BaseModel, Field
 from sqlmodel import Session, case, col, func, or_, select
 
-from api.env import Settings
 from api.models import Section, SectionBase, UnitSectionLink
 from api.util.db import get_session
 from api.util.sections import SectionLevel, get_child_sections, get_parent_sections
@@ -13,7 +11,6 @@ router = APIRouter(prefix="/section", tags=["Sections"])
 
 
 @router.get("/list", response_model=list[int])
-@cache(expire=Settings().cache_expiry)
 async def list_sections(
     session: Annotated[Session, Depends(get_session)],
     limit: Annotated[int, Query(gt=0, le=1000)] = 100,
@@ -94,7 +91,6 @@ class SectionUnitResponse(SectionBase):
 
 
 @router.get("/{section_id}/get", response_model=SectionUnitResponse | None)
-@cache(expire=Settings().cache_expiry)
 async def get_section(
     session: Annotated[Session, Depends(get_session)],
     section_id: int,

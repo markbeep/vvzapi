@@ -1,10 +1,8 @@
 from typing import Annotated, Sequence
 
 from fastapi import APIRouter, Depends
-from fastapi_cache.decorator import cache
 from sqlmodel import Session, func, select
 
-from api.env import Settings
 from api.models import BaseModel
 from api.models import Course
 from api.models import LearningUnit, Section
@@ -24,7 +22,6 @@ class MetricsResponse(BaseModel):
 
 
 @router.get("/metrics", response_model=MetricsResponse)
-@cache(expire=Settings().cache_expiry)
 async def get_metrics(
     session: Annotated[Session, Depends(get_session)],
 ) -> MetricsResponse:
@@ -51,7 +48,6 @@ async def get_version():
 
 
 @router.get("/semesters", response_model=list[str])
-@cache(expire=Settings().cache_expiry)
 async def list_semesters(
     session: Annotated[Session, Depends(get_session)],
 ) -> Sequence[str]:

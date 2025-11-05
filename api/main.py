@@ -1,13 +1,10 @@
-from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import FastAPI, Request
 from starlette.background import BackgroundTask
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from pathlib import Path
 from fastapi.templating import Jinja2Templates
-from fastapi_cache import FastAPICache
-from fastapi_cache.backends.inmemory import InMemoryBackend
 import httpx
 
 from api.env import Settings
@@ -15,13 +12,7 @@ from api.routers.v0_router import router as v0_router
 from api.util.version import get_api_version
 
 
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    FastAPICache.init(InMemoryBackend(), prefix="fastapi-cache")
-    yield
-
-
-app = FastAPI(lifespan=lifespan, title="VVZ API", version=get_api_version())
+app = FastAPI(title="VVZ API", version=get_api_version())
 app.include_router(v0_router)
 
 
@@ -54,7 +45,7 @@ def send_analytics_event(request: Request):
 
 @app.middleware("http")
 async def analytics_middleware(request: Request, call_next: Any):
-    response = await call_next(request)
+    response: StreamingResponse = await call_next(request)
     if (
         not Settings().plausible_url
         and not request.url.path.startswith("/api")
@@ -64,6 +55,11 @@ async def analytics_middleware(request: Request, call_next: Any):
         return response
     task = BackgroundTask(send_analytics_event, request)
     response.background = task
+
+    if 200 <= response.status_code < 300:
+        response.headers["Cache-Control"] = (
+            f"Cache-Control: public, max-age={Settings().cache_expiry}"
+        )
     return response
 
 

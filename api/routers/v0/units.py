@@ -1,10 +1,8 @@
 from typing import Annotated, Sequence
 
 from fastapi import APIRouter, Depends, Query
-from fastapi_cache.decorator import cache
 from sqlmodel import Session, col, select
 
-from api.env import Settings
 from api.models import (
     Department,
     LearningUnit,
@@ -22,7 +20,6 @@ router = APIRouter(prefix="/unit", tags=["Learning Units"])
 
 
 @router.get("/{unit_id}/get", response_model=LearningUnit | None)
-@cache(expire=Settings().cache_expiry)
 async def get_unit(
     unit_id: int,
     session: Annotated[Session, Depends(get_session)],
@@ -31,7 +28,6 @@ async def get_unit(
 
 
 @router.get("/{unit_id}/sections", response_model=Sequence[int])
-@cache(expire=Settings().cache_expiry)
 async def get_unit_sections(
     unit_id: int,
     session: Annotated[Session, Depends(get_session)],
@@ -49,7 +45,6 @@ async def get_unit_sections(
 
 
 @router.get("/{unit_id}/lecturers", response_model=Sequence[int])
-@cache(expire=Settings().cache_expiry)
 async def get_unit_lecturers(
     unit_id: int,
     session: Annotated[Session, Depends(get_session)],
@@ -73,7 +68,6 @@ async def get_unit_lecturers(
     "Changes are a JSON object that describe what the values were before they "
     "got updated to either the next change or whatever the model currently has.",
 )
-@cache(expire=Settings().cache_expiry)
 async def get_unit_changes(
     unit_id: int,
     session: Annotated[Session, Depends(get_session)],
@@ -92,7 +86,6 @@ async def get_unit_changes(
 
 
 @router.get("/{unit_id}/examiners", response_model=Sequence[int])
-@cache(expire=Settings().cache_expiry)
 async def get_unit_examiners(
     unit_id: int,
     session: Annotated[Session, Depends(get_session)],
@@ -114,7 +107,6 @@ async def get_unit_examiners(
     response_model=Sequence[int],
     description="List learning unit IDs with optional VVZ-like filters",
 )
-@cache(expire=Settings().cache_expiry)
 async def list_units(
     session: Annotated[Session, Depends(get_session)],
     limit: Annotated[int, Query(gt=0, le=1000)] = 100,
