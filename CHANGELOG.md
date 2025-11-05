@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.0.0](https://github.com/markbeep/vvzapi/compare/v0.7.0-alpha...v1.0.0) (2025-11-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* The /v0 endpoint has been removed
+
+### Miscellaneous Chores
+
+* update paths and readme to release v1.0.0. Closes [#32](https://github.com/markbeep/vvzapi/issues/32) ([910c778](https://github.com/markbeep/vvzapi/commit/910c778ee96e2d12e3eb1eea14ce8b981191db04))
+
+
+### Code Refactoring
+
+* **api:** replace third-party cache library with simple cache headers. Closes [#31](https://github.com/markbeep/vvzapi/issues/31) ([ff3f079](https://github.com/markbeep/vvzapi/commit/ff3f0793aa3b0ce00ebd711379dd8c9598889b8e))
+
 ## [0.7.0-alpha](https://github.com/markbeep/vvzapi/compare/v0.6.1-alpha...v0.7.0-alpha) (2025-11-05)
 
 
