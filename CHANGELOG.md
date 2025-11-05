@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/markbeep/vvzapi/compare/v1.0.0...v1.0.1) (2025-11-05)
+
+
+### Miscellaneous Chores
+
+* remove mention of alpha in readme ([6d609d0](https://github.com/markbeep/vvzapi/commit/6d609d090d9724d71c4a4bc7a4089cf4b22f8db9))
+
 ## [1.0.0](https://github.com/markbeep/vvzapi/compare/v0.7.0-alpha...v1.0.0) (2025-11-05)
 
 
