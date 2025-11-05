@@ -178,12 +178,13 @@ class UnitsSpider(KeywordLoggerSpider):
                 unit = self.extract_unit_catalogue_data(id, rows, response.url)
                 if not unit:
                     continue
-                yield unit
 
                 if level:
                     yield UnitLevelMapping(unit_id=id, level=level)
-                if dept:
+                elif dept:
                     yield UnitDepartmentMapping(unit_id=id, department=dept)
+                else:  # only yield unit on root page without filters
+                    yield unit
 
             # get the full section structure
             sec_count = 0
