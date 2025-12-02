@@ -1,6 +1,6 @@
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Query, Request
 from starlette.background import BackgroundTask
 from fastapi.responses import HTMLResponse, StreamingResponse
 from pathlib import Path
@@ -10,6 +10,8 @@ import httpx
 from api.env import Settings
 from api.routers.v1_router import router as v1_router
 from api.routers.v2_router import router as v2_router
+from api.routers.v2.search import search_units
+from api.util.db import get_session
 from api.util.version import get_api_version
 
 
@@ -18,8 +20,7 @@ app.include_router(v1_router)
 app.include_router(v2_router)
 
 
-_STATIC_INDEX = Path(__file__).parent / "static" / "index.html"
-templates = Jinja2Templates(directory=str(_STATIC_INDEX.parent))
+templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
 
 def send_analytics_event(request: Request):
@@ -66,12 +67,24 @@ async def analytics_middleware(request: Request, call_next: Any):
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
-async def root():
-    if not _STATIC_INDEX.exists():
-        return HTMLResponse("<h1>VVZ API</h1>", status_code=200)
+async def root(
+    session: Annotated[Any, Depends(get_session)],
+    query: Annotated[str | None, Query(alias="q"), str] = None,
+):
+    if not query:
+        return templates.TemplateResponse(
+            "root_search.html", {"request": {}, "version": get_api_version()}
+        )
 
+    results = await search_units(query, session)
     return templates.TemplateResponse(
-        "index.html", {"request": {}, "version": get_api_version()}
+        "results.html",
+        {
+            "request": {},
+            "version": get_api_version(),
+            "query": query,
+            "results": results,
+        },
     )
 
 

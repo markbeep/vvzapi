@@ -13,7 +13,8 @@
         "esbenp.prettier-vscode",
         "yzhang.markdown-all-in-one",
         "Gruntfuggly.todo-tree",
-        "tamasfe.even-better-toml"
+        "tamasfe.even-better-toml",
+        "bradlc.vscode-tailwindcss"
       ]
     }
   }
