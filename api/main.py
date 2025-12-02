@@ -8,12 +8,14 @@ from fastapi.templating import Jinja2Templates
 import httpx
 
 from api.env import Settings
-from api.routers.v1_router import router as v0_router
+from api.routers.v1_router import router as v1_router
+from api.routers.v2_router import router as v2_router
 from api.util.version import get_api_version
 
 
 app = FastAPI(title="VVZ API", version=get_api_version())
-app.include_router(v0_router)
+app.include_router(v1_router)
+app.include_router(v2_router)
 
 
 _STATIC_INDEX = Path(__file__).parent / "static" / "index.html"
