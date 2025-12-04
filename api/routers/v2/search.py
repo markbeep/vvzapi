@@ -34,11 +34,8 @@ QueryKey = Literal[
     "descriptions",
     "descriptions_german",
     "descriptions_english",
-    # TODO: order
-    "order",
 ]
 
-# NOTE: currently using something like "t" will filter by both languages using AND instead of OR
 mapping: dict[str, QueryKey] = {
     "t": "title",
     "n": "number",
@@ -54,12 +51,6 @@ mapping: dict[str, QueryKey] = {
     "d": "descriptions",
     "dg": "descriptions_german",
     "de": "descriptions_english",
-    # TODO: order
-    "order": "order",
-    "orderby": "order",
-    "sort": "order",
-    "sortby": "order",
-    "o": "order",
 }
 
 
@@ -194,7 +185,16 @@ def match_filters(
                 continue
             query = query.where(semester == filter_.value[0].upper())
         elif filter_.key in ["lecturer", "i", "instructor"]:
-            query = query.where(col(Lecturer.name).ilike(f"%{filter_.value}%"))
+            query = query.where(
+                or_(
+                    func.concat(Lecturer.name, " ", Lecturer.surname).ilike(
+                        f"%{filter_.value}%"
+                    ),
+                    func.concat(Lecturer.surname, " ", Lecturer.name).ilike(
+                        f"%{filter_.value}%"
+                    ),
+                )
+            )
         elif filter_.key == "descriptions_german":
             search_term = f"%{filter_.value}%"
             query = query.where(

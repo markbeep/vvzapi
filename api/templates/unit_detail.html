@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}<title>VVZ - {{ unit.title_english }}</title>{% endblock title %}
+
+{% block body %}
+
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+
+    <nav class="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm px-4 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            <a href="/" class="text-xl font-bold text-gray-900 hover:text-blue-600 shrink-0">
+                VVZ API
+            </a>
+            <form class="grow max-w-2xl hidden md:block" action="/" method="get">
+                <input type="text" name="q" placeholder="Search for courses..."
+                    class="w-full h-9 px-4 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-colors" />
+            </form>
+            <div class="flex gap-2">
+                <a href="/"
+                    class="text-sm font-medium text-gray-600 hover:text-blue-600 border border-gray-300 rounded px-3 py-2 hover:bg-gray-50">Back
+                    to Search</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="grow p-4 sm:p-8">
+        <div class="max-w-7xl mx-auto space-y-8">
+
+            <header class="bg-white p-6 rounded-sm border border-gray-200 shadow-sm">
+                <div class="flex flex-col gap-2">
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                        <span class="bg-gray-800 text-white font-mono px-2 py-1 text-sm rounded">{{ unit.number
+                            }}</span>
+                        <span class="bg-blue-100 text-blue-800 font-mono px-2 py-1 text-sm rounded">{{ unit.semkez
+                            }}</span>
+                        {% if unit.credits %}
+                        <span class="bg-green-100 text-green-800 font-bold px-2 py-1 text-sm rounded">{{ unit.credits }}
+                            Credits</span>
+                        {% endif %}
+                        {% if unit.department %}
+                        <span class="bg-gray-100 text-gray-700 px-2 py-1 text-sm rounded">{{ unit.department }}</span>
+                        {% endif %}
+                    </div>
+
+                    <h1 class="text-3xl font-bold text-gray-900">
+                        {{ unit.title_english if unit.title_english else unit.title }}
+                    </h1>
+                    {% if unit.title_english and unit.title != unit.title_english %}
+                    <h2 class="text-xl text-gray-500 font-medium">{{ unit.title }}</h2>
+                    {% endif %}
+
+                    {% if unit.lecturers or lecturers %}
+                    <div class="mt-4 text-sm text-gray-600">
+                        <span class="font-bold">Lecturers: </span>
+                        {% for lecturer in lecturers %}
+                        <span class="mr-2">{{ lecturer.surname }} {{ lecturer.name }}{% if not loop.last %},{% endif
+                            %}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                <div class="lg:col-span-2 space-y-6">
+
+                    {% if unit.abstract or unit.abstract_english %}
+                    <section class="bg-white p-6 rounded-sm border border-gray-200">
+                        <h3 class="text-lg font-bold border-b border-gray-200 pb-2 mb-4">Abstract</h3>
+                        <div class="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap font-sans">
+                            {{ unit.abstract_english if unit.abstract_english else unit.abstract }}
+                        </div>
+                    </section>
+                    {% endif %}
+
+                    {% if unit.objective or unit.objective_english %}
+                    <section class="bg-white p-6 rounded-sm border border-gray-200">
+                        <h3 class="text-lg font-bold border-b border-gray-200 pb-2 mb-4">Objective</h3>
+                        <div class="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
+                            {{ unit.objective_english if unit.objective_english else unit.objective }}
+                        </div>
+                    </section>
+                    {% endif %}
+
+                    {% if unit.content or unit.content_english %}
+                    <section class="bg-white p-6 rounded-sm border border-gray-200">
+                        <h3 class="text-lg font-bold border-b border-gray-200 pb-2 mb-4">Content</h3>
+                        <div class="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
+                            {{ unit.content_english if unit.content_english else unit.content }}
+                        </div>
+                    </section>
+                    {% endif %}
+
+                    {% if unit.literature or unit.literature_english or unit.lecture_notes or unit.learning_materials %}
+                    <section class="bg-white p-6 rounded-sm border border-gray-200">
+                        <h3 class="text-lg font-bold border-b border-gray-200 pb-2 mb-4">Resources</h3>
+
+                        {% if unit.lecture_notes or unit.lecture_notes_english %}
+                        <div class="mb-4">
+                            <h4 class="font-bold text-gray-900 text-sm mb-1">Lecture Notes</h4>
+                            <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ unit.lecture_notes_english if
+                                unit.lecture_notes_english else unit.lecture_notes }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if unit.literature or unit.literature_english %}
+                        <div class="mb-4">
+                            <h4 class="font-bold text-gray-900 text-sm mb-1">Literature</h4>
+                            <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ unit.literature_english if
+                                unit.literature_english else unit.literature }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if unit.learning_materials %}
+                        <div class="mb-4">
+                            <h4 class="font-bold text-gray-900 text-sm mb-1">Learning Materials (Links)</h4>
+                            <ul class="list-disc list-inside text-sm text-blue-600">
+                                {% for category, links in unit.learning_materials.items() %}
+                                <li class="font-semibold text-gray-800 list-none mt-2">{{ category }}</li>
+                                {% for link in links %}
+                                <li class="ml-4"><a href="{{ link.url }}" target="_blank" class="hover:underline">{{
+                                        link.title or link.url }}</a></li>
+                                {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </section>
+                    {% endif %}
+                </div>
+
+                <div class="space-y-6">
+
+                    <section class="bg-white p-5 rounded-sm border border-gray-200 text-sm">
+                        <h3 class="font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">General Information</h3>
+                        <dl class="space-y-2">
+                            {% if unit.language %}
+                            <div class="flex justify-between">
+                                <dt class="text-gray-500">Language</dt>
+                                <dd class="font-medium text-gray-900">{{ unit.language }}</dd>
+                            </div>
+                            {% endif %}
+
+                            {% if unit.levels %}
+                            <div class="flex justify-between">
+                                <dt class="text-gray-500">Levels</dt>
+                                <dd class="font-medium text-gray-900 text-right">{{ unit.levels|join(', ') }}</dd>
+                            </div>
+                            {% endif %}
+
+                            {% if unit.course_frequency %}
+                            <div class="flex justify-between">
+                                <dt class="text-gray-500">Frequency</dt>
+                                <dd class="font-medium text-gray-900">{{ unit.course_frequency }}</dd>
+                            </div>
+                            {% endif %}
+                        </dl>
+                    </section>
+
+                    <section class="bg-white p-5 rounded-sm border border-gray-200 text-sm">
+                        <h3 class="font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Examination</h3>
+                        <dl class="space-y-3">
+                            {% if unit.exam_type %}
+                            <div>
+                                <dt class="text-gray-500 text-xs uppercase tracking-wide">Type</dt>
+                                <dd class="font-medium text-gray-900">{{ unit.exam_type }}</dd>
+                            </div>
+                            {% endif %}
+
+                            {% if unit.exam_mode %}
+                            <div>
+                                <dt class="text-gray-500 text-xs uppercase tracking-wide">Mode</dt>
+                                <dd class="font-medium text-gray-900">{{ unit.exam_mode }}</dd>
+                            </div>
+                            {% endif %}
+
+                            {% if unit.written_aids %}
+                            <div>
+                                <dt class="text-gray-500 text-xs uppercase tracking-wide">Aids</dt>
+                                <dd class="text-gray-700">{{ unit.written_aids }}</dd>
+                            </div>
+                            {% endif %}
+
+                            {% if unit.digital %}
+                            <div>
+                                <dt class="text-gray-500 text-xs uppercase tracking-wide">Digital</dt>
+                                <dd class="text-gray-700">{{ unit.digital }}</dd>
+                            </div>
+                            {% endif %}
+                        </dl>
+                        {% if unit.additional_info %}
+                        <div class="mt-3 pt-3 border-t border-gray-100 text-gray-600 italic">
+                            {{ unit.additional_info }}
+                        </div>
+                        {% endif %}
+                    </section>
+
+                    <section class="bg-white p-5 rounded-sm border border-gray-200 text-sm">
+                        <h3 class="font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Registration & Places
+                        </h3>
+                        <dl class="space-y-2">
+                            {% if unit.max_places and unit.max_places > -1 %}
+                            <div class="flex justify-between">
+                                <dt class="text-gray-500">Max Places</dt>
+                                <dd class="font-medium text-gray-900">{{ unit.max_places }}</dd>
+                            </div>
+                            {% elif unit.max_places == -1 %}
+                            <div class="text-orange-600 font-medium text-xs">
+                                Limited places (Special selection)
+                            </div>
+                            {% endif %}
+
+                            {% if unit.signup_start %}
+                            <div class="flex justify-between">
+                                <dt class="text-gray-500">Signup Start</dt>
+                                <dd class="font-medium text-gray-900">{{ unit.signup_start }}</dd>
+                            </div>
+                            {% endif %}
+
+                            {% if unit.signup_end %}
+                            <div class="flex justify-between">
+                                <dt class="text-gray-500">Signup End</dt>
+                                <dd class="font-medium text-gray-900">{{ unit.signup_end }}</dd>
+                            </div>
+                            {% endif %}
+                        </dl>
+                        {% if unit.priority %}
+                        <div class="mt-3 bg-yellow-50 p-2 rounded border border-yellow-100 text-yellow-800 text-xs">
+                            <strong>Priority:</strong> {{ unit.priority }}
+                        </div>
+                        {% endif %}
+                    </section>
+
+                </div>
+            </div>
+
+            {% if courses %}
+            <section class="mt-8">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Course Components</h3>
+                <div class="bg-white border border-gray-200 rounded-sm overflow-hidden overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-100 text-gray-600 uppercase font-bold text-xs">
+                            <tr>
+                                <th class="px-4 py-3 border-b">Type</th>
+                                <th class="px-4 py-3 border-b">Title</th>
+                                <th class="px-4 py-3 border-b">Time & Place</th>
+                                <th class="px-4 py-3 border-b">Hours</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {% for course in courses %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-3 font-mono text-gray-500">
+                                    {{ course.type.value if course.type else '?' }}
+                                </td>
+                                <td class="px-4 py-3 font-medium text-gray-900">
+                                    {{ course.title if course.title else 'Course' }}
+                                    {% if course.comment %}
+                                    <div class="text-xs text-gray-500 font-normal mt-1">{{ course.comment }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3 text-gray-700">
+                                    {% if course.timeslots %}
+                                    <ul class="space-y-1">
+                                        {% for slot in course.timeslots %}
+                                        <li>
+                                            <span class="font-semibold">{{ slot.day }}</span>
+                                            {{ slot.start }}-{{ slot.end }}
+                                            {% if slot.room %}<span class="text-blue-600">({{ slot.room }})</span>{%
+                                            endif %}
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% else %}
+                                    <span class="text-gray-400 italic">No time listed</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3 text-gray-600">
+                                    {{ course.hours }} {{ course.hour_type.value if course.hour_type else 'h' }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            {% endif %}
+
+        </div>
+    </main>
+
+</body>
+
+{% endblock body %}

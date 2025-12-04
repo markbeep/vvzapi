@@ -108,6 +108,12 @@ uv run scraper/util/cleanup_scrapy.py [--dry-run] [--amount <int>] [--age-second
 uv run fastapi dev api/main.py
 ```
 
+#### Tailwindcss
+
+```sh
+tailwindcss -i api/static/tw.css -o api/static/globals.css --watch
+```
+
 ### Type Check
 
 ```sh
