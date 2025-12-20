@@ -1,0 +1,116 @@
+{% extends "base_search.html" %}
+
+{% block title %}<title>VVZ API - Search</title>{% endblock title %}
+
+{% block content %}
+
+<main class="grow p-4 sm:p-8">
+    <div class="flex flex-col max-w-5xl mx-auto space-y-4">
+
+        {% if results.total %}
+        <div class="text-gray-600">
+            <p>Found {{ results.total }} result{{ results.total|pluralize }}</p>
+            <p class="text-gray-500 text-sm">Viewing results {{ (page-1)*limit }}-{{ [page*limit,results.total]|min }}
+            </p>
+        </div>
+
+        {% for unit in results.results %}
+        <div class="bg-white border border-gray-200 rounded-sm p-4 hover:border-gray-400 transition-colors flex">
+            <a href="/unit/{{ unit.id }}" class="w-full">
+                <div class="flex flex-col gap-2 w-full">
+
+                    <div>
+                        <h3 class="text-lg font-bold text-blue-700 leading-tight">
+                            {{ unit.title_english if unit.title_english else unit.title }}
+                        </h3>
+                        <h4 class="text-sm text-gray-500 italic">
+                            {{ unit.title }}
+                        </h4>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2 text-xs font-mono mt-1">
+                        <span class="text-gray-400 px-2 py-1">
+                            {{ unit.number }}
+                        </span>
+
+                        <span class="text-gray-400 px-2 py-1">
+                            {{ unit.semkez }}
+                        </span>
+
+                        {% if unit.credits %}
+                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                            {{ unit.credits }} Credits
+                        </span>
+                        {% endif %}
+
+                        {% if unit.levels %}
+                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded">
+                            {{ unit.levels|join(', ') }}
+                        </span>
+                        {% endif %}
+
+                        {% if unit.department %}
+                        <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                            {{ unit.department }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <p class="text-sm text-gray-700 leading-relaxed line-clamp-3 mt-1">
+                        {% if unit.abstract_english %}
+                        {{ unit.abstract_english }}
+                        {% elif unit.abstract %}
+                        {{ unit.abstract }}
+                        {% else %}
+                        <span class="text-gray-400 italic">No description available.</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </a>
+            <a class="bg-blue-100 border p-1 rounded-sm hover:border-gray-400 transition-colors cursor-pointer h-fit"
+                target="_blank"
+                href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={{ unit.id }}&semkez={{ unit.semkez }}&lang=en&ansicht=ALLE">VVZ</a>
+        </div>
+        {% endfor %}
+
+        {% if results.total > results.results|length %}
+        <div class="flex justify-center gap-4 pt-4">
+            {% if page > 1 %}
+            <a href="/?q={{ query }}&page={{ page - 1 }}"
+                class="px-4 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-700 font-medium transition-colors">
+                Previous
+            </a>
+            {% else %}
+            <span
+                class="px-4 py-2 bg-gray-100 border border-gray-300 rounded text-gray-400 font-medium cursor-not-allowed">
+                Previous
+            </span>
+            {% endif %}
+
+            {% if page * limit < results.total %} <a href="/?q={{ query }}&page={{ page + 1 }}"
+                class="px-4 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-700 font-medium transition-colors">
+                Next
+                </a>
+                {% else %}
+                <span
+                    class="px-4 py-2 bg-gray-100 border border-gray-300 rounded text-gray-400 font-medium cursor-not-allowed">
+                    Next
+                </span>
+                {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        {% if query %}
+        <div class="text-center text-gray-500 mt-10">
+            <p>No results found for "{{ query }}".</p>
+        </div>
+        {% endif %}
+        {% endif %}
+
+    </div>
+</main>
+
+</body>
+
+{% endblock content %}

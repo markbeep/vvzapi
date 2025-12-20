@@ -2,12 +2,17 @@ FROM astral/uv:python3.13-trixie-slim
 
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y curl
+RUN curl https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.18/tailwindcss-linux-x64 -L -o /bin/tailwindcss && \
+    chmod +x /bin/tailwindcss
+
 COPY uv.lock pyproject.toml .python-version alembic.ini ./ 
 COPY api api
 COPY alembic alembic
 # allows for debugging in the api pod
 COPY scraper scraper
 
-RUN uv sync
+RUN uv sync --frozen --no-cache
+RUN tailwindcss -i ./api/static/tw.css -o ./api/static/globals.css --minify
 
-CMD uv run alembic upgrade heads && uv run fastapi run api/main.py
+CMD ["/bin/sh", "-c", "uv run alembic upgrade heads && exec uv run fastapi run api/main.py"]

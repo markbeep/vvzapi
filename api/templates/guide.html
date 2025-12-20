@@ -1,0 +1,172 @@
+{% extends "base_search.html" %}
+
+{% block title %}<title>VVZ API - Syntax Guide</title>{% endblock title %}
+
+{% block content %}
+<main class="grow p-4 sm:p-8">
+    <div class="max-w-3xl mx-auto space-y-8">
+
+        <header>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Search Syntax Guide</h1>
+            <p class="text-gray-600">
+                Learn how to filter courses effectively using specific keywords and operators.
+            </p>
+        </header>
+
+        <section class="bg-white p-6 rounded-sm border border-gray-200">
+            <h2 class="text-xl font-bold text-gray-900 mb-4 border-b border-gray-200 pb-2">How it works</h2>
+            <div class="space-y-4 text-sm text-gray-700">
+                <p>
+                    By default, any text you type is searched against the course <strong>titles</strong>.
+                    To refine your search, you can use specific <strong>keys</strong> followed by an
+                    <strong>operator</strong> and a <strong>value</strong>.
+                </p>
+                <div class="bg-gray-50 p-3 rounded border border-gray-200 font-mono text-gray-800">
+                    key:value
+                </div>
+                <p>
+                    Spaces separate different filters. If your value contains spaces, wrap it in quotes (e.g.,
+                    <code>lecturer:"John Doe"</code>).
+                </p>
+            </div>
+        </section>
+
+        <section class="bg-white p-6 rounded-sm border border-gray-200">
+            <h2 class="text-xl font-bold text-gray-900 mb-4 border-b border-gray-200 pb-2">Filter Keys</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-gray-100 text-gray-600 uppercase font-bold text-xs">
+                        <tr>
+                            <th class="px-4 py-3 border-b">Key</th>
+                            <th class="px-4 py-3 border-b">Aliases</th>
+                            <th class="px-4 py-3 border-b">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">title</td>
+                            <td class="px-4 py-3 font-mono text-gray-500">t</td>
+                            <td class="px-4 py-3">Matches course title (English or German).</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">title_english</td>
+                            <td class="px-4 py-3 font-mono text-gray-500">te</td>
+                            <td class="px-4 py-3">Matches English course title.</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">title_german</td>
+                            <td class="px-4 py-3 font-mono text-gray-500">tg</td>
+                            <td class="px-4 py-3">Matches German course title.</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">number</td>
+                            <td class="px-4 py-3 font-mono text-gray-500">n</td>
+                            <td class="px-4 py-3">Matches course number (e.g., <code>252-0027</code>).</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">lecturer</td>
+                            <td class="px-4 py-3 font-mono text-gray-500">l, i, instructor</td>
+                            <td class="px-4 py-3">Matches lecturer name or surname.</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">credits</td>
+                            <td class="px-4 py-3 font-mono text-gray-500">c, ects, mv</td>
+                            <td class="px-4 py-3">Number of ECTS credits.</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">year</td>
+                            <td class="px-4 py-3 font-mono text-gray-500">y</td>
+                            <td class="px-4 py-3">Academic year (e.g., <code>2024</code>).</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">semester</td>
+                            <td class="px-4 py-3 font-mono text-gray-500">s</td>
+                            <td class="px-4 py-3">Semester type. Use <code>S</code> (Spring) or <code>W</code>
+                                (Autumn/Winter).</td>
+                        </tr>
+                        <!-- <tr>
+                            <td class="px-4 py-3 font-mono font-bold">level</td>
+                            <td class="px-4 py-3 font-mono text-gray-500">-</td>
+                            <td class="px-4 py-3">Course level (e.g., <code>Bachelor</code>, <code>Master</code>).
+                            </td>
+                        </tr> -->
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">descriptions</td>
+                            <td class="px-4 py-3 font-mono text-gray-500">d</td>
+                            <td class="px-4 py-3">Searches full content (abstract, objectives, etc.).</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">description_english</td>
+                            <td class="px-4 py-3 font-mono text-gray-500">de</td>
+                            <td class="px-4 py-3">Searches full content in English.</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">description_german</td>
+                            <td class="px-4 py-3 font-mono text-gray-500">dg</td>
+                            <td class="px-4 py-3">Searches full content in German.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="bg-white p-6 rounded-sm border border-gray-200">
+            <h2 class="text-xl font-bold text-gray-900 mb-4 border-b border-gray-200 pb-2">Comparison Operators</h2>
+            <p class="text-sm text-gray-700 mb-4">
+                For numeric values like <strong>credits</strong> or <strong>year</strong>, you can use comparison
+                operators.
+            </p>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 font-mono text-sm">
+                <div class="bg-gray-50 p-2 border rounded text-center">
+                    <span class="font-bold text-blue-600">:</span> or <span class="font-bold text-blue-600">=</span>
+                    <div class="text-gray-500 text-xs font-sans mt-1">Equal</div>
+                </div>
+                <div class="bg-gray-50 p-2 border rounded text-center">
+                    <span class="font-bold text-blue-600">!=</span>
+                    <div class="text-gray-500 text-xs font-sans mt-1">Not Equal</div>
+                </div>
+                <div class="bg-gray-50 p-2 border rounded text-center">
+                    <span class="font-bold text-blue-600">&gt;</span> / <span
+                        class="font-bold text-blue-600">&lt;</span>
+                    <div class="text-gray-500 text-xs font-sans mt-1">Greater / Less</div>
+                </div>
+                <div class="bg-gray-50 p-2 border rounded text-center">
+                    <span class="font-bold text-blue-600">&gt;=</span> / <span
+                        class="font-bold text-blue-600">&lt;=</span>
+                    <div class="text-gray-500 text-xs font-sans mt-1">Greater/Less or Equal</div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Examples</h2>
+            <div class="space-y-3">
+
+                <a href="/?q=credits%3E%3D10" class="block group">
+                    <div class="bg-white p-4 rounded-sm border border-gray-200 hover:border-blue-400 transition-colors">
+                        <code class="text-blue-600 font-bold block mb-1">credits>=10</code>
+                        <span class="text-sm text-gray-600">Find all courses with 10 or more credits.</span>
+                    </div>
+                </a>
+
+                <a href="/?q=lecturer%3AMüller+year%3A2024" class="block group">
+                    <div class="bg-white p-4 rounded-sm border border-gray-200 hover:border-blue-400 transition-colors">
+                        <code class="text-blue-600 font-bold block mb-1">lecturer:Müller year:2024</code>
+                        <span class="text-sm text-gray-600">Find courses taught by Müller in 2024.</span>
+                    </div>
+                </a>
+
+                <a href="/?q=physics+s%3AW" class="block group">
+                    <div class="bg-white p-4 rounded-sm border border-gray-200 hover:border-blue-400 transition-colors">
+                        <code class="text-blue-600 font-bold block mb-1">physics s:W</code>
+                        <span class="text-sm text-gray-600">Search for "physics" in the Winter semester.</span>
+                    </div>
+                </a>
+
+            </div>
+        </section>
+
+    </div>
+</main>
+
+{% endblock content %}

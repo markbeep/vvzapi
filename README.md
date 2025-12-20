@@ -8,6 +8,10 @@ Head to https://vvzapi.ch and start playing around with the API.
 
 Currently there's barely any documentation. If you want to help out with documentation, you're always open to creating a pull request.
 
+## Search Design
+
+The search is inspired by [Scryfall](https://scryfall.com/).
+
 ## Schema
 
 The schema is inspired by the [VVZ Manual](https://www.bi.id.ethz.ch/soapvvz-2023-1/manual/SoapVVZ.pdf#page=18) (starts page 18).
@@ -106,6 +110,12 @@ uv run scraper/util/cleanup_scrapy.py [--dry-run] [--amount <int>] [--age-second
 
 ```sh
 uv run fastapi dev api/main.py
+```
+
+#### Tailwindcss
+
+```sh
+tailwindcss -i api/static/tw.css -o api/static/globals.css --watch
 ```
 
 ### Type Check
