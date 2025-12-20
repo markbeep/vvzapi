@@ -163,6 +163,7 @@ async def favicon(favicon: str):
 async def static_files(file_path: str):
     if file_path not in [
         "globals.css",
+        "opensearch.xml",
     ]:
         return HTMLResponse(status_code=404)
     static_path = Path(__file__).parent / "static" / file_path
