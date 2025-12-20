@@ -40,6 +40,7 @@ mapping: dict[str, QueryKey] = {
     "t": "title",
     "n": "number",
     "c": "credits",
+    "mv": "credits",
     "ects": "credits",
     "tg": "title_german",
     "te": "title_english",
@@ -103,7 +104,7 @@ def find_closest_operators(key: str) -> QueryKey | None:
 
 
 def match_filters(
-    session: Session, filters: list[FilterOperator], *, limit: int = 20
+    session: Session, filters: list[FilterOperator], *, offset: int = 0, limit: int = 20
 ) -> tuple[int, list[LearningUnit]]:
     query = select(
         LearningUnit,
@@ -246,7 +247,7 @@ def match_filters(
     # have it as an extra parameter in the request instead of an operator
 
     count = session.exec(select(func.count()).select_from(query.subquery())).one()
-    results = session.exec(query.limit(limit)).all()
+    results = session.exec(query.offset(offset).limit(limit)).all()
     return count, [unit for unit, _, _ in results]
 
 
@@ -259,6 +260,8 @@ class SearchResponse(BaseModel):
 async def search_units(
     query: Annotated[str, Query(alias="q")],
     session: Annotated[Session, Depends(get_session)],
+    offset: int = 0,
+    limit: int = 20,
 ) -> SearchResponse:
     operators: list[tuple[str, str, str]] = query_ops.findall(query)
     unparsed_filters: list[FilterOperatorUnparsed] = []
@@ -297,5 +300,5 @@ async def search_units(
         for filter_ in unparsed_filters
     ]
 
-    count, results = match_filters(session, filters)
+    count, results = match_filters(session, filters, offset=offset, limit=limit)
     return SearchResponse(total=count, results=results)

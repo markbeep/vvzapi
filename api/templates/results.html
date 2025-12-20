@@ -1,105 +1,116 @@
-{% extends "base.html" %}
+{% extends "base_search.html" %}
 
 {% block title %}<title>VVZ API - Search</title>{% endblock title %}
 
-{% block body %}
+{% block content %}
 
-<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+<main class="grow p-4 sm:p-8">
+    <div class="flex flex-col max-w-5xl mx-auto space-y-4">
 
-    <nav class="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm px-4 py-3">
-        <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
-
-            <a href="/" class="text-xl font-bold text-gray-900 hover:text-blue-600 shrink-0">
-                VVZ API
-            </a>
-
-            <form class="grow max-w-2xl" action="/" method="get">
-                <input type="text" name="q" value="{{ query|default('') }}"
-                    placeholder="Search for courses, lecturers, or units..."
-                    class="w-full h-10 px-4 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-colors" />
-            </form>
-
-            <a href="/guide"
-                class="text-sm font-medium text-gray-600 hover:text-blue-600 shrink-0 border border-gray-300 rounded px-3 py-2 hover:bg-gray-50">
-                Syntax Guide
-            </a>
+        {% if results.total %}
+        <div class="text-gray-600">
+            <p>Found {{ results.total }} result{{ results.total|pluralize }}</p>
+            <p class="text-gray-500 text-sm">Viewing results {{ (page-1)*limit }}-{{ [page*limit,results.total]|min }}
+            </p>
         </div>
-    </nav>
 
-    <main class="grow p-4 sm:p-8">
-        <div class="flex flex-col max-w-5xl mx-auto space-y-4">
+        {% for unit in results.results %}
+        <div class="bg-white border border-gray-200 rounded-sm p-4 hover:border-gray-400 transition-colors flex">
+            <a href="/unit/{{ unit.id }}" class="w-full">
+                <div class="flex flex-col gap-2 w-full">
 
-            {% if results %}
-            {% for unit in results.results %}
-            <div class="bg-white border border-gray-200 rounded-sm p-4 hover:border-gray-400 transition-colors flex">
-                <a href="/unit/{{ unit.id }}" class="w-full">
-                    <div class="flex flex-col gap-2 w-full">
-
-                        <div>
-                            <h3 class="text-lg font-bold text-blue-700 leading-tight">
-                                {{ unit.title_english if unit.title_english else unit.title }}
-                            </h3>
-                            <h4 class="text-sm text-gray-500 italic">
-                                {{ unit.title }}
-                            </h4>
-                        </div>
-
-                        <div class="flex flex-wrap gap-2 text-xs font-mono mt-1">
-                            <span class="text-gray-400 px-2 py-1">
-                                {{ unit.number }}
-                            </span>
-
-                            <span class="text-gray-400 px-2 py-1">
-                                {{ unit.semkez }}
-                            </span>
-
-                            {% if unit.credits %}
-                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                {{ unit.credits }} Credits
-                            </span>
-                            {% endif %}
-
-                            {% if unit.levels %}
-                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded">
-                                {{ unit.levels|join(', ') }}
-                            </span>
-                            {% endif %}
-
-                            {% if unit.department %}
-                            <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                                {{ unit.department }}
-                            </span>
-                            {% endif %}
-                        </div>
-
-                        <p class="text-sm text-gray-700 leading-relaxed line-clamp-3 mt-1">
-                            {% if unit.abstract_english %}
-                            {{ unit.abstract_english }}
-                            {% elif unit.abstract %}
-                            {{ unit.abstract }}
-                            {% else %}
-                            <span class="text-gray-400 italic">No description available.</span>
-                            {% endif %}
-                        </p>
+                    <div>
+                        <h3 class="text-lg font-bold text-blue-700 leading-tight">
+                            {{ unit.title_english if unit.title_english else unit.title }}
+                        </h3>
+                        <h4 class="text-sm text-gray-500 italic">
+                            {{ unit.title }}
+                        </h4>
                     </div>
-                </a>
-                <a class="bg-blue-100 border p-1 rounded-sm hover:border-gray-400 transition-colors cursor-pointer h-fit"
-                    href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={{ unit.id }}&semkez={{ unit.semkez }}&lang=en">VVZ</a>
-            </div>
 
-            {% endfor %}
+                    <div class="flex flex-wrap gap-2 text-xs font-mono mt-1">
+                        <span class="text-gray-400 px-2 py-1">
+                            {{ unit.number }}
+                        </span>
 
-            {% else %}
-            {% if q %}
-            <div class="text-center text-gray-500 mt-10">
-                <p>No results found for "{{ q }}".</p>
-            </div>
-            {% endif %}
-            {% endif %}
+                        <span class="text-gray-400 px-2 py-1">
+                            {{ unit.semkez }}
+                        </span>
 
+                        {% if unit.credits %}
+                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                            {{ unit.credits }} Credits
+                        </span>
+                        {% endif %}
+
+                        {% if unit.levels %}
+                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded">
+                            {{ unit.levels|join(', ') }}
+                        </span>
+                        {% endif %}
+
+                        {% if unit.department %}
+                        <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                            {{ unit.department }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <p class="text-sm text-gray-700 leading-relaxed line-clamp-3 mt-1">
+                        {% if unit.abstract_english %}
+                        {{ unit.abstract_english }}
+                        {% elif unit.abstract %}
+                        {{ unit.abstract }}
+                        {% else %}
+                        <span class="text-gray-400 italic">No description available.</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </a>
+            <a class="bg-blue-100 border p-1 rounded-sm hover:border-gray-400 transition-colors cursor-pointer h-fit"
+                target="_blank"
+                href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={{ unit.id }}&semkez={{ unit.semkez }}&lang=en&ansicht=ALLE">VVZ</a>
         </div>
-    </main>
+        {% endfor %}
+
+        {% if results.total > results.results|length %}
+        <div class="flex justify-center gap-4 pt-4">
+            {% if page > 1 %}
+            <a href="/?q={{ query }}&page={{ page - 1 }}"
+                class="px-4 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-700 font-medium transition-colors">
+                Previous
+            </a>
+            {% else %}
+            <span
+                class="px-4 py-2 bg-gray-100 border border-gray-300 rounded text-gray-400 font-medium cursor-not-allowed">
+                Previous
+            </span>
+            {% endif %}
+
+            {% if page * limit < results.total %} <a href="/?q={{ query }}&page={{ page + 1 }}"
+                class="px-4 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-700 font-medium transition-colors">
+                Next
+                </a>
+                {% else %}
+                <span
+                    class="px-4 py-2 bg-gray-100 border border-gray-300 rounded text-gray-400 font-medium cursor-not-allowed">
+                    Next
+                </span>
+                {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        {% if query %}
+        <div class="text-center text-gray-500 mt-10">
+            <p>No results found for "{{ query }}".</p>
+        </div>
+        {% endif %}
+        {% endif %}
+
+    </div>
+</main>
 
 </body>
 
-{% endblock body %}
+{% endblock content %}

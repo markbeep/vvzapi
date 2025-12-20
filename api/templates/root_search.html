@@ -3,12 +3,35 @@
 {% block body %}
 
 <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col justify-center p-4 sm:p-10">
-    <form class="flex flex-col items-center" action="/" method="get">
-        <h3 class="text-4xl font-bold mb-6 text-center">VVZ API</h3>
+    <form class="flex flex-col items-center gap-4" action="/" method="get">
+        <div class="flex flex-col gap-2 items-center">
+            <div class="flex gap-1">
+                <h3 class="text-4xl font-bold text-center">VVZ API</h3>
+                <p class="text-sm text-gray-500 mb-2 font-bold">{{ version }}</p>
+            </div>
+            <p class="text-sm text-gray-600">A community-made REST API for <a
+                    href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis" target="_blank">VVZ</a>, the ETHZ course
+                catalogue website.</p>
+        </div>
 
         <input type="text" id="search-input" name="q" placeholder="Search for courses, lecturers, or units..."
-            class="max-w-[30rem] w-full h-16 px-4 text-xl border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            class="max-w-120 py-2 w-full px-4 text-lg border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+        <div class="flex gap-1 sm:gap-4 flex-wrap justify-center">
+            <a href="/guide"
+                class="text-sm font-medium text-gray-600 hover:text-blue-600 shrink-0 border border-gray-300 rounded px-3 py-2 hover:bg-gray-50 self-center">
+                Syntax Guide
+            </a>
+            <a class="text-sm font-medium text-gray-600 hover:text-blue-600 shrink-0 border border-gray-300 rounded px-3 py-2 hover:bg-gray-50 self-center"
+                href="/docs">API Docs
+            </a>
+            <a href="https://github.com/markbeep/vvzapi" target="_blank"
+                class="text-sm font-medium text-gray-600 hover:text-blue-600 shrink-0 border border-gray-300 rounded px-3 py-2 hover:bg-gray-50 self-center">
+                GitHub
+            </a>
+        </div>
     </form>
+
 </body>
 
 {% endblock body %}

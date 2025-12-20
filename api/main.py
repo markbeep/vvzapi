@@ -10,6 +10,7 @@ from fastapi.responses import (
 )
 from pathlib import Path
 from fastapi.templating import Jinja2Templates
+from jinja2_pluralize import pluralize_dj  # pyright: ignore[reportUnknownVariableType,reportMissingTypeStubs]
 import httpx
 
 from api.env import Settings
@@ -27,6 +28,7 @@ app.include_router(v2_router)
 
 
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
+templates.env.filters["pluralize"] = pluralize_dj  # pyright: ignore[reportUnknownMemberType]
 
 
 def send_analytics_event(request: Request):
@@ -76,14 +78,15 @@ async def analytics_middleware(request: Request, call_next: Any):
 async def root(
     session: Annotated[Any, Depends(get_session)],
     query: Annotated[str | None, Query(alias="q"), str] = None,
-    page: int = 1,
+    page: Annotated[int, Query(ge=1)] = 1,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
 ):
     if not query:
         return templates.TemplateResponse(
             "root_search.html", {"request": {}, "version": get_api_version()}
         )
 
-    results = await search_units(query, session)
+    results = await search_units(query, session, offset=(page - 1) * limit, limit=limit)
 
     if results.total == 1:
         return RedirectResponse(f"/unit/{results.results[0].id}", status_code=303)
@@ -95,6 +98,7 @@ async def root(
             "version": get_api_version(),
             "query": query,
             "page": page,
+            "limit": limit,
             "results": results,
         },
     )
@@ -121,6 +125,17 @@ async def unit_detail(
             "unit": unit,
             "courses": courses,
             "lecturers": lecturers,
+        },
+    )
+
+
+@app.get("/guide", include_in_schema=False)
+async def guide():
+    return templates.TemplateResponse(
+        "guide.html",
+        {
+            "request": {},
+            "version": get_api_version(),
         },
     )
 
