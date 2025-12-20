@@ -182,9 +182,19 @@ def match_filters(
                 case Operator.le:
                     query = query.where(year <= year_value)
         elif filter_.key == "semester":
-            if len(filter_.value) == 0 or filter_.value[0].lower() not in ["s", "w"]:
+            if len(filter_.value) == 0 or filter_.value[0].upper() not in [
+                "S",
+                "W",
+                "F",
+                "H",
+            ]:
                 continue
-            query = query.where(semester == filter_.value[0].upper())
+            sem_filter = filter_.value[0].upper()
+            if sem_filter == "F":  # fs
+                sem_filter = "S"
+            elif sem_filter == "H":  # hs
+                sem_filter = "W"
+            query = query.where(semester == sem_filter)
         elif filter_.key in ["lecturer", "i", "instructor"]:
             query = query.where(
                 or_(
