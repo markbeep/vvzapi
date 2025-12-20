@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/markbeep/vvzapi/compare/v1.1.0...v1.1.1) (2025-12-20)
+
+
+### Bug Fixes
+
+* **api:** translate fs/hs to correct semester ([4799bbe](https://github.com/markbeep/vvzapi/commit/4799bbe4756f91b3098a4f77d6d48c6c301e87bb))
+
 ## [1.1.0](https://github.com/markbeep/vvzapi/compare/v1.0.0...v1.1.0) (2025-12-20)
 
 
