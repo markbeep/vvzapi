@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/markbeep/vvzapi/compare/v1.0.0...v1.1.0) (2025-12-20)
+
+
+### Features
+
+* Search frontend with "poweruser" operators ([#35](https://github.com/markbeep/vvzapi/issues/35)) ([b2c3daf](https://github.com/markbeep/vvzapi/commit/b2c3daff3f78d01d71aca29e1928b5eb8a8fe2a4))
+
+
+### Miscellaneous Chores
+
+* remove mention of alpha in readme ([6d609d0](https://github.com/markbeep/vvzapi/commit/6d609d090d9724d71c4a4bc7a4089cf4b22f8db9))
+
 ## [1.0.0](https://github.com/markbeep/vvzapi/compare/v0.7.0-alpha...v1.0.0) (2025-11-05)
 
 
