@@ -1,4 +1,4 @@
-FROM astral/uv:python3.13-trixie-slim
+FROM docker.io/astral/uv:python3.13-trixie-slim
 
 # gcc required for pyright
 RUN apt-get update && apt-get install -y \

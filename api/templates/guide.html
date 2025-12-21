@@ -70,7 +70,7 @@
                 <td class="px-4 py-3 font-mono font-bold">number</td>
                 <td class="px-4 py-3 font-mono text-gray-500">n</td>
                 <td class="px-4 py-3">
-                  Matches course number (e.g., <code>252-0027</code>).
+                  Matches part of course number (e.g., <code>252-0027</code>).
                 </td>
               </tr>
               <tr>
@@ -124,6 +124,22 @@
                 <td class="px-4 py-3 font-mono text-gray-500">dg</td>
                 <td class="px-4 py-3">Searches full content in German.</td>
               </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono font-bold">deparment</td>
+                <td class="px-4 py-3 font-mono text-gray-500">dep</td>
+                <td class="px-4 py-3">Department as in "Computer Science" or "Management Technology and
+                  Economics".</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono font-bold">level</td>
+                <td class="px-4 py-3 font-mono text-gray-500">lvl, lev</td>
+                <td class="px-4 py-3">Course level. One of BSC, MSC, DZ, DS, DR, SHE, GS, WBZ, NDS.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono font-bold">language</td>
+                <td class="px-4 py-3 font-mono text-gray-500">lang</td>
+                <td class="px-4 py-3">The language the course is held in.</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -145,7 +161,8 @@
             <div class="text-base-content/60 text-xs font-sans mt-1">Equal</div>
           </div>
           <div class="bg-base-200 p-2 rounded text-center">
-            <span class="font-bold text-primary">!=</span>
+            <span class="font-bold text-primary">!=</span> or
+            <span class="font-bold text-primary">!:</span>
             <div class="text-base-content/60 text-xs font-sans mt-1">Not Equal</div>
           </div>
           <div class="bg-base-200 p-2 rounded text-center">
@@ -185,11 +202,12 @@
           </div>
         </a>
 
-        <a href="/?q=physics+s%3AW" class="block group">
+        <a href="/?q=physics+s%3AW+d%21%3Aanalysis" class="block group">
           <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
             <div class="card-body p-4">
-              <code class="text-primary font-bold block mb-1">physics s:W</code>
-              <span class="text-sm text-base-content/80">Search for "physics" in the Winter semester.</span>
+              <code class="text-primary font-bold block mb-1">physics s:W d!:analysis</code>
+              <span class="text-sm text-base-content/80">Search for "physics" in the Winter semester without any mention
+                of "analyis" in the description.</span>
             </div>
           </div>
         </a>

@@ -33,6 +33,9 @@
                         <option selected value="year">year</option>
                         <option value="semester">semester</option>
                         <option value="lecturer">lecturer name</option>
+                        <option value="department">department</option>
+                        <option value="level">level</option>
+                        <option value="language">language</option>
                     </select>
                     <select name="order" class="select select-ghost select-sm max-w-fit">
                         <option value="asc">ascending</option>
@@ -62,6 +65,8 @@
                 </div>
             </div>
         </div>
+
+        {% include "components/pagination.html" %}
 
         {% for unit in results.results %}
         <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow flex-row p-4 gap-4">
@@ -121,29 +126,8 @@
         </div>
         {% endfor %}
 
-        {% if results.total > results.results|length %}
-        <div class="join grid grid-cols-2 w-full max-w-xs mx-auto pt-4">
-            {% if page > 1 %}
-            <a href="/?q={{ query }}{% if page > 2 %}&page={{ page - 1 }}{% endif %}" class="join-item btn btn-outline">
-                Previous
-            </a>
-            {% else %}
-            <button class="join-item btn btn-outline btn-disabled" disabled>
-                Previous
-            </button>
-            {% endif %}
+        {% include "components/pagination.html" %}
 
-            {% if page * limit < results.total %} <a href="/?q={{ query }}&page={{ page + 1 }}"
-                class="join-item btn btn-outline">
-                Next
-                </a>
-                {% else %}
-                <button class="join-item btn btn-outline btn-disabled" disabled>
-                    Next
-                </button>
-                {% endif %}
-        </div>
-        {% endif %}
 
         {% else %}
         {% if query %}
@@ -152,6 +136,7 @@
         </div>
         {% endif %}
         {% endif %}
+
 
     </div>
 </main>
