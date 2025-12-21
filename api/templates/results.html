@@ -10,92 +10,137 @@
         {% if results.total %}
         <div class="text-gray-600">
             <p>Found {{ results.total }} result{{ results.total|pluralize }}</p>
-            <p class="text-gray-500 text-sm">Viewing results {{ (page-1)*limit }}-{{ [page*limit,results.total]|min }}
-            </p>
+
+            <div class="collapse bg-base-100 border-base-300 border">
+                <input type="checkbox" />
+                <div class="collapse-title">
+                    Search options
+                </div>
+                <div class="collapse-content text-sm">
+                    Showing
+                    <select name="limit" class="select select-ghost select-sm max-w-fit">
+                        <option value="20">20</option>
+                        <option value="40">40</option>
+                        <option value="60">60</option>
+                        <option value="80">80</option>
+                        <option value="100">100</option>
+                    </select>
+                    results ordered by
+                    <select name="order_by" class="select select-ghost select-sm max-w-fit">
+                        <option value="title">English title</option>
+                        <option value="title_german">German title</option>
+                        <option value="number">number</option>
+                        <option selected value="year">year</option>
+                        <option value="semester">semester</option>
+                        <option value="lecturer">lecturer name</option>
+                    </select>
+                    <select name="order" class="select select-ghost select-sm max-w-fit">
+                        <option value="asc">ascending</option>
+                        <option selected value="desc">descending</option>
+                    </select>
+
+                    <script>
+                        document.addEventListener('DOMContentLoaded', () => {
+                            const inputs = document.querySelectorAll('select[name="limit"], select[name="order_by"], select[name="order"]');
+                            const currentUrl = new URL(window.location);
+                            const params = currentUrl.searchParams;
+                            inputs.forEach(input => {
+                                const paramValue = params.get(input.name);
+                                if (paramValue) {
+                                    input.value = paramValue;
+                                }
+                                input.addEventListener('change', (event) => {
+                                    const url = new URL(window.location);
+                                    url.searchParams.set(event.target.name, event.target.value);
+                                    url.searchParams.set('page', '1');
+                                    window.location.href = url.toString();
+                                });
+
+                            });
+                        });
+                    </script>
+                </div>
+            </div>
         </div>
 
         {% for unit in results.results %}
-        <div class="bg-white border border-gray-200 rounded-sm p-4 hover:border-gray-400 transition-colors flex">
-            <a href="/unit/{{ unit.id }}" class="w-full">
+        <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow flex-row p-4 gap-4">
+            <a href="/unit/{{ unit.id }}" class="grow">
                 <div class="flex flex-col gap-2 w-full">
 
                     <div>
-                        <h3 class="text-lg font-bold text-blue-700 leading-tight">
+                        <h3 class="text-lg font-bold text-primary leading-tight">
                             {{ unit.title_english if unit.title_english else unit.title }}
                         </h3>
-                        <h4 class="text-sm text-gray-500 italic">
+                        <h4 class="text-sm text-base-content/70 italic">
                             {{ unit.title }}
                         </h4>
                     </div>
 
                     <div class="flex flex-wrap gap-2 text-xs font-mono mt-1">
-                        <span class="text-gray-400 px-2 py-1">
+                        <span class="badge badge-ghost">
                             {{ unit.number }}
                         </span>
 
-                        <span class="text-gray-400 px-2 py-1">
+                        <span class="badge badge-ghost">
                             {{ unit.semkez }}
                         </span>
 
                         {% if unit.credits %}
-                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                        <span class="badge badge-info">
                             {{ unit.credits }} Credits
                         </span>
                         {% endif %}
 
                         {% if unit.levels %}
-                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded">
+                        <span class="badge badge-success">
                             {{ unit.levels|join(', ') }}
                         </span>
                         {% endif %}
 
                         {% if unit.department %}
-                        <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                        <span class="badge badge-neutral">
                             {{ unit.department }}
                         </span>
                         {% endif %}
                     </div>
 
-                    <p class="text-sm text-gray-700 leading-relaxed line-clamp-3 mt-1">
+                    <p class="text-sm text-base-content/80 leading-relaxed line-clamp-3 mt-1">
                         {% if unit.abstract_english %}
                         {{ unit.abstract_english }}
                         {% elif unit.abstract %}
                         {{ unit.abstract }}
                         {% else %}
-                        <span class="text-gray-400 italic">No description available.</span>
+                        <span class="text-base-content/50 italic">No description available.</span>
                         {% endif %}
                     </p>
                 </div>
             </a>
-            <a class="bg-blue-100 border p-1 rounded-sm hover:border-gray-400 transition-colors cursor-pointer h-fit"
-                target="_blank"
+            <a class="btn btn-sm btn-ghost h-fit" target="_blank"
                 href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={{ unit.id }}&semkez={{ unit.semkez }}&lang=en&ansicht=ALLE">VVZ</a>
         </div>
         {% endfor %}
 
         {% if results.total > results.results|length %}
-        <div class="flex justify-center gap-4 pt-4">
+        <div class="join grid grid-cols-2 w-full max-w-xs mx-auto pt-4">
             {% if page > 1 %}
-            <a href="/?q={{ query }}&page={{ page - 1 }}"
-                class="px-4 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-700 font-medium transition-colors">
+            <a href="/?q={{ query }}{% if page > 2 %}&page={{ page - 1 }}{% endif %}" class="join-item btn btn-outline">
                 Previous
             </a>
             {% else %}
-            <span
-                class="px-4 py-2 bg-gray-100 border border-gray-300 rounded text-gray-400 font-medium cursor-not-allowed">
+            <button class="join-item btn btn-outline btn-disabled" disabled>
                 Previous
-            </span>
+            </button>
             {% endif %}
 
             {% if page * limit < results.total %} <a href="/?q={{ query }}&page={{ page + 1 }}"
-                class="px-4 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-700 font-medium transition-colors">
+                class="join-item btn btn-outline">
                 Next
                 </a>
                 {% else %}
-                <span
-                    class="px-4 py-2 bg-gray-100 border border-gray-300 rounded text-gray-400 font-medium cursor-not-allowed">
+                <button class="join-item btn btn-outline btn-disabled" disabled>
                     Next
-                </span>
+                </button>
                 {% endif %}
         </div>
         {% endif %}

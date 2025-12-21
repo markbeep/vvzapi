@@ -1,1 +1,8 @@
 @import "tailwindcss";
+
+@source not "./daisyui{,*}.mjs";
+
+@plugin "./daisyui.mjs";
+
+@plugin "./daisyui-theme.mjs" {
+}

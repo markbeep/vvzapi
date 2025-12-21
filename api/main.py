@@ -19,7 +19,7 @@ from jinja2_htmlmin import minify_loader
 from api.env import Settings
 from api.routers.v1_router import router as v1_router
 from api.routers.v2_router import router as v2_router
-from api.routers.v2.search import search_units
+from api.routers.v2.search import QueryKey, search_units
 from api.routers.v1.units import get_unit
 from api.util.db import get_session
 from api.util.version import get_api_version
@@ -93,13 +93,22 @@ async def root(
     query: Annotated[str | None, Query(alias="q"), str] = None,
     page: Annotated[int, Query(ge=1)] = 1,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    order_by: QueryKey = "year",
+    order: str = "desc",
 ):
     if not query:
         return templates.TemplateResponse(
             "root_search.html", {"request": {}, "version": get_api_version()}
         )
 
-    results = await search_units(query, session, offset=(page - 1) * limit, limit=limit)
+    results = await search_units(
+        query,
+        session,
+        offset=(page - 1) * limit,
+        limit=limit,
+        order_by=order_by,
+        order=order,
+    )
 
     if results.total == 1:
         return RedirectResponse(f"/unit/{results.results[0].id}", status_code=303)

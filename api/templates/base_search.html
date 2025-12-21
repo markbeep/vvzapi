@@ -1,24 +1,32 @@
 {% extends "base.html" %} {% block body %}
 
-<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
-  <nav class="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm px-4 py-3">
-    <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
-      <a href="/" class="text-xl font-bold text-gray-900 hover:text-blue-600 shrink-0">
-        VVZ API
-      </a>
-
-      <form class="grow max-w-2xl" action="/" method="get">
-        <input type="search" name="q" value="{{ query|default('') }}"
-          placeholder="Search for courses, lecturers, or units..."
-          class="w-full h-10 px-4 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-colors" />
-      </form>
-
-      <a href="/guide"
-        class="text-sm font-medium text-gray-600 hover:text-blue-600 shrink-0 border border-gray-300 rounded px-3 py-2 hover:bg-gray-50">
-        Syntax Guide
-      </a>
+<body class="bg-base-100 min-h-screen flex flex-col">
+  <div id="navbar" class="navbar bg-base-100 shadow-sm sticky top-0 z-10 gap-2 transition-all duration-500 ease-in-out">
+    <script>
+      let lastScrollPosition = 0;
+      const navbar = document.getElementById("navbar");
+      document.addEventListener('scroll', function (e) {
+        if (lastScrollPosition > 100 && window.scrollY > lastScrollPosition) {
+          navbar.style.top = "-100%";
+          navbar.style.opacity = 0;
+        } else {
+          navbar.style.top = 0;
+          navbar.style.opacity = "100%";
+        }
+        lastScrollPosition = window.scrollY;
+      }, { passive: true });
+    </script>
+    <div>
+      <a href="/" class="btn btn-ghost text-xl p-1">VVZ API</a>
     </div>
-  </nav>
+    <form action="/" method="get" class="flex-1 join">
+      <input type="search" name="q" value="{{ query|default('') }}" placeholder="Search..."
+        class="input input-bordered w-full join-item" />
+    </form>
+    <div class="flex-none gap-2">
+      <a href="/guide" class="btn" title="Syntax Guide">Syntax</a>
+    </div>
+  </div>
 
   {% block content %}{% endblock content %}
 </body>

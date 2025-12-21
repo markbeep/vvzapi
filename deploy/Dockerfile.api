@@ -13,6 +13,10 @@ COPY alembic alembic
 COPY scraper scraper
 
 RUN uv sync --frozen --no-cache
+
+RUN curl -Lo api/static/daisyui.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs && \
+    curl -Lo api/static/daisyui-theme.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.mjs
+
 RUN tailwindcss -i ./api/static/tw.css -o ./api/static/globals.css --minify
 
 CMD ["/bin/sh", "-c", "uv run alembic upgrade heads && exec uv run fastapi run api/main.py"]

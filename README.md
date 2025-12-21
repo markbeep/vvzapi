@@ -114,6 +114,15 @@ uv run fastapi dev api/main.py
 
 #### Tailwindcss
 
+Tailwind is used in combination with [DaisyUI](https://daisyui.com). Download the source files using the following commands:
+
+```sh
+curl -sLo api/static/daisyui.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs
+curl -sLo api/static/daisyui-theme.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.mjs
+```
+
+Then run tailwindcss:
+
 ```sh
 tailwindcss -i api/static/tw.css -o api/static/globals.css --watch
 ```

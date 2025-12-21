@@ -104,14 +104,20 @@ def find_closest_operators(key: str) -> QueryKey | None:
 
 
 def match_filters(
-    session: Session, filters: list[FilterOperator], *, offset: int = 0, limit: int = 20
+    session: Session,
+    filters: list[FilterOperator],
+    *,
+    offset: int = 0,
+    limit: int = 20,
+    order_by: QueryKey = "year",
+    descending: bool = True,
 ) -> tuple[int, list[LearningUnit]]:
     query = select(
         LearningUnit,
         year := sql_cast(func.substr(LearningUnit.semkez, 1, 4), Integer),
         semester := sql_cast(func.substr(LearningUnit.semkez, 5, 1), String),
     )
-    if any(f.key == "lecturer" for f in filters):
+    if any(f.key == "lecturer" for f in filters) or order_by == "lecturer":
         query = (
             query.join(
                 UnitExaminerLink,
@@ -253,11 +259,39 @@ def match_filters(
                 )
             )
 
-    # TODO: add ordering: unclear how to implement this cleanly. Might make sense to just
-    # have it as an extra parameter in the request instead of an operator
-
     count = session.exec(select(func.count()).select_from(query.subquery())).one()
+
+    # ordering
+    order_by_clauses = [year]
+    default_order_clauses = [col(LearningUnit.title_english), col(LearningUnit.title)]
+    match order_by:
+        case "title" | "title_english":
+            order_by_clauses = [col(LearningUnit.title_english)]
+        case "title_german":
+            order_by_clauses = [col(LearningUnit.title)]
+        case "number":
+            order_by_clauses = [col(LearningUnit.number)]
+        case "credits":
+            order_by_clauses = [col(LearningUnit.credits)]
+        case "semester":
+            order_by_clauses = [semester]
+        case "lecturer":
+            order_by_clauses = [col(Lecturer.surname), col(Lecturer.name)]
+        case "year" | "descriptions" | "descriptions_english" | "descriptions_german":
+            pass
+    if descending:
+        query = query.order_by(
+            *(x.desc() for x in order_by_clauses),
+            *(x.asc() for x in default_order_clauses),
+        )
+    else:
+        query = query.order_by(
+            *(x.asc() for x in order_by_clauses),
+            *(x.asc() for x in default_order_clauses),
+        )
+
     results = session.exec(query.offset(offset).limit(limit)).all()
+
     return count, [unit for unit, _, _ in results]
 
 
@@ -272,6 +306,8 @@ async def search_units(
     session: Annotated[Session, Depends(get_session)],
     offset: int = 0,
     limit: int = 20,
+    order_by: QueryKey = "year",
+    order: str = "desc",
 ) -> SearchResponse:
     operators: list[tuple[str, str, str]] = query_ops.findall(query)
     unparsed_filters: list[FilterOperatorUnparsed] = []
@@ -310,5 +346,15 @@ async def search_units(
         for filter_ in unparsed_filters
     ]
 
-    count, results = match_filters(session, filters, offset=offset, limit=limit)
+    # default to desc
+    descending = not order.startswith("asc")
+
+    count, results = match_filters(
+        session,
+        filters,
+        offset=offset,
+        limit=limit,
+        order_by=order_by,
+        descending=descending,
+    )
     return SearchResponse(total=count, results=results)

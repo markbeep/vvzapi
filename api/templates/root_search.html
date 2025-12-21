@@ -1,36 +1,32 @@
 {% extends "base.html" %} {% block body %}
 
-<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col justify-center p-4 sm:p-10">
-  <form class="flex flex-col items-center gap-4" action="/" method="get">
-    <div class="flex flex-col gap-2 items-center">
-      <div class="flex gap-1">
-        <h3 class="text-4xl font-bold text-center">VVZ API</h3>
-        <p class="text-sm text-gray-500 mb-2 font-bold">{{ version }}</p>
+<body class="bg-base-200 flex flex-col justify-center">
+  <div class="hero bg-base-200 min-h-dvh">
+    <div class="hero-content text-center">
+      <div class="max-w-md">
+        <div class="flex justify-center items-start gap-2 mb-4">
+          <h1 class="text-5xl font-bold">VVZ API</h1>
+          <span class="badge badge-neutral">{{ version }}</span>
+        </div>
+        <p class="py-6">
+          A community-made REST API and search for
+          <a href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis" target="_blank" class="link link-primary">VVZ</a>, the
+          ETHZ
+          course catalogue website.
+        </p>
+        <form action="/" method="get" class="w-full flex flex-col gap-4">
+          <input type="search" id="search-input" name="q" placeholder="Search for courses, lecturers, or units..."
+            class="input input-bordered w-full" autofocus />
+
+          <div class="flex flex-wrap justify-center gap-2">
+            <a href="/guide" class="btn btn-sm">Syntax Guide</a>
+            <a href="/docs" class="btn btn-sm">API Docs</a>
+            <a href="https://github.com/markbeep/vvzapi" target="_blank" class="btn btn-sm">GitHub</a>
+          </div>
+        </form>
       </div>
-      <p class="text-sm text-gray-600">
-        A community-made REST API and search for
-        <a href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis" target="_blank" class="underline">VVZ</a>, the ETHZ
-        course catalogue website.
-      </p>
     </div>
-
-    <input type="text" id="search-input" name="q" placeholder="Search for courses, lecturers, or units..."
-      class="max-w-120 py-2 w-full px-4 text-lg border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-
-    <div class="flex gap-1 sm:gap-4 flex-wrap justify-center">
-      <a href="/guide"
-        class="text-sm font-medium text-gray-600 hover:text-blue-600 shrink-0 border border-gray-300 rounded px-3 py-2 hover:bg-gray-50 self-center">
-        Syntax Guide
-      </a>
-      <a class="text-sm font-medium text-gray-600 hover:text-blue-600 shrink-0 border border-gray-300 rounded px-3 py-2 hover:bg-gray-50 self-center"
-        href="/docs">API Docs
-      </a>
-      <a href="https://github.com/markbeep/vvzapi" target="_blank"
-        class="text-sm font-medium text-gray-600 hover:text-blue-600 shrink-0 border border-gray-300 rounded px-3 py-2 hover:bg-gray-50 self-center">
-        GitHub
-      </a>
-    </div>
-  </form>
+  </div>
 </body>
 
 {% endblock body %}
