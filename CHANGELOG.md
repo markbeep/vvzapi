@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.3](https://github.com/markbeep/vvzapi/compare/v1.1.2...v1.1.3) (2025-12-21)
+
+
+### Bug Fixes
+
+* allow for a unit to be in multiple departments ([b9bf043](https://github.com/markbeep/vvzapi/commit/b9bf043b96e4d11be6f4d218e97ff342f56c5df5))
+* **api:** title in search is not combined but instead each word is matched ([b9bf043](https://github.com/markbeep/vvzapi/commit/b9bf043b96e4d11be6f4d218e97ff342f56c5df5))
+
 ## [1.1.2](https://github.com/markbeep/vvzapi/compare/v1.1.1...v1.1.2) (2025-12-21)
 
 ### Features
