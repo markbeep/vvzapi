@@ -16,8 +16,8 @@
                         <span class="badge badge-success font-bold">{{ unit.credits }}
                             Credits</span>
                         {% endif %}
-                        {% if unit.department %}
-                        <span class="badge badge-outline">{{ unit.department }}</span>
+                        {% if unit.departments %}
+                        <span class="badge badge-outline">{{ unit.departments_as_str() }}</span>
                         {% endif %}
                     </div>
 

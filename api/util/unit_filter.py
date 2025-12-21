@@ -85,7 +85,7 @@ def build_vvz_filter[T: Select[Any] | SelectOfScalar[Any]](
     if filters.level is not None:
         query_filters.append(col(LearningUnit.levels).contains(filters.level))
     if filters.department is not None:
-        query_filters.append(LearningUnit.department == filters.department)
+        query_filters.append(LearningUnit.departments == filters.department)
     if filters.number is not None:
         query_filters.append(LearningUnit.number == filters.number)
     if filters.title is not None:

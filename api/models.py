@@ -1,3 +1,4 @@
+from __future__ import annotations
 import time
 from enum import Enum
 from typing import Any
@@ -162,6 +163,14 @@ class Department(Enum):
     HEALTH_SCIENCES_AND_TECHNOLOGY = 24
     ENVIRONMENTAL_SYSTEMS_SCIENCE = 25
 
+    @staticmethod
+    def get(v: str | int | Department) -> Department:
+        if isinstance(v, Department):
+            return v
+        if isinstance(v, int):
+            return Department(v)
+        return Department[v]
+
 
 class LearningUnit(BaseModel, Overwriteable, table=True):
     """
@@ -184,7 +193,7 @@ class LearningUnit(BaseModel, Overwriteable, table=True):
     title_english: str | None = Field(default=None)
     levels: list[Level] = Field(default_factory=list, sa_column=Column(JSON))
     """Levels of the learning unit, e.g., BSC, MSC, etc."""
-    department: Department | None = Field(default=None)
+    departments: list[Department] = Field(default_factory=list, sa_column=Column(JSON))
     """Department offering this learning unit."""
     credits: float | None = Field(default=None)
     two_semester_credits: float | None = Field(default=None)
@@ -258,6 +267,12 @@ class LearningUnit(BaseModel, Overwriteable, table=True):
         default_factory=lambda: int(time.time()),
         sa_column=Column(INTEGER, nullable=False),
     )
+
+    def departments_as_str(self) -> str:
+        def _dep_to_str(dep: Department) -> str:
+            return dep.name.replace("_", " ").title()
+
+        return ", ".join([_dep_to_str(Department.get(dep)) for dep in self.departments])
 
 
 """

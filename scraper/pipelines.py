@@ -10,6 +10,7 @@ from sqlmodel import col, select
 from api.models import (
     Course,
     CourseLecturerLink,
+    Department,
     FinishedScrapingSemester,
     LearningUnit,
     Lecturer,
@@ -56,8 +57,10 @@ class DatabasePipeline:
             if isinstance(item, UnitDepartmentMapping):
                 unit = self.session.get(LearningUnit, item.unit_id)
                 if unit:
-                    unit.department = item.department
-                    self.session.add(unit)
+                    unit.departments = [Department.get(dep) for dep in unit.departments]
+                    if item.department not in unit.departments:
+                        unit.departments.append(item.department)
+                        self.session.add(unit)
                     self.session.commit()
                 else:
                     append(DEP_LINK, item)
@@ -181,8 +184,10 @@ class DatabasePipeline:
                     self.logger.debug(
                         f"Updating LearningUnit id={mapping.unit_id} with department={mapping.department}"
                     )
-                    unit.department = mapping.department
-                    self.session.add(unit)
+                    unit.departments = [Department.get(dep) for dep in unit.departments]
+                    if mapping.department not in unit.departments:
+                        unit.departments.append(mapping.department)
+                        self.session.add(unit)
                 else:
                     self.logger.error(
                         f"Failed to update LearningUnit id={mapping.unit_id} with department={mapping.department}"

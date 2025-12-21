@@ -2,7 +2,6 @@ from enum import Enum
 from typing import Annotated, Literal, Sequence, cast
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
-from sqlalchemy import case
 from sqlmodel import (
     Integer,
     String,
@@ -18,7 +17,6 @@ import re
 from rapidfuzz import fuzz
 
 from api.models import (
-    Department,
     LearningUnit,
     Lecturer,
     UnitExaminerLink,
@@ -124,13 +122,6 @@ def find_closest_operators(key: str) -> QueryKey | None:
     return None
 
 
-def _get_acronym(department: Department) -> str:
-    name = str(department.name).replace("_", " ")
-    # TODO: find proper acronyms like "ITET" for "Information Technology and Electrical Engineering"
-    acronym = "".join(word[0].upper() for word in name.split(" ") if word)
-    return name + f" ({acronym})"
-
-
 def match_filters(
     session: Session,
     filters: list[FilterOperator],
@@ -140,12 +131,11 @@ def match_filters(
     order_by: QueryKey = "year",
     descending: bool = True,
 ) -> tuple[int, list[LearningUnit]]:
-    department_map = {dept.name: _get_acronym(dept) for dept in Department}
     query = select(
         LearningUnit,
         year := sql_cast(func.substr(LearningUnit.semkez, 1, 4), Integer),
         semester := sql_cast(func.substr(LearningUnit.semkez, 5, 1), String),
-        department := case(department_map, value=LearningUnit.department, else_=""),
+        department := func.replace(LearningUnit.departments, "_", " "),
     )
     if any(f.key == "lecturer" for f in filters) or order_by == "lecturer":
         query = (
@@ -401,13 +391,14 @@ async def search_units(
     # any values without operators are used as title filters
     query = re.sub(r"\s+", " ", query).strip()
     if query:
-        unparsed_filters.append(
-            FilterOperatorUnparsed(
-                key="title",
-                operator="=",
-                value=query,
+        for word in query.split(" "):
+            unparsed_filters.append(
+                FilterOperatorUnparsed(
+                    key="title",
+                    operator="=",
+                    value=word,
+                )
             )
-        )
 
     # convert to FilterOperator (basically just turn colons into equals)
     filters: list[FilterOperator] = []
