@@ -1,6 +1,7 @@
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Query, Request
+from jinja2 import Environment, FileSystemLoader
 from starlette.background import BackgroundTask
 from fastapi.responses import (
     FileResponse,
@@ -10,8 +11,10 @@ from fastapi.responses import (
 )
 from pathlib import Path
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.gzip import GZipMiddleware
 from jinja2_pluralize import pluralize_dj  # pyright: ignore[reportUnknownVariableType,reportMissingTypeStubs]
 import httpx
+from jinja2_htmlmin import minify_loader
 
 from api.env import Settings
 from api.routers.v1_router import router as v1_router
@@ -25,9 +28,19 @@ from api.util.version import get_api_version
 app = FastAPI(title="VVZ API", version=get_api_version())
 app.include_router(v1_router)
 app.include_router(v2_router)
+app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
 
-
-templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
+templates = Jinja2Templates(
+    env=Environment(
+        loader=minify_loader(
+            FileSystemLoader(str(Path(__file__).parent / "templates")),
+            remove_comments=True,
+            remove_empty_space=True,
+            remove_all_empty_space=True,
+            reduce_boolean_attributes=True,
+        )
+    )
+)
 templates.env.filters["pluralize"] = pluralize_dj  # pyright: ignore[reportUnknownMemberType]
 
 

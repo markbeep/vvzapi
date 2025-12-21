@@ -8,6 +8,7 @@ dependencies = [
     "alembic>=1.17.0",
     "fastapi[standard]>=0.119.0",
     "jinja2>=3.1.6",
+    "jinja2-htmlmin>=1.0.1",
     "jinja2-pluralize>=0.3.0",
     "pydantic>=2.12.0",
     "pydantic-settings>=2.11.0",

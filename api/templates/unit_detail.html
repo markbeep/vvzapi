@@ -9,10 +9,8 @@
         <header class="bg-white p-6 rounded-sm border border-gray-200 shadow-sm relative">
             <div class="flex flex-col gap-2">
                 <div class="flex flex-wrap items-center gap-2 mb-2">
-                    <span class="bg-gray-800 text-white font-mono px-2 py-1 text-sm rounded">{{ unit.number
-                        }}</span>
-                    <span class="bg-blue-100 text-blue-800 font-mono px-2 py-1 text-sm rounded">{{ unit.semkez
-                        }}</span>
+                    <span class="bg-gray-800 text-white font-mono px-2 py-1 text-sm rounded">{{ unit.number }}</span>
+                    <span class="bg-blue-100 text-blue-800 font-mono px-2 py-1 text-sm rounded">{{ unit.semkez }}</span>
                     {% if unit.credits %}
                     <span class="bg-green-100 text-green-800 font-bold px-2 py-1 text-sm rounded">{{ unit.credits }}
                         Credits</span>
@@ -33,8 +31,8 @@
                 <div class="mt-4 text-sm text-gray-600">
                     <span class="font-bold">Lecturers: </span>
                     {% for lecturer in lecturers %}
-                    <span class="mr-2">{{ lecturer.surname }} {{ lecturer.name }}{% if not loop.last %},{% endif
-                        %}</span>
+                    <span class="mr-2">{{ lecturer.surname }}
+                        {{ lecturer.name }}{% if not loop.last %},{% endif %}</span>
                     {% endfor %}
                 </div>
                 {% endif %}
@@ -91,8 +89,8 @@
                     {% if unit.literature or unit.literature_english %}
                     <div class="mb-4">
                         <h4 class="font-bold text-gray-900 text-sm mb-1">Literature</h4>
-                        <p class="text-sm text-gray-700">{{- unit.literature_english if
-                            unit.literature_english else unit.literature -}}</p>
+                        <p class="text-sm text-gray-700">
+                            {{- unit.literature_english if unit.literature_english else unit.literature -}}</p>
                     </div>
                     {% endif %}
 
@@ -103,8 +101,8 @@
                             {% for category, links in unit.learning_materials.items() %}
                             <li class="font-semibold text-gray-800 list-none mt-2">{{ category }}</li>
                             {% for link in links %}
-                            <li class="ml-4"><a href="{{ link.url }}" target="_blank" class="hover:underline">{{
-                                    link.title or link.url }}</a></li>
+                            <li class="ml-4"><a href="{{ link.url }}" target="_blank" class="hover:underline">
+                                    {{ link.title or link.url }}</a></li>
                             {% endfor %}
                             {% endfor %}
                         </ul>
@@ -251,8 +249,8 @@
                                     <li>
                                         <span class="font-semibold">{{ slot.day }}</span>
                                         {{ slot.start }}-{{ slot.end }}
-                                        {% if slot.room %}<span class="text-blue-600">({{ slot.room }})</span>{%
-                                        endif %}
+                                        {% if slot.room %}<span class="text-blue-600">({{ slot.room }})</span>
+                                        {% endif %}
                                     </li>
                                     {% endfor %}
                                 </ul>
