@@ -38,7 +38,7 @@ def delete_cached() -> Sequence[str]:
             dry_run=True,
             delete_cached_semesters=list(last_semesters),
             amount=Settings().rescrape_amount,
-            age_seconds=Settings().rescrape_age_seconds * 3600,
+            age_seconds=Settings().rescrape_age_seconds,
         )
 
         last_cleanup = LastCleanup(timestamp=now)
