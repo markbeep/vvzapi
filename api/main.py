@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import Annotated, Any, cast
-import urllib.parse
 
 from fastapi import Depends, FastAPI, Query, Request
 from jinja2 import Environment, FileSystemLoader
@@ -20,11 +19,11 @@ from fastapi.middleware.gzip import GZipMiddleware
 from jinja2_pluralize import pluralize_dj  # pyright: ignore[reportUnknownVariableType,reportMissingTypeStubs]
 import httpx
 from jinja2_htmlmin import minify_loader
-import urllib
 
 from api.env import Settings
 from api.models import (
     Course,
+    LearningUnit,
     Lecturer,
     Section,
     UnitExaminerLink,
@@ -152,6 +151,7 @@ class RecursiveSection(BaseModel):
 
 @app.get("/unit/{unit_id}", include_in_schema=False)
 async def unit_detail(
+    request: Request,
     unit_id: int,
     session: Annotated[Session, Depends(get_session)],
 ):
@@ -171,6 +171,11 @@ async def unit_detail(
     ).all()
     courses = session.exec(select(Course).where(Course.unit_id == unit_id)).all()
     sections = session.exec(get_parent_from_unit(unit_id)).all()
+    semkezs = session.exec(
+        select(LearningUnit.id, LearningUnit.semkez)
+        .where(LearningUnit.number == unit.number)
+        .distinct()
+    ).all()
 
     # create tree structure of offered in sections
     section_ids = {
@@ -187,13 +192,14 @@ async def unit_detail(
     return templates.TemplateResponse(
         "unit_detail.html",
         {
-            "request": {},
+            "request": request,
             "version": get_api_version(),
             "unit": unit,
             "sections": root_sections,
             "courses": courses,
             "lecturers": lecturers,
             "examiners": examiners,
+            "semkezs": semkezs,
         },
     )
 

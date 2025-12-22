@@ -11,7 +11,6 @@
                 <div class="flex flex-col gap-2">
                     <div class="flex flex-wrap items-center gap-2 mb-2 pr-24">
                         <span class="badge badge-neutral font-mono h-fit p-1">{{ unit.number }}</span>
-                        <span class="badge badge-ghost font-mono h-fit p-1">{{ unit.semkez }}</span>
                         {% if unit.credits %}
                         <span class="badge badge-success font-bold h-fit p-1"> {{ unit.credits|trim_float }}
                             Credits</span>
@@ -22,6 +21,19 @@
                             <span title="{{ dept }}">{{ dept.short() }}{% if not loop.last %}, {% endif %}</span>
                             {% endfor %}
                         </span>
+                        {% endif %}
+                        {% if semkezs %}
+                        <select onchange="location = this.value;"
+                            class="badge badge-ghost font-mono h-fit p-1 bg-base-200 cursor-pointer">
+                            {% for id, sk in semkezs %}
+                            <option value="{{ url_for('unit_detail', unit_id=id) }}" {% if sk==unit.semkez %}selected{%
+                                endif %}>
+                                {{ sk }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% else %}
+                        <span class="badge badge-ghost font-mono h-fit p-1">{{ unit.semkez }}</span>
                         {% endif %}
                     </div>
 
