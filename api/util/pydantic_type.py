@@ -49,12 +49,14 @@ class EnumList[T: Enum](TypeDecorator[sa.JSON()]):
         self.enum_cls = enum_cls
 
     def process_bind_param(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, value: list[T] | None, dialect: Any
+        self, value: Any | None, dialect: Any
     ) -> list[Any] | None:
         if value is None:
             return None
+        if not isinstance(value, list):
+            return value
         return [
-            item.name if hasattr(item, "value") else item
+            item.value if hasattr(item, "value") else item
             for item in cast(list[Any], value)
         ]
 

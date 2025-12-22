@@ -2,6 +2,7 @@ from __future__ import annotations
 import time
 from enum import Enum
 from typing import Any
+from rapidfuzz import process, fuzz, utils
 
 from pydantic import BaseModel as PydanticBaseModel
 
@@ -228,6 +229,17 @@ class Department(Enum):
             Department.ENVIRONMENTAL_SYSTEMS_SCIENCE: "D-USYS",
         }
         return short_names.get(self, "Unknown")
+
+    @staticmethod
+    def closest_match(name: str) -> Department | None:
+        keys = list(str(x) for x in Department)
+        if result := process.extractOne(
+            name, keys, scorer=fuzz.WRatio, processor=utils.default_process
+        ):
+            matched_name, score, _ = result
+            if score >= 80:
+                return Department.get(matched_name.replace(" ", "_").upper())
+        return None
 
 
 class LearningUnit(BaseModel, Overwriteable, table=True):

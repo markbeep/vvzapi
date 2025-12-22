@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Annotated, Literal, Sequence, cast
+from typing import Annotated, Literal, cast
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlmodel import (
@@ -14,9 +14,10 @@ from sqlmodel import (
     func,
 )
 import re
-from rapidfuzz import fuzz
+from rapidfuzz import fuzz, process, utils
 
 from api.models import (
+    Department,
     LearningUnit,
     Lecturer,
     UnitExaminerLink,
@@ -109,16 +110,15 @@ def find_closest_operators(key: str) -> QueryKey | None:
             return query_key
 
     # try to figure out the closest match
-    top: Sequence[tuple[QueryKey, float]] = sorted(
-        [
-            (query_key, fuzz.partial_ratio(key, query_key))
-            for query_key in QueryKey.__args__
-        ],
-        reverse=True,
-    )
-    if len(top) > 0:
-        return top[0][0]
-
+    if result := process.extractOne(
+        key,
+        QueryKey.__args__,
+        scorer=fuzz.partial_ratio,
+        processor=utils.default_process,
+    ):
+        matched_name, score, _ = result
+        if score >= 60:
+            return matched_name
     return None
 
 
@@ -135,7 +135,6 @@ def match_filters(
         LearningUnit,
         year := sql_cast(func.substr(LearningUnit.semkez, 1, 4), Integer),
         semester := sql_cast(func.substr(LearningUnit.semkez, 5, 1), String),
-        department := func.replace(LearningUnit.departments, "_", " "),
     )
     if any(f.key == "lecturer" for f in filters) or order_by == "lecturer":
         query = (
@@ -299,20 +298,22 @@ def match_filters(
             )
             if filter_.operator == Operator.ne:
                 clause = not_(clause)
-                print("negating descriptions", clause)
             query = query.where(clause)
         elif filter_.key == "department":
-            clause = department.ilike(f"%{filter_.value}%")
+            closest_dept = Department.closest_match(filter_.value)
+            if not closest_dept:
+                continue
+            clause = col(LearningUnit.departments).contains(closest_dept.value)
             if filter_.operator == Operator.ne:
                 clause = not_(clause)
             query = query.where(clause)
         elif filter_.key == "level":
-            clause = col(LearningUnit.levels).ilike(f"%{filter_.value}%")
+            clause = col(LearningUnit.levels).icontains(filter_.value)
             if filter_.operator == Operator.ne:
                 clause = not_(clause)
             query = query.where(clause)
         elif filter_.key == "language":
-            clause = col(LearningUnit.language).ilike(f"%{filter_.value}%")
+            clause = col(LearningUnit.language).icontains(filter_.value)
             if filter_.operator == Operator.ne:
                 clause = not_(clause)
             query = query.where(clause)
@@ -339,7 +340,7 @@ def match_filters(
         case "year" | "descriptions" | "descriptions_english" | "descriptions_german":
             pass
         case "department":
-            order_by_clauses = [department]
+            order_by_clauses = [col(LearningUnit.departments)]
         case "level":
             order_by_clauses = [col(LearningUnit.levels)]
         case "language":
@@ -357,7 +358,7 @@ def match_filters(
 
     results = session.exec(query.offset(offset).limit(limit)).all()
 
-    return count, [unit for unit, _, _, _ in results]
+    return count, [unit for unit, _, _ in results]
 
 
 class SearchResponse(BaseModel):
