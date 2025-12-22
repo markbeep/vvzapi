@@ -95,7 +95,7 @@
 
                         {% if unit.credits %}
                         <span class="badge badge-info h-fit p-1">
-                            {{ unit.credits }} Credits
+                            {{ unit.credits|trim_float }} Credits
                         </span>
                         {% endif %}
 

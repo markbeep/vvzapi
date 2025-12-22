@@ -13,7 +13,7 @@
                         <span class="badge badge-neutral font-mono h-fit p-1">{{ unit.number }}</span>
                         <span class="badge badge-ghost font-mono h-fit p-1">{{ unit.semkez }}</span>
                         {% if unit.credits %}
-                        <span class="badge badge-success font-bold h-fit p-1">{{ unit.credits }}
+                        <span class="badge badge-success font-bold h-fit p-1"> {{ unit.credits|trim_float }}
                             Credits</span>
                         {% endif %}
                         {% if unit.departments %}
@@ -32,14 +32,27 @@
                     <h2 class="text-xl text-base-content/70 font-medium">{{ unit.title }}</h2>
                     {% endif %}
 
-                    {% if unit.lecturers or lecturers %}
+                    {% if lecturers %}
                     <div class="mt-4 text-sm text-base-content/80">
+                        {% if lecturers == examiners %}
+                        <span class="font-bold">Lecturers & Examiners: </span>
+                        {% else %}
                         <span class="font-bold">Lecturers: </span>
+                        {% endif %}
                         {% for lecturer in lecturers %}
                         <span class="mr-2">{{ lecturer.surname }}
                             {{ lecturer.name }}{% if not loop.last %},{% endif %}</span>
                         {% endfor %}
                     </div>
+                    {% if examiners and examiners != lecturers %}
+                    <div class="mt-4 text-sm text-base-content/80">
+                        <span class="font-bold">Examiners: </span>
+                        {% for lecturer in examiners %}
+                        <span class="mr-2">{{ lecturer.surname }}
+                            {{ lecturer.name }}{% if not loop.last %},{% endif %}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                     {% endif %}
                 </div>
 
@@ -57,7 +70,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-            <div class="lg:col-span-2 space-y-6 [&>section>p]:whitespace-pre-wrap font-sans">
+            <div class="lg:col-span-2 space-y-6 [&>section>*>p]:whitespace-pre-wrap font-sans">
 
                 {% if unit.abstract or unit.abstract_english %}
                 <section class="card bg-base-100 shadow-sm">
@@ -281,8 +294,9 @@
                                     {% for slot in course.timeslots %}
                                     <li>
                                         <span class="font-semibold">{{ slot.day }}</span>
-                                        {{ slot.start }}-{{ slot.end }}
-                                        {% if slot.room %}<span class="text-primary">({{ slot.room }})</span>
+                                        {{ slot.weekday }} {{ slot.start_time }}-{{ slot.end_time }}
+                                        {% if slot.room %}<span class="text-primary">({{ slot.building }} {{ slot.floor
+                                            }} {{ slot.room }})</span>
                                         {% endif %}
                                     </li>
                                     {% endfor %}
@@ -292,7 +306,9 @@
                                 {% endif %}
                             </td>
                             <td class="text-base-content/70">
-                                {{ course.hours }} {{ course.hour_type.value if course.hour_type else 'h' }}
+                                {{ course.hours|trim_float }} h {{ "weekly" if
+                                course.hour_type.value
+                                == 1 else 'semesterly' }}
                             </td>
                         </tr>
                         {% endfor %}

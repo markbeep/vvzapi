@@ -465,6 +465,9 @@ class Lecturer(BaseModel, Overwriteable, table=True):
         sa_column=Column(INTEGER, nullable=False),
     )
 
+    def __str__(self) -> str:
+        return f"{self.surname} {self.name}"
+
 
 """
 

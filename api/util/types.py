@@ -24,6 +24,28 @@ class WeekdayEnum(Enum):
     Date = 8
     Invalid = 9
 
+    def __str__(self) -> str:
+        if self == WeekdayEnum.Mon:
+            return "Mon"
+        elif self == WeekdayEnum.Tue:
+            return "Tue"
+        elif self == WeekdayEnum.Wed:
+            return "Wed"
+        elif self == WeekdayEnum.Thu:
+            return "Thu"
+        elif self == WeekdayEnum.Fri:
+            return "Fri"
+        elif self == WeekdayEnum.Sat:
+            return "Sat"
+        elif self == WeekdayEnum.Sun:
+            return "Sun"
+        elif self == WeekdayEnum.ByAppointment:
+            return "By Appointment"
+        elif self == WeekdayEnum.Date:
+            return "Date"
+        else:
+            return "Invalid"
+
 
 class TimeSlot(BaseModel):
     weekday: WeekdayEnum

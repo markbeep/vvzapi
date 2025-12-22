@@ -1,7 +1,8 @@
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 from fastapi import Depends, FastAPI, Query, Request
 from jinja2 import Environment, FileSystemLoader
+from sqlmodel import Session, col, select
 from starlette.background import BackgroundTask
 from fastapi.responses import (
     FileResponse,
@@ -17,6 +18,12 @@ import httpx
 from jinja2_htmlmin import minify_loader
 
 from api.env import Settings
+from api.models import (
+    Course,
+    Lecturer,
+    UnitExaminerLink,
+    UnitLecturerLink,
+)
 from api.routers.v1_router import router as v1_router
 from api.routers.v2_router import router as v2_router
 from api.routers.v2.search import QueryKey, search_units
@@ -42,6 +49,9 @@ templates = Jinja2Templates(
     )
 )
 templates.env.filters["pluralize"] = pluralize_dj  # pyright: ignore[reportUnknownMemberType]
+templates.env.filters["trim_float"] = (  # pyright: ignore[reportUnknownMemberType]
+    lambda x: round(cast(float, x), 3) if x % 1 else int(cast(float, x))  # pyright: ignore[reportUnknownLambdaType]
+)
 
 
 def send_analytics_event(request: Request):
@@ -131,15 +141,23 @@ async def root(
 @app.get("/unit/{unit_id}", include_in_schema=False)
 async def unit_detail(
     unit_id: int,
-    session: Annotated[Any, Depends(get_session)],
+    session: Annotated[Session, Depends(get_session)],
 ):
     unit = await get_unit(unit_id, session)
     if not unit:  # TODO: redirect to 404 page once implemented
         return HTMLResponse(status_code=404)
 
-    # lecturer_ids = await get_unit_lecturers(unit_id, session)
-    courses = []
-    lecturers = []
+    lecturers = session.exec(
+        select(Lecturer)
+        .join(UnitLecturerLink, col(UnitLecturerLink.lecturer_id) == Lecturer.id)
+        .where(UnitLecturerLink.unit_id == unit_id)
+    ).all()
+    examiners = session.exec(
+        select(Lecturer)
+        .join(UnitExaminerLink, col(UnitExaminerLink.lecturer_id) == Lecturer.id)
+        .where(UnitExaminerLink.unit_id == unit_id)
+    ).all()
+    courses = session.exec(select(Course).where(Course.unit_id == unit_id)).all()
 
     return templates.TemplateResponse(
         "unit_detail.html",
@@ -149,6 +167,7 @@ async def unit_detail(
             "unit": unit,
             "courses": courses,
             "lecturers": lecturers,
+            "examiners": examiners,
         },
     )
 
