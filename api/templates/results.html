@@ -9,7 +9,9 @@
 
         {% if results.total %}
         <div class="text-gray-600">
-            <p>Found {{ results.total }} result{{ results.total|pluralize }}</p>
+            <p class="text-xs pb-2">Found {{ results.total }} result{{ results.total|pluralize }} where
+                <span class="bg-gray-200 py-0.5 px-1 rounded">{{ results.filters_used|join(', ') }}</span>
+            </p>
 
             <div class="collapse bg-base-100 border-base-300 border">
                 <input type="checkbox" />
@@ -138,7 +140,9 @@
         {% else %}
         {% if query %}
         <div class="text-center text-gray-500 mt-10">
-            <p>No results found for "{{ query }}".</p>
+            <p class="text-xs">No results found where
+                <span class="bg-gray-200 py-0.5 px-1 rounded">{{ results.filters_used|join(', ') }}</span>
+            </p>
         </div>
         {% endif %}
         {% endif %}

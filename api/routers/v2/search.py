@@ -83,6 +83,9 @@ class Operator(str, Enum):
     ge = ">="
     le = "<="
 
+    def __str__(self) -> str:
+        return self.value
+
 
 class FilterOperatorUnparsed(BaseModel):
     key: QueryKey
@@ -94,6 +97,9 @@ class FilterOperator(BaseModel):
     key: QueryKey
     operator: Operator
     value: str
+
+    def __str__(self) -> str:
+        return f"{self.key} {self.operator} {self.value}"
 
 
 def find_closest_operators(key: str) -> QueryKey | None:
@@ -130,7 +136,9 @@ def match_filters(
     limit: int = 20,
     order_by: QueryKey = "year",
     descending: bool = True,
-) -> tuple[int, list[LearningUnit]]:
+) -> tuple[int, list[LearningUnit], list[FilterOperator]]:
+    filters_used: list[FilterOperator] = []
+
     query = select(
         LearningUnit,
         year := sql_cast(func.substr(LearningUnit.semkez, 1, 4), Integer),
@@ -161,11 +169,13 @@ def match_filters(
             if filter_.operator == Operator.ne:
                 clause = not_(clause)
             query = query.where(clause)
+            filters_used.append(filter_)
         elif filter_.key == "title_english":
             clause = col(LearningUnit.title_english).ilike(f"%{filter_.value}%")
             if filter_.operator == Operator.ne:
                 clause = not_(clause)
             query = query.where(clause)
+            filters_used.append(filter_)
         elif filter_.key == "title":
             clause = or_(
                 func.coalesce(LearningUnit.title, "").ilike(f"%{filter_.value}%"),
@@ -176,8 +186,10 @@ def match_filters(
             if filter_.operator == Operator.ne:
                 clause = not_(clause)
             query = query.where(clause)
+            filters_used.append(filter_)
         elif filter_.key == "number":
             query = query.where(col(LearningUnit.number).ilike(f"%{filter_.value}%"))
+            filters_used.append(filter_)
         elif filter_.key == "credits":
             try:
                 ects_value = float(filter_.value)
@@ -196,6 +208,7 @@ def match_filters(
                     query = query.where(col(LearningUnit.credits) >= ects_value)
                 case Operator.le:
                     query = query.where(col(LearningUnit.credits) <= ects_value)
+            filters_used.append(filter_)
         elif filter_.key == "year":
             if not filter_.value.isdigit():
                 continue
@@ -213,6 +226,7 @@ def match_filters(
                     query = query.where(year >= year_value)
                 case Operator.le:
                     query = query.where(year <= year_value)
+            filters_used.append(filter_)
         elif filter_.key == "semester":
             if len(filter_.value) == 0 or filter_.value[0].upper() not in [
                 "S",
@@ -230,6 +244,13 @@ def match_filters(
                 query = query.where(semester != sem_filter)
             else:
                 query = query.where(semester == sem_filter)
+            filters_used.append(
+                FilterOperator(
+                    operator=filter_.operator,
+                    key=filter_.key,
+                    value="FS" if sem_filter == "S" else "HS",
+                )
+            )
         elif filter_.key in ["lecturer", "i", "instructor"]:
             clause = or_(
                 func.concat(Lecturer.name, " ", Lecturer.surname).ilike(
@@ -242,6 +263,7 @@ def match_filters(
             if filter_.operator == Operator.ne:
                 clause = not_(clause)
             query = query.where(clause)
+            filters_used.append(filter_)
         elif filter_.key == "descriptions_german":
             search_term = f"%{filter_.value}%"
             clause = or_(
@@ -256,6 +278,7 @@ def match_filters(
             if filter_.operator == Operator.ne:
                 clause = not_(clause)
             query = query.where(clause)
+            filters_used.append(filter_)
         elif filter_.key == "descriptions_english":
             search_term = f"%{filter_.value}%"
             clause = or_(
@@ -274,6 +297,7 @@ def match_filters(
             if filter_.operator == Operator.ne:
                 clause = not_(clause)
             query = query.where(clause)
+            filters_used.append(filter_)
         elif filter_.key == "descriptions":
             search_term = f"%{filter_.value}%"
             clause = or_(
@@ -299,6 +323,7 @@ def match_filters(
             if filter_.operator == Operator.ne:
                 clause = not_(clause)
             query = query.where(clause)
+            filters_used.append(filter_)
         elif filter_.key == "department":
             closest_dept = Department.closest_match(filter_.value)
             if not closest_dept:
@@ -307,16 +332,31 @@ def match_filters(
             if filter_.operator == Operator.ne:
                 clause = not_(clause)
             query = query.where(clause)
+            filters_used.append(
+                FilterOperator(
+                    key=filter_.key,
+                    operator=filter_.operator,
+                    value=str(closest_dept),
+                )
+            )
         elif filter_.key == "level":
             clause = col(LearningUnit.levels).icontains(filter_.value)
             if filter_.operator == Operator.ne:
                 clause = not_(clause)
             query = query.where(clause)
+            filters_used.append(
+                FilterOperator(
+                    key=filter_.key,
+                    operator=filter_.operator,
+                    value=filter_.value.upper(),
+                )
+            )
         elif filter_.key == "language":
             clause = col(LearningUnit.language).icontains(filter_.value)
             if filter_.operator == Operator.ne:
                 clause = not_(clause)
             query = query.where(clause)
+            filters_used.append(filter_)
 
     # count is in separate query to make it easier
     count = session.exec(select(func.count()).select_from(query.subquery())).one()
@@ -358,12 +398,13 @@ def match_filters(
 
     results = session.exec(query.offset(offset).limit(limit)).all()
 
-    return count, [unit for unit, _, _ in results]
+    return count, [unit for unit, _, _ in results], filters_used
 
 
 class SearchResponse(BaseModel):
     total: int
     results: list[LearningUnit]
+    filters_used: list[FilterOperator]
 
 
 @router.get("/", response_model=SearchResponse)
@@ -424,7 +465,7 @@ async def search_units(
     # default to desc
     descending = not order.startswith("asc")
 
-    count, results = match_filters(
+    count, results, filters_used = match_filters(
         session,
         filters,
         offset=offset,
@@ -433,4 +474,4 @@ async def search_units(
         descending=descending,
     )
 
-    return SearchResponse(total=count, results=results)
+    return SearchResponse(total=count, results=results, filters_used=filters_used)
