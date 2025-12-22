@@ -318,7 +318,38 @@
         </section>
         {% endif %}
 
-    </div>
+
+        {% if sections %}
+        <section class="mt-8 mb-4">
+            <h3 class="text-xl font-bold text-base-content mb-4">Offered In</h3>
+            <ul class="card bg-base-100 shadow-sm space-y-1 p-5">
+                {% for tree in sections recursive %}
+                <li>
+                    <div class="flex items-center gap-2 py-0.5">
+                        <span class="h-0.5 w-3 bg-base-300 rounded-full"></span>
+                        <a target="_blank"
+                            href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?abschnittId={{ tree.section.id }}&semkez={{ tree.section.semkez }}&lang=en"
+                            class="text-sm text-base-content font-medium hover:underline">
+                            {{ tree.section.name_english if tree.section.name_english else tree.section.name }}
+                        </a>
+                        {% if tree.section.comment_english or tree.section.comment %}
+                        <span class="text-xs text-base-content/70 italic">
+                            ({{ tree.section.comment_english if tree.section.comment_english else
+                            tree.section.comment }})
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    {% if tree.sub_sections %}
+                    <ul class="pl-4 ml-1.5 border-l border-base-300">
+                        {{ loop(tree.sub_sections) }}
+                    </ul>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endif %}
 </main>
 
 {% endblock content %}

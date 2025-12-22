@@ -6,7 +6,7 @@
 
     <div class="join grid grid-cols-2 w-full max-w-xs mx-auto">
         {% if page > 1 %}
-        <a href="/?q={{ query }}{% if page > 2 %}&page={{ page - 1 }}{% endif %}{{ q_order_by }}{{ q_limit }}{{ q_order }}"
+        <a href="/?q={{ query|e }}{% if page > 2 %}&page={{ page - 1 }}{% endif %}{{ q_order_by }}{{ q_limit }}{{ q_order }}"
             class="join-item btn btn-outline">
             Previous
         </a>
@@ -17,7 +17,7 @@
         {% endif %}
 
         {% if page * limit < results.total %} <a
-            href="/?q={{ query }}&page={{ page + 1 }}{{ q_order_by }}{{ q_limit }}{{ q_order }}"
+            href="/?q={{ query|e }}&page={{ page + 1 }}{{ q_order_by }}{{ q_limit }}{{ q_order }}"
             class="join-item btn btn-outline">
             Next
             </a>

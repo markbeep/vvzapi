@@ -20,7 +20,7 @@
       <a href="/" class="btn btn-ghost text-xl p-1">VVZ API</a>
     </div>
     <form action="/" method="get" class="flex-1 join">
-      <input type="search" name="q" value="{{ query|default('') }}" placeholder="Search..."
+      <input type="search" name="q" value="{{ query|e }}" placeholder="Search..."
         class="input input-bordered w-full join-item" />
     </form>
     <div class="flex-none gap-2">

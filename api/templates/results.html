@@ -138,13 +138,11 @@
 
 
         {% else %}
-        {% if query %}
         <div class="text-center text-gray-500 mt-10">
             <p class="text-xs">No results found where
                 <span class="bg-gray-200 py-0.5 px-1 rounded">{{ results.filters_used|join(', ') }}</span>
             </p>
         </div>
-        {% endif %}
         {% endif %}
 
 

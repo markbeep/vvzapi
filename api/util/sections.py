@@ -1,5 +1,8 @@
 from pydantic import BaseModel
-from sqlmodel import Session, text
+from sqlalchemy.orm import aliased
+from sqlmodel import Session, col, select, text
+
+from api.models import Section, UnitSectionLink
 
 
 class SectionLevel(BaseModel):
@@ -49,3 +52,23 @@ def get_parent_sections(session: Session, child_section_id: int):
         SectionLevel(id=row[0], level=row[1]) for row in results.fetchall()
     ]
     return parent_sections
+
+
+def get_parent_from_unit(unit_id: int | None = None):
+    """Gets all sections, including parent sections, for a given unit ID"""
+    base_stmt = select(Section.id, Section.parent_id).join(
+        UnitSectionLink, col(UnitSectionLink.section_id) == Section.id
+    )
+    if unit_id is not None:
+        base_stmt = base_stmt.where(UnitSectionLink.unit_id == unit_id)
+    section_cte = base_stmt.cte("section_tree", recursive=True)
+    ParentSection = aliased(Section)
+    recursive_part = select(ParentSection.id, ParentSection.parent_id).join(
+        section_cte, col(ParentSection.id) == section_cte.c.parent_id
+    )
+    section_cte = section_cte.union_all(recursive_part)
+    return (
+        select(Section)
+        .join(section_cte, col(Section.id) == section_cte.c.id)
+        .distinct()
+    )

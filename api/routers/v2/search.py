@@ -20,8 +20,10 @@ from api.models import (
     Department,
     LearningUnit,
     Lecturer,
+    Section,
     UnitExaminerLink,
     UnitLecturerLink,
+    UnitSectionLink,
 )
 from api.util.db import get_session
 
@@ -50,6 +52,7 @@ QueryKey = Literal[
     "level",
     "department",
     "language",
+    "offered",
 ]
 
 mapping: dict[str, QueryKey] = {
@@ -72,6 +75,9 @@ mapping: dict[str, QueryKey] = {
     "lvl": "level",
     "lev": "level",
     "lang": "language",
+    "offeredin": "offered",
+    "o": "offered",
+    "off": "offered",
 }
 
 
@@ -163,200 +169,292 @@ def match_filters(
             )
         )
 
+    offered_in_ids: set[int] = set()
+    not_offered_in_ids: set[int] = set()
+    if any(f.key == "offered" for f in filters):
+        query = query.join(
+            UnitSectionLink, onclause=col(LearningUnit.id) == UnitSectionLink.unit_id
+        ).join(Section, onclause=col(UnitSectionLink.section_id) == Section.id)
+
     for filter_ in filters:
-        if filter_.key == "title_german":
-            clause = col(LearningUnit.title).ilike(f"%{filter_.value}%")
-            if filter_.operator == Operator.ne:
-                clause = not_(clause)
-            query = query.where(clause)
-            filters_used.append(filter_)
-        elif filter_.key == "title_english":
-            clause = col(LearningUnit.title_english).ilike(f"%{filter_.value}%")
-            if filter_.operator == Operator.ne:
-                clause = not_(clause)
-            query = query.where(clause)
-            filters_used.append(filter_)
-        elif filter_.key == "title":
-            clause = or_(
-                func.coalesce(LearningUnit.title, "").ilike(f"%{filter_.value}%"),
-                func.coalesce(LearningUnit.title_english, "").ilike(
-                    f"%{filter_.value}%"
-                ),
-            )
-            if filter_.operator == Operator.ne:
-                clause = not_(clause)
-            query = query.where(clause)
-            filters_used.append(filter_)
-        elif filter_.key == "number":
-            query = query.where(col(LearningUnit.number).ilike(f"%{filter_.value}%"))
-            filters_used.append(filter_)
-        elif filter_.key == "credits":
-            try:
-                ects_value = float(filter_.value)
-            except ValueError:
-                continue
-            match filter_.operator:
-                case Operator.eq:
-                    query = query.where(LearningUnit.credits == ects_value)
-                case Operator.ne:
-                    query = query.where(LearningUnit.credits != ects_value)
-                case Operator.gt:
-                    query = query.where(col(LearningUnit.credits) > ects_value)
-                case Operator.lt:
-                    query = query.where(col(LearningUnit.credits) < ects_value)
-                case Operator.ge:
-                    query = query.where(col(LearningUnit.credits) >= ects_value)
-                case Operator.le:
-                    query = query.where(col(LearningUnit.credits) <= ects_value)
-            filters_used.append(filter_)
-        elif filter_.key == "year":
-            if not filter_.value.isdigit():
-                continue
-            year_value = int(filter_.value)
-            match filter_.operator:
-                case Operator.eq:
-                    query = query.where(year == year_value)
-                case Operator.ne:
-                    query = query.where(year != year_value)
-                case Operator.gt:
-                    query = query.where(year > year_value)
-                case Operator.lt:
-                    query = query.where(year < year_value)
-                case Operator.ge:
-                    query = query.where(year >= year_value)
-                case Operator.le:
-                    query = query.where(year <= year_value)
-            filters_used.append(filter_)
-        elif filter_.key == "semester":
-            if len(filter_.value) == 0 or filter_.value[0].upper() not in [
-                "S",
-                "W",
-                "F",
-                "H",
-            ]:
-                continue
-            sem_filter = filter_.value[0].upper()
-            if sem_filter == "F":  # fs
-                sem_filter = "S"
-            elif sem_filter == "H":  # hs
-                sem_filter = "W"
-            if filter_.operator == Operator.ne:
-                query = query.where(semester != sem_filter)
-            else:
-                query = query.where(semester == sem_filter)
-            filters_used.append(
-                FilterOperator(
-                    operator=filter_.operator,
-                    key=filter_.key,
-                    value="FS" if sem_filter == "S" else "HS",
+        match filter_.key:
+            case "title_german":
+                clause = col(LearningUnit.title).ilike(f"%{filter_.value}%")
+                if filter_.operator == Operator.ne:
+                    clause = not_(clause)
+                query = query.where(clause)
+                filters_used.append(filter_)
+            case "title_english":
+                clause = col(LearningUnit.title_english).ilike(f"%{filter_.value}%")
+                if filter_.operator == Operator.ne:
+                    clause = not_(clause)
+                query = query.where(clause)
+                filters_used.append(filter_)
+            case "title":
+                clause = or_(
+                    func.coalesce(LearningUnit.title, "").ilike(f"%{filter_.value}%"),
+                    func.coalesce(LearningUnit.title_english, "").ilike(
+                        f"%{filter_.value}%"
+                    ),
                 )
-            )
-        elif filter_.key in ["lecturer", "i", "instructor"]:
-            clause = or_(
-                func.concat(Lecturer.name, " ", Lecturer.surname).ilike(
-                    f"%{filter_.value}%"
-                ),
-                func.concat(Lecturer.surname, " ", Lecturer.name).ilike(
-                    f"%{filter_.value}%"
-                ),
-            )
-            if filter_.operator == Operator.ne:
-                clause = not_(clause)
-            query = query.where(clause)
-            filters_used.append(filter_)
-        elif filter_.key == "descriptions_german":
-            search_term = f"%{filter_.value}%"
-            clause = or_(
-                (func.coalesce(LearningUnit.content, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.literature, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.objective, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.lecture_notes, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.additional, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.comment, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.abstract, "").ilike(search_term)),
-            )
-            if filter_.operator == Operator.ne:
-                clause = not_(clause)
-            query = query.where(clause)
-            filters_used.append(filter_)
-        elif filter_.key == "descriptions_english":
-            search_term = f"%{filter_.value}%"
-            clause = or_(
-                (func.coalesce(LearningUnit.content_english, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.literature_english, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.objective_english, "").ilike(search_term)),
-                (
-                    func.coalesce(LearningUnit.lecture_notes_english, "").ilike(
-                        search_term
+                if filter_.operator == Operator.ne:
+                    clause = not_(clause)
+                query = query.where(clause)
+                filters_used.append(filter_)
+            case "number":
+                query = query.where(
+                    col(LearningUnit.number).ilike(f"%{filter_.value}%")
+                )
+                filters_used.append(filter_)
+            case "credits":
+                try:
+                    ects_value = float(filter_.value)
+                except ValueError:
+                    continue
+                match filter_.operator:
+                    case Operator.eq:
+                        query = query.where(LearningUnit.credits == ects_value)
+                    case Operator.ne:
+                        query = query.where(LearningUnit.credits != ects_value)
+                    case Operator.gt:
+                        query = query.where(col(LearningUnit.credits) > ects_value)
+                    case Operator.lt:
+                        query = query.where(col(LearningUnit.credits) < ects_value)
+                    case Operator.ge:
+                        query = query.where(col(LearningUnit.credits) >= ects_value)
+                    case Operator.le:
+                        query = query.where(col(LearningUnit.credits) <= ects_value)
+                filters_used.append(filter_)
+            case "year":
+                if not filter_.value.isdigit():
+                    continue
+                year_value = int(filter_.value)
+                match filter_.operator:
+                    case Operator.eq:
+                        query = query.where(year == year_value)
+                    case Operator.ne:
+                        query = query.where(year != year_value)
+                    case Operator.gt:
+                        query = query.where(year > year_value)
+                    case Operator.lt:
+                        query = query.where(year < year_value)
+                    case Operator.ge:
+                        query = query.where(year >= year_value)
+                    case Operator.le:
+                        query = query.where(year <= year_value)
+                filters_used.append(filter_)
+            case "semester":
+                if len(filter_.value) == 0 or filter_.value[0].upper() not in [
+                    "S",
+                    "W",
+                    "F",
+                    "H",
+                ]:
+                    continue
+                sem_filter = filter_.value[0].upper()
+                if sem_filter == "F":  # fs
+                    sem_filter = "S"
+                elif sem_filter == "H":  # hs
+                    sem_filter = "W"
+                if filter_.operator == Operator.ne:
+                    query = query.where(semester != sem_filter)
+                else:
+                    query = query.where(semester == sem_filter)
+                filters_used.append(
+                    FilterOperator(
+                        operator=filter_.operator,
+                        key=filter_.key,
+                        value="FS" if sem_filter == "S" else "HS",
                     )
-                ),
-                (func.coalesce(LearningUnit.additional_english, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.comment_english, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.abstract_english, "").ilike(search_term)),
-            )
-            if filter_.operator == Operator.ne:
-                clause = not_(clause)
-            query = query.where(clause)
-            filters_used.append(filter_)
-        elif filter_.key == "descriptions":
-            search_term = f"%{filter_.value}%"
-            clause = or_(
-                (func.coalesce(LearningUnit.content, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.content_english, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.literature, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.literature_english, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.objective, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.objective_english, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.lecture_notes, "").ilike(search_term)),
-                (
-                    func.coalesce(LearningUnit.lecture_notes_english, "").ilike(
-                        search_term
+                )
+            case "lecturer":
+                clause = or_(
+                    func.concat(Lecturer.name, " ", Lecturer.surname).ilike(
+                        f"%{filter_.value}%"
+                    ),
+                    func.concat(Lecturer.surname, " ", Lecturer.name).ilike(
+                        f"%{filter_.value}%"
+                    ),
+                )
+                if filter_.operator == Operator.ne:
+                    clause = not_(clause)
+                query = query.where(clause)
+                filters_used.append(filter_)
+            case "descriptions_german":
+                search_term = f"%{filter_.value}%"
+                clause = or_(
+                    (func.coalesce(LearningUnit.content, "").ilike(search_term)),
+                    (func.coalesce(LearningUnit.literature, "").ilike(search_term)),
+                    (func.coalesce(LearningUnit.objective, "").ilike(search_term)),
+                    (func.coalesce(LearningUnit.lecture_notes, "").ilike(search_term)),
+                    (func.coalesce(LearningUnit.additional, "").ilike(search_term)),
+                    (func.coalesce(LearningUnit.comment, "").ilike(search_term)),
+                    (func.coalesce(LearningUnit.abstract, "").ilike(search_term)),
+                )
+                if filter_.operator == Operator.ne:
+                    clause = not_(clause)
+                query = query.where(clause)
+                filters_used.append(filter_)
+            case "descriptions_english":
+                search_term = f"%{filter_.value}%"
+                clause = or_(
+                    (
+                        func.coalesce(LearningUnit.content_english, "").ilike(
+                            search_term
+                        )
+                    ),
+                    (
+                        func.coalesce(LearningUnit.literature_english, "").ilike(
+                            search_term
+                        )
+                    ),
+                    (
+                        func.coalesce(LearningUnit.objective_english, "").ilike(
+                            search_term
+                        )
+                    ),
+                    (
+                        func.coalesce(LearningUnit.lecture_notes_english, "").ilike(
+                            search_term
+                        )
+                    ),
+                    (
+                        func.coalesce(LearningUnit.additional_english, "").ilike(
+                            search_term
+                        )
+                    ),
+                    (
+                        func.coalesce(LearningUnit.comment_english, "").ilike(
+                            search_term
+                        )
+                    ),
+                    (
+                        func.coalesce(LearningUnit.abstract_english, "").ilike(
+                            search_term
+                        )
+                    ),
+                )
+                if filter_.operator == Operator.ne:
+                    clause = not_(clause)
+                query = query.where(clause)
+                filters_used.append(filter_)
+            case "descriptions":
+                search_term = f"%{filter_.value}%"
+                clause = or_(
+                    (func.coalesce(LearningUnit.content, "").ilike(search_term)),
+                    (
+                        func.coalesce(LearningUnit.content_english, "").ilike(
+                            search_term
+                        )
+                    ),
+                    (func.coalesce(LearningUnit.literature, "").ilike(search_term)),
+                    (
+                        func.coalesce(LearningUnit.literature_english, "").ilike(
+                            search_term
+                        )
+                    ),
+                    (func.coalesce(LearningUnit.objective, "").ilike(search_term)),
+                    (
+                        func.coalesce(LearningUnit.objective_english, "").ilike(
+                            search_term
+                        )
+                    ),
+                    (func.coalesce(LearningUnit.lecture_notes, "").ilike(search_term)),
+                    (
+                        func.coalesce(LearningUnit.lecture_notes_english, "").ilike(
+                            search_term
+                        )
+                    ),
+                    (func.coalesce(LearningUnit.additional, "").ilike(search_term)),
+                    (
+                        func.coalesce(LearningUnit.additional_english, "").ilike(
+                            search_term
+                        )
+                    ),
+                    (func.coalesce(LearningUnit.comment, "").ilike(search_term)),
+                    (
+                        func.coalesce(LearningUnit.comment_english, "").ilike(
+                            search_term
+                        )
+                    ),
+                    (func.coalesce(LearningUnit.abstract, "").ilike(search_term)),
+                    (
+                        func.coalesce(LearningUnit.abstract_english, "").ilike(
+                            search_term
+                        )
+                    ),
+                )
+                if filter_.operator == Operator.ne:
+                    clause = not_(clause)
+                query = query.where(clause)
+                filters_used.append(filter_)
+            case "department":
+                closest_dept = Department.closest_match(filter_.value)
+                if not closest_dept:
+                    continue
+                clause = col(LearningUnit.departments).contains(closest_dept.value)
+                if filter_.operator == Operator.ne:
+                    clause = not_(clause)
+                query = query.where(clause)
+                filters_used.append(
+                    FilterOperator(
+                        key=filter_.key,
+                        operator=filter_.operator,
+                        value=str(closest_dept),
                     )
-                ),
-                (func.coalesce(LearningUnit.additional, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.additional_english, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.comment, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.comment_english, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.abstract, "").ilike(search_term)),
-                (func.coalesce(LearningUnit.abstract_english, "").ilike(search_term)),
-            )
-            if filter_.operator == Operator.ne:
-                clause = not_(clause)
-            query = query.where(clause)
-            filters_used.append(filter_)
-        elif filter_.key == "department":
-            closest_dept = Department.closest_match(filter_.value)
-            if not closest_dept:
-                continue
-            clause = col(LearningUnit.departments).contains(closest_dept.value)
-            if filter_.operator == Operator.ne:
-                clause = not_(clause)
-            query = query.where(clause)
-            filters_used.append(
-                FilterOperator(
-                    key=filter_.key,
-                    operator=filter_.operator,
-                    value=str(closest_dept),
                 )
-            )
-        elif filter_.key == "level":
-            clause = col(LearningUnit.levels).icontains(filter_.value)
-            if filter_.operator == Operator.ne:
-                clause = not_(clause)
-            query = query.where(clause)
-            filters_used.append(
-                FilterOperator(
-                    key=filter_.key,
-                    operator=filter_.operator,
-                    value=filter_.value.upper(),
+            case "level":
+                clause = col(LearningUnit.levels).icontains(filter_.value)
+                if filter_.operator == Operator.ne:
+                    clause = not_(clause)
+                query = query.where(clause)
+                filters_used.append(
+                    FilterOperator(
+                        key=filter_.key,
+                        operator=filter_.operator,
+                        value=filter_.value.upper(),
+                    )
                 )
-            )
-        elif filter_.key == "language":
-            clause = col(LearningUnit.language).icontains(filter_.value)
-            if filter_.operator == Operator.ne:
-                clause = not_(clause)
-            query = query.where(clause)
-            filters_used.append(filter_)
+            case "language":
+                clause = col(LearningUnit.language).icontains(filter_.value)
+                if filter_.operator == Operator.ne:
+                    clause = not_(clause)
+                query = query.where(clause)
+                filters_used.append(filter_)
+            case "offered":
+                result = session.exec(
+                    select(
+                        Section.id, func.coalesce(Section.name_english, Section.name)
+                    )
+                    .where(
+                        or_(
+                            col(Section.name_english).icontains(filter_.value),
+                            col(Section.name).icontains(filter_.value),
+                        )
+                    )
+                    .distinct()
+                ).all()
+                ids = [section_id for section_id, _ in result]
+                names = set([name for _, name in result if name])
+                if filter_.operator == Operator.ne:
+                    not_offered_in_ids.update(ids)
+                else:
+                    offered_in_ids.update(ids)
+
+                if len(names) > 2:
+                    names = list(names)[:2] + [f"... ({len(names) - 2} more)"]
+                filters_used.append(
+                    FilterOperator(
+                        key=filter_.key,
+                        operator=filter_.operator,
+                        value=" | ".join(names),
+                    )
+                )
+
+    if offered_in_ids:
+        query = query.where(col(Section.id).in_(offered_in_ids))
+    if not_offered_in_ids:
+        query = query.where(not_(col(Section.id).in_(not_offered_in_ids)))
 
     # count is in separate query to make it easier
     count = session.exec(select(func.count()).select_from(query.subquery())).one()
@@ -377,14 +475,20 @@ def match_filters(
             order_by_clauses = [semester]
         case "lecturer":
             order_by_clauses = [col(Lecturer.surname), col(Lecturer.name)]
-        case "year" | "descriptions" | "descriptions_english" | "descriptions_german":
-            pass
         case "department":
             order_by_clauses = [col(LearningUnit.departments)]
         case "level":
             order_by_clauses = [col(LearningUnit.levels)]
         case "language":
             order_by_clauses = [col(LearningUnit.language)]
+        case (
+            "year"
+            | "descriptions"
+            | "descriptions_english"
+            | "descriptions_german"
+            | "offered"
+        ):
+            pass
     if descending:
         query = query.order_by(
             *(x.desc() for x in order_by_clauses),

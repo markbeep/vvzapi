@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 from typing import Annotated, Any, cast
+import urllib.parse
 
 from fastapi import Depends, FastAPI, Query, Request
 from jinja2 import Environment, FileSystemLoader
+from pydantic import BaseModel
 from sqlmodel import Session, col, select
 from starlette.background import BackgroundTask
 from fastapi.responses import (
@@ -16,11 +20,13 @@ from fastapi.middleware.gzip import GZipMiddleware
 from jinja2_pluralize import pluralize_dj  # pyright: ignore[reportUnknownVariableType,reportMissingTypeStubs]
 import httpx
 from jinja2_htmlmin import minify_loader
+import urllib
 
 from api.env import Settings
 from api.models import (
     Course,
     Lecturer,
+    Section,
     UnitExaminerLink,
     UnitLecturerLink,
 )
@@ -29,6 +35,7 @@ from api.routers.v2_router import router as v2_router
 from api.routers.v2.search import QueryKey, search_units
 from api.routers.v1.units import get_unit
 from api.util.db import get_session
+from api.util.sections import get_parent_from_unit
 from api.util.version import get_api_version
 
 
@@ -138,6 +145,11 @@ async def root(
     )
 
 
+class RecursiveSection(BaseModel):
+    section: Section
+    sub_sections: list[RecursiveSection] = []
+
+
 @app.get("/unit/{unit_id}", include_in_schema=False)
 async def unit_detail(
     unit_id: int,
@@ -158,6 +170,19 @@ async def unit_detail(
         .where(UnitExaminerLink.unit_id == unit_id)
     ).all()
     courses = session.exec(select(Course).where(Course.unit_id == unit_id)).all()
+    sections = session.exec(get_parent_from_unit(unit_id)).all()
+
+    # create tree structure of offered in sections
+    section_ids = {
+        section.id: RecursiveSection(section=section) for section in sections
+    }
+    root_sections: list[RecursiveSection] = []
+    for section in sections:
+        if section.parent_id and section.parent_id in section_ids:
+            parent_section = section_ids[section.parent_id]
+            parent_section.sub_sections.append(section_ids[section.id])
+        else:
+            root_sections.append(section_ids[section.id])
 
     return templates.TemplateResponse(
         "unit_detail.html",
@@ -165,6 +190,7 @@ async def unit_detail(
             "request": {},
             "version": get_api_version(),
             "unit": unit,
+            "sections": root_sections,
             "courses": courses,
             "lecturers": lecturers,
             "examiners": examiners,

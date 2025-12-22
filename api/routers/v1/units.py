@@ -11,9 +11,9 @@ from api.models import (
     UnitChanges,
     UnitExaminerLink,
     UnitLecturerLink,
-    UnitSectionLink,
 )
 from api.util.db import get_session
+from api.util.sections import get_parent_from_unit
 from api.util.unit_filter import VVZFilters, build_vvz_filter
 
 router = APIRouter(prefix="/unit", tags=["Learning Units"])
@@ -31,17 +31,9 @@ async def get_unit(
 async def get_unit_sections(
     unit_id: int,
     session: Annotated[Session, Depends(get_session)],
-    limit: Annotated[int, Query(gt=0, le=1000)] = 100,
-    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> Sequence[int]:
-    query = (
-        select(UnitSectionLink.section_id)
-        .where(UnitSectionLink.unit_id == unit_id)
-        .offset(offset)
-        .limit(limit)
-    )
-    results = session.exec(query).all()
-    return results
+    results = session.exec(get_parent_from_unit(unit_id)).all()
+    return [sec.id for sec in results]
 
 
 @router.get("/{unit_id}/lecturers", response_model=Sequence[int])
