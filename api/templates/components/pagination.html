@@ -1,8 +1,13 @@
 {% if results.total > results.results|length %}
 <div class="flex flex-col items-center my-4">
+    {% set q_order_by = '&order_by=' + order_by if order_by != 'year' else '' %}
+    {% set q_limit = '&limit=%d' % limit if limit != 20 else '' %}
+    {% set q_order = '&order=' + order if order != 'desc' else '' %}
+
     <div class="join grid grid-cols-2 w-full max-w-xs mx-auto">
         {% if page > 1 %}
-        <a href="/?q={{ query }}{% if page > 2 %}&page={{ page - 1 }}{% endif %}" class="join-item btn btn-outline">
+        <a href="/?q={{ query }}{% if page > 2 %}&page={{ page - 1 }}{% endif %}{{ q_order_by }}{{ q_limit }}{{ q_order }}"
+            class="join-item btn btn-outline">
             Previous
         </a>
         {% else %}
@@ -11,7 +16,8 @@
         </button>
         {% endif %}
 
-        {% if page * limit < results.total %} <a href="/?q={{ query }}&page={{ page + 1 }}"
+        {% if page * limit < results.total %} <a
+            href="/?q={{ query }}&page={{ page + 1 }}{{ q_order_by }}{{ q_limit }}{{ q_order }}"
             class="join-item btn btn-outline">
             Next
             </a>

@@ -121,6 +121,8 @@ async def root(
             "query": query,
             "page": page,
             "limit": limit,
+            "order_by": order_by,
+            "order": order,
             "results": results,
         },
     )
