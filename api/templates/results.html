@@ -10,7 +10,7 @@
         {% if results.total %}
         <div class="text-gray-600">
             <p class="text-xs pb-2">Found {{ results.total }} result{{ results.total|pluralize }} where
-                <span class="bg-gray-200 py-0.5 px-1 rounded">{{ results.filters_used|join(', ') }}</span>
+                <span class="bg-base-100 py-0.5 px-1 rounded">{{ results.filters_used|join(', ') }}</span>
             </p>
 
             <div class="collapse bg-base-100 border-base-300 border">
@@ -76,7 +76,7 @@
                 <div class="flex flex-col gap-2 w-full">
 
                     <div>
-                        <h3 class="text-lg font-bold text-primary leading-tight">
+                        <h3 class="text-lg font-bold text-neutral leading-tight">
                             {{ unit.title_english if unit.title_english else unit.title }}
                         </h3>
                         <h4 class="text-sm text-base-content/70 italic">
@@ -140,7 +140,7 @@
         {% else %}
         <div class="text-center text-gray-500 mt-10">
             <p class="text-xs">No results found where
-                <span class="bg-gray-200 py-0.5 px-1 rounded">{{ results.filters_used|join(', ') }}</span>
+                <span class="bg-base-100 py-0.5 px-1 rounded">{{ results.filters_used|join(', ') }}</span>
             </p>
         </div>
         {% endif %}

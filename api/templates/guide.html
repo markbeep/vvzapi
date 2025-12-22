@@ -27,8 +27,8 @@
           </div>
           <p>
             Spaces separate different filters. If your value contains spaces, wrap
-            it in quotes (e.g.,
-            <code class="kbd kbd-sm">lecturer:"John Doe"</code>).
+            it in quotes <span class="whitespace-nowrap">(e.g.,
+              <code class="kbd kbd-sm">lecturer:"John Doe"</code>).</span>
           </p>
         </div>
       </div>
@@ -164,23 +164,23 @@
         </p>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 font-mono text-sm">
           <div class="bg-base-200 p-2 rounded text-center">
-            <span class="font-bold text-primary">:</span> or
-            <span class="font-bold text-primary">=</span>
+            <span class="font-bold text-accent">:</span> or
+            <span class="font-bold text-accent">=</span>
             <div class="text-base-content/60 text-xs font-sans mt-1">Equal</div>
           </div>
           <div class="bg-base-200 p-2 rounded text-center">
-            <span class="font-bold text-primary">!=</span> or
-            <span class="font-bold text-primary">!:</span>
+            <span class="font-bold text-accent">!=</span> or
+            <span class="font-bold text-accent">!:</span>
             <div class="text-base-content/60 text-xs font-sans mt-1">Not Equal</div>
           </div>
           <div class="bg-base-200 p-2 rounded text-center">
-            <span class="font-bold text-primary">&gt;</span> /
-            <span class="font-bold text-primary">&lt;</span>
+            <span class="font-bold text-accent">&gt;</span> /
+            <span class="font-bold text-accent">&lt;</span>
             <div class="text-base-content/60 text-xs font-sans mt-1">Greater / Less</div>
           </div>
           <div class="bg-base-200 p-2 rounded text-center">
-            <span class="font-bold text-primary">&gt;=</span> /
-            <span class="font-bold text-primary">&lt;=</span>
+            <span class="font-bold text-accent">&gt;=</span> /
+            <span class="font-bold text-accent">&lt;=</span>
             <div class="text-base-content/60 text-xs font-sans mt-1">
               Greater/Less or Equal
             </div>
@@ -195,7 +195,7 @@
         <a href="/?q=credits%3E%3D10" class="block group">
           <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
             <div class="card-body p-4">
-              <code class="text-primary font-bold block mb-1">credits>=10</code>
+              <code class="text-accent font-bold block mb-1">credits>=10</code>
               <span class="text-sm text-base-content/80">Find all courses with 10 or more credits.</span>
             </div>
           </div>
@@ -204,7 +204,7 @@
         <a href="/?q=lecturer%3AMüller+year%3A2024" class="block group">
           <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
             <div class="card-body p-4">
-              <code class="text-primary font-bold block mb-1">lecturer:Müller year:2024</code>
+              <code class="text-accent font-bold block mb-1">lecturer:Müller year:2024</code>
               <span class="text-sm text-base-content/80">Find courses taught by Müller in 2024.</span>
             </div>
           </div>
@@ -213,7 +213,7 @@
         <a href="/?q=physics+s%3AW+d%21%3Aanalysis" class="block group">
           <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
             <div class="card-body p-4">
-              <code class="text-primary font-bold block mb-1">physics s:W d!:analysis</code>
+              <code class="text-accent font-bold block mb-1">physics s:W d!:analysis</code>
               <span class="text-sm text-base-content/80">Search for "physics" in the Winter semester without any mention
                 of "analyis" in the description.</span>
             </div>
