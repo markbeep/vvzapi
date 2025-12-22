@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.2.0](https://github.com/markbeep/vvzapi/compare/v1.1.3...v1.2.0) (2025-12-22)
+
+
+### Features
+
+* **api:** add courses and lecturers to unit details page ([4faf15b](https://github.com/markbeep/vvzapi/commit/4faf15b1b9816cdf9d0f114dacfd5d1a51e6e320))
+* **api:** add offered in details and search filter ([8fc98fc](https://github.com/markbeep/vvzapi/commit/8fc98fc352fdc5b014801cef33514c0c33c2cc99))
+* **api:** change semester/year of a unit while on details page ([5040463](https://github.com/markbeep/vvzapi/commit/5040463736b132659e1e6852e4bc73e99f81dcca))
+* **api:** show filters that got applied when searching ([09a1cf7](https://github.com/markbeep/vvzapi/commit/09a1cf7e32f395f82e1c23b824a675e39122609b))
+
+
+### Bug Fixes
+
+* **api:** correctly link to coursereview ([9d06379](https://github.com/markbeep/vvzapi/commit/9d063795c4197190a00160053f87880bcf26cc40))
+* **api:** correctly sort using department/level ([e1141f4](https://github.com/markbeep/vvzapi/commit/e1141f404edf2bf552c452bb79786e0033bf088f))
+* **api:** keep track of search options across pages ([a34a9be](https://github.com/markbeep/vvzapi/commit/a34a9bebde47174ab0be3f0cfaf98394e2fed6b0))
+* **api:** make periodicity value more clear on unit page ([d68ede3](https://github.com/markbeep/vvzapi/commit/d68ede3503e596031e72bcab3dc5c8547c135f85))
+* **api:** show short levels/departments with long title on hover ([d68ede3](https://github.com/markbeep/vvzapi/commit/d68ede3503e596031e72bcab3dc5c8547c135f85))
+* **scraper:** not rescraping correctly ([9043c0b](https://github.com/markbeep/vvzapi/commit/9043c0b77d7ac3414e2650d2aa9f3c8aab920dfa))
+* **scraper:** parse multiple courses without explicit weekdays correctly ([c63ccb7](https://github.com/markbeep/vvzapi/commit/c63ccb7f439446fa02012c96bd962310f33977df))
+
+
+### Miscellaneous Chores
+
+* make parsing of enums from db more consistent with separate wrapper class ([d68ede3](https://github.com/markbeep/vvzapi/commit/d68ede3503e596031e72bcab3dc5c8547c135f85))
+
 ## [1.1.3](https://github.com/markbeep/vvzapi/compare/v1.1.2...v1.1.3) (2025-12-21)
 
 
