@@ -9,15 +9,19 @@
         <header class="card bg-base-100 shadow-sm">
             <div class="card-body">
                 <div class="flex flex-col gap-2">
-                    <div class="flex flex-wrap items-center gap-2 mb-2">
-                        <span class="badge badge-neutral font-mono">{{ unit.number }}</span>
-                        <span class="badge badge-ghost font-mono">{{ unit.semkez }}</span>
+                    <div class="flex flex-wrap items-center gap-2 mb-2 pr-24">
+                        <span class="badge badge-neutral font-mono h-fit p-1">{{ unit.number }}</span>
+                        <span class="badge badge-ghost font-mono h-fit p-1">{{ unit.semkez }}</span>
                         {% if unit.credits %}
-                        <span class="badge badge-success font-bold">{{ unit.credits }}
+                        <span class="badge badge-success font-bold h-fit p-1">{{ unit.credits }}
                             Credits</span>
                         {% endif %}
                         {% if unit.departments %}
-                        <span class="badge badge-outline">{{ unit.departments_as_str() }}</span>
+                        <span class="badge badge-outline h-fit p-1">
+                            {% for dept in unit.departments %}
+                            <span title="{{ dept }}">{{ dept.short() }}{% if not loop.last %}, {% endif %}</span>
+                            {% endfor %}
+                        </span>
                         {% endif %}
                     </div>
 
@@ -145,7 +149,13 @@
                             {% if unit.levels %}
                             <div class="flex justify-between">
                                 <dt class="text-base-content/60">Levels</dt>
-                                <dd class="font-medium text-base-content text-right">{{ unit.levels|join(', ') }}</dd>
+                                <dd class="font-medium text-base-content text-right">
+                                    {% for level in unit.levels %}
+                                    <span title="{{ level.description() }}">
+                                        {{ level }}{% if not loop.last %}, {% endif %}
+                                    </span>
+                                    {% endfor %}
+                                </dd>
                             </div>
                             {% endif %}
 

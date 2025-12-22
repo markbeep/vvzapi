@@ -15,7 +15,7 @@ from sqlmodel import (
     SQLModel,
 )
 
-from api.util.pydantic_type import PydanticType
+from api.util.pydantic_type import EnumList, PydanticType
 from api.util.types import CourseTypeEnum, Group, TimeSlot
 
 
@@ -103,6 +103,17 @@ class Periodicity(Enum):
     SEMESTER = 2
     BIENNIAL = 3
 
+    def __str__(self) -> str:
+        if self == Periodicity.ONETIME:
+            return "Onetime"
+        elif self == Periodicity.ANNUAL:
+            return "Yearly recurring"
+        elif self == Periodicity.SEMESTER:
+            return "Semesterly recurring"
+        elif self == Periodicity.BIENNIAL:
+            return "Every two years"
+        return "Unknown"
+
 
 class NamedURL(BaseModel):
     name: str
@@ -142,6 +153,29 @@ class Level(str, Enum):
     NDS = "NDS"
     """Master of Advanced Studies"""
 
+    def __str__(self) -> str:
+        return self.value
+
+    def description(self) -> str:
+        descriptions = {
+            Level.BSC: "Bachelor's Degree Program",
+            Level.DZ: "Didactics Certificate",
+            Level.DS: "Diploma Programme",
+            Level.DR: "Doctorate",
+            Level.SHE: "Teaching Diploma",
+            Level.MSC: "Master's Degree Program",
+            Level.GS: "Mobility Students",
+            Level.WBZ: "Advanced Studies (CAS, DAS)",
+            Level.NDS: "Master of Advanced Studies",
+        }
+        return descriptions.get(self, "Unknown")
+
+    @staticmethod
+    def get(v: str | Level) -> Level:
+        if isinstance(v, Level):
+            return v
+        return Level[v]
+
 
 class Department(Enum):
     """This seems to be hardcoded on the VVZ website"""
@@ -171,6 +205,30 @@ class Department(Enum):
             return Department(v)
         return Department[v]
 
+    def __str__(self) -> str:
+        return self.name.replace("_", " ").title()
+
+    def short(self) -> str:
+        short_names = {
+            Department.ARCHITECTURE: "D-ARCH",
+            Department.CIVIL_ENVIRONMENTAL_AND_GEOMATIC_ENGINEERING: "D-BAUG",
+            Department.MECHANICAL_AND_PROCESS_ENGINEERING: "D-MAVT",
+            Department.COMPUTER_SCIENCE: "D-INFK",
+            Department.MANAGEMENT_TECHNOLOGY_AND_ECONOMICS: "D-MTEC",
+            Department.MATHEMATICS: "D-MATH",
+            Department.PHYSICS: "D-PHYS",
+            Department.BIOLOGY: "D-BIOL",
+            Department.EARTH_AND_PLANETARY_SCIENCES: "D-ERDW",
+            Department.HUMANITIES_SOCIAL_AND_POLITICAL_SCIENCES: "D-GESS",
+            Department.INFORMATION_TECHNOLOGY_AND_ELECTRICAL_ENGINEERING: "D-ITET",
+            Department.MATERIALS: "D-MATL",
+            Department.CHEMISTRY_AND_APPLIED_BIOSCIENCES: "D-CHAB",
+            Department.BIOSYSTEMS_SCIENCE_AND_ENGINEERING: "D-BSSE",
+            Department.HEALTH_SCIENCES_AND_TECHNOLOGY: "D-HEST",
+            Department.ENVIRONMENTAL_SYSTEMS_SCIENCE: "D-USYS",
+        }
+        return short_names.get(self, "Unknown")
+
 
 class LearningUnit(BaseModel, Overwriteable, table=True):
     """
@@ -191,9 +249,11 @@ class LearningUnit(BaseModel, Overwriteable, table=True):
     """263-3010-00L type code. Check the `RE_CODE` to more details on the format."""
     title: str | None = Field(default=None)
     title_english: str | None = Field(default=None)
-    levels: list[Level] = Field(default_factory=list, sa_column=Column(JSON))
+    levels: list[Level] = Field(default_factory=list, sa_column=Column(EnumList(Level)))
     """Levels of the learning unit, e.g., BSC, MSC, etc."""
-    departments: list[Department] = Field(default_factory=list, sa_column=Column(JSON))
+    departments: list[Department] = Field(
+        default_factory=list, sa_column=Column(EnumList(Department))
+    )
     """Department offering this learning unit."""
     credits: float | None = Field(default=None)
     two_semester_credits: float | None = Field(default=None)
@@ -269,10 +329,7 @@ class LearningUnit(BaseModel, Overwriteable, table=True):
     )
 
     def departments_as_str(self) -> str:
-        def _dep_to_str(dep: Department) -> str:
-            return dep.name.replace("_", " ").title()
-
-        return ", ".join([_dep_to_str(Department.get(dep)) for dep in self.departments])
+        return ", ".join([str(dep) for dep in self.departments])
 
 
 """

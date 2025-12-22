@@ -83,29 +83,35 @@
                     </div>
 
                     <div class="flex flex-wrap gap-2 text-xs font-mono mt-1">
-                        <span class="badge badge-ghost">
+                        <span class="badge badge-ghost h-fit p-1">
                             {{ unit.number }}
                         </span>
 
-                        <span class="badge badge-ghost">
+                        <span class="badge badge-ghost h-fit p-1">
                             {{ unit.semkez }}
                         </span>
 
                         {% if unit.credits %}
-                        <span class="badge badge-info">
+                        <span class="badge badge-info h-fit p-1">
                             {{ unit.credits }} Credits
                         </span>
                         {% endif %}
 
                         {% if unit.levels %}
-                        <span class="badge badge-success">
-                            {{ unit.levels|join(', ') }}
+                        <span class="badge badge-success h-fit p-1">
+                            {% for level in unit.levels %}
+                            <span title="{{ level.description() }}">
+                                {{ level }}{% if not loop.last %}, {% endif %}
+                            </span>
+                            {% endfor %}
                         </span>
                         {% endif %}
 
                         {% if unit.departments %}
-                        <span class="badge badge-neutral">
-                            {{ unit.departments_as_str() }}
+                        <span class="badge badge-neutral h-fit p-1">
+                            {% for dept in unit.departments %}
+                            <span title="{{ dept }}">{{ dept.short() }}{% if not loop.last %}, {% endif %}</span>
+                            {% endfor %}
                         </span>
                         {% endif %}
                     </div>

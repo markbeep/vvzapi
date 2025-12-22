@@ -431,4 +431,5 @@ async def search_units(
         order_by=order_by,
         descending=descending,
     )
+
     return SearchResponse(total=count, results=results)

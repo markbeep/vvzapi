@@ -1,15 +1,17 @@
+from enum import Enum
 import json
-from typing import Any, Sequence
+from typing import Any, Sequence, cast
 
 from fastapi.encoders import jsonable_encoder
 import sqlalchemy as sa
 from pydantic import BaseModel, parse_obj_as  # pyright: ignore[reportDeprecated]
 from pydantic.json import pydantic_encoder
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import TypeDecorator
 
 
-class PydanticType[T: BaseModel](sa.types.TypeDecorator[sa.JSON()]):
-    impl = sa.types.JSON
+class PydanticType[T: BaseModel](TypeDecorator[sa.JSON()]):
+    impl = sa.JSON
 
     def __init__(
         self,
@@ -36,3 +38,30 @@ class PydanticType[T: BaseModel](sa.types.TypeDecorator[sa.JSON()]):
 
 def json_serializer(*args: Any, **kwargs: Any) -> str:
     return json.dumps(*args, default=pydantic_encoder, **kwargs)
+
+
+class EnumList[T: Enum](TypeDecorator[sa.JSON()]):
+    impl = sa.JSON
+    cache_ok = True
+
+    def __init__(self, enum_cls: type[T]):
+        super().__init__()
+        self.enum_cls = enum_cls
+
+    def process_bind_param(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, value: list[T] | None, dialect: Any
+    ) -> list[Any] | None:
+        if value is None:
+            return None
+        return [
+            item.name if hasattr(item, "value") else item
+            for item in cast(list[Any], value)
+        ]
+
+    def process_result_value(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, value: list[Any] | None, dialect: Any
+    ) -> list[T] | None:
+        if value is None:
+            return []
+        converter = getattr(self.enum_cls, "get", self.enum_cls)
+        return [converter(item) for item in value]
