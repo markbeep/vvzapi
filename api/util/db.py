@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlmodel import Session, text
 
 from api.env import Settings
-from api.util.pydantic_type import json_serializer  # pyright: ignore[reportUnknownVariableType]
+from api.util.pydantic_type import json_serializer
 
 
 engine = create_engine(
@@ -12,5 +12,5 @@ engine = create_engine(
 
 def get_session():
     with Session(engine) as session:
-        session.execute(text("PRAGMA foreign_keys=ON"))  # pyright: ignore[reportDeprecated]
+        session.execute(text("PRAGMA foreign_keys=ON"))  # ty: ignore[deprecated]
         yield session

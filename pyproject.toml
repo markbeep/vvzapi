@@ -19,13 +19,9 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pyright>=1.1.407"]
+dev = [
+    "ty>=0.0.7",
+]
 
-[tool.pyright]
-include = ["**/*.py"]
-exclude = ["**/__pycache__", "**/.venv", "**/.direnv"]
-ignore = []
-
-typeCheckingMode = "strict"
-reportUnknownParameterType = true
-reportMissingParameterType = true
+[tool.ty.src]
+include = ["api", "scraper"]

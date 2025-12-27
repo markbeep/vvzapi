@@ -1,22 +1,25 @@
+import re
 from collections import defaultdict
 from enum import Enum
 from typing import Annotated, Literal, cast
+
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
+from rapidfuzz import fuzz, process, utils
+from sqlalchemy import not_
 from sqlmodel import (
     Integer,
-    String,
     Session,
+    String,
     col,
     distinct,
-    not_,
+    func,
     or_,
     select,
-    cast as sql_cast,
-    func,
 )
-import re
-from rapidfuzz import fuzz, process, utils
+from sqlmodel import (
+    cast as sql_cast,
+)
 
 from api.models import (
     Department,
@@ -28,7 +31,6 @@ from api.models import (
     UnitSectionLink,
 )
 from api.util.db import get_session
-
 
 router = APIRouter(prefix="/search", tags=["Search"])
 
@@ -132,7 +134,7 @@ def find_closest_operators(key: str) -> QueryKey | None:
     ):
         matched_name, score, _ = result
         if score >= 60:
-            return matched_name
+            return cast(QueryKey, matched_name)
     return None
 
 

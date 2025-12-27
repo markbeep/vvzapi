@@ -17,7 +17,5 @@ class KeywordLoggerAdapter(SpiderLoggerAdapter):
 class KeywordLoggerSpider(CrawlSpider):
     @property
     def logger(self):
-        from scraper.util.logging import KeywordLoggerAdapter
-
         logger = super().logger
         return KeywordLoggerAdapter(logger, {"spider": self})

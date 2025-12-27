@@ -1,25 +1,25 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Annotated, Any, cast
 
+import httpx
 from fastapi import Depends, FastAPI, Query, Request
-from jinja2 import Environment, FileSystemLoader
-from pydantic import BaseModel
-from sqlmodel import Session, col, select
-from starlette.background import BackgroundTask
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
     RedirectResponse,
     StreamingResponse,
 )
-from pathlib import Path
 from fastapi.templating import Jinja2Templates
-from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.middleware.cors import CORSMiddleware
-from jinja2_pluralize import pluralize_dj  # pyright: ignore[reportUnknownVariableType,reportMissingTypeStubs]
-import httpx
+from jinja2 import Environment, FileSystemLoader
 from jinja2_htmlmin import minify_loader
+from jinja2_pluralize import pluralize_dj
+from pydantic import BaseModel
+from sqlmodel import Session, col, select
+from starlette.background import BackgroundTask
 
 from api.env import Settings
 from api.models import (
@@ -30,21 +30,23 @@ from api.models import (
     UnitExaminerLink,
     UnitLecturerLink,
 )
-from api.routers.v1_router import router as v1_router
-from api.routers.v2_router import router as v2_router
-from api.routers.v2.search import QueryKey, search_units
 from api.routers.v1.units import get_unit
+from api.routers.v1_router import router as v1_router
+from api.routers.v2.search import QueryKey, search_units
+from api.routers.v2_router import router as v2_router
 from api.util.db import get_session
 from api.util.sections import get_parent_from_unit
 from api.util.version import get_api_version
 
-
 app = FastAPI(title="VVZ API", version=get_api_version())
 app.include_router(v1_router)
 app.include_router(v2_router)
-app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
+app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)  # ty: ignore[invalid-argument-type]
 app.add_middleware(
-    CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
+    CORSMiddleware,  # ty: ignore[invalid-argument-type]
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 templates = Jinja2Templates(
@@ -58,9 +60,9 @@ templates = Jinja2Templates(
         )
     )
 )
-templates.env.filters["pluralize"] = pluralize_dj  # pyright: ignore[reportUnknownMemberType]
-templates.env.filters["trim_float"] = (  # pyright: ignore[reportUnknownMemberType]
-    lambda x: round(cast(float, x), 3) if x % 1 else int(cast(float, x))  # pyright: ignore[reportUnknownLambdaType]
+templates.env.filters["pluralize"] = pluralize_dj
+templates.env.filters["trim_float"] = (
+    lambda x: round(cast(float, x), 3) if x % 1 else int(cast(float, x))
 )
 
 

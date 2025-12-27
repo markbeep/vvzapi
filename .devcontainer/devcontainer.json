@@ -14,7 +14,8 @@
         "yzhang.markdown-all-in-one",
         "Gruntfuggly.todo-tree",
         "tamasfe.even-better-toml",
-        "bradlc.vscode-tailwindcss"
+        "bradlc.vscode-tailwindcss",
+        "astral-sh.ty"
       ]
     }
   }

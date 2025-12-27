@@ -1,16 +1,16 @@
-from enum import Enum
 import json
+from enum import Enum
 from typing import Any, Sequence, cast
 
-from fastapi.encoders import jsonable_encoder
 import sqlalchemy as sa
-from pydantic import BaseModel, parse_obj_as  # pyright: ignore[reportDeprecated]
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel, parse_obj_as  # ty: ignore[deprecated]
 from pydantic.json import pydantic_encoder
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import TypeDecorator
 
 
-class PydanticType[T: BaseModel](TypeDecorator[sa.JSON()]):
+class PydanticType[T: BaseModel](TypeDecorator[sa.JSON]):
     impl = sa.JSON
 
     def __init__(
@@ -29,18 +29,18 @@ class PydanticType[T: BaseModel](TypeDecorator[sa.JSON()]):
     def process_bind_param(self, value: Any, dialect: sa.Dialect):
         return jsonable_encoder(value) if value else None
 
-    def process_result_value(self, value: Any, dialect: sa.Dialect):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def process_result_value(self, value: Any, dialect: sa.Dialect):
         # Concerning the deprecation warning:
         # parse_obj_as works for Basemodels as well as list/dicts.
         # The "new" pydantic.TypeAdapter.validate_python does not.
-        return parse_obj_as(self.pydantic_type, value) if value else None  # pyright: ignore[reportDeprecated]
+        return parse_obj_as(self.pydantic_type, value) if value else None  # ty: ignore[deprecated]
 
 
 def json_serializer(*args: Any, **kwargs: Any) -> str:
     return json.dumps(*args, default=pydantic_encoder, **kwargs)
 
 
-class EnumList[T: Enum](TypeDecorator[sa.JSON()]):
+class EnumList[T: Enum](TypeDecorator[sa.JSON]):
     impl = sa.JSON
     cache_ok = True
 
@@ -48,9 +48,7 @@ class EnumList[T: Enum](TypeDecorator[sa.JSON()]):
         super().__init__()
         self.enum_cls = enum_cls
 
-    def process_bind_param(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, value: Any | None, dialect: Any
-    ) -> list[Any] | None:
+    def process_bind_param(self, value: Any | None, dialect: Any) -> list[Any] | None:
         if value is None:
             return None
         if not isinstance(value, list):
@@ -60,8 +58,10 @@ class EnumList[T: Enum](TypeDecorator[sa.JSON()]):
             for item in cast(list[Any], value)
         ]
 
-    def process_result_value(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, value: list[Any] | None, dialect: Any
+    def process_result_value(  # ty: ignore[invalid-method-override]
+        self,
+        value: list[Any] | None,
+        dialect: Any,
     ) -> list[T] | None:
         if value is None:
             return []

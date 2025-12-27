@@ -32,9 +32,7 @@ jobs:
           sudo apt-get install -y sqlite3 gcc
 
       - name: Type check
-        run: |
-          uv run pyright api
-          uv run pyright scraper
+        run: uv run ty check
 
       - name: Check SQLite Alembic Migrations
         run: |
