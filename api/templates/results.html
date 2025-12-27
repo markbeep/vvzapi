@@ -100,7 +100,7 @@
                         {% endif %}
 
                         {% if unit.levels %}
-                        <span class="badge badge-success h-fit p-1">
+                        <span class="badge badge-success h-fit p-1 flex-wrap justify-start">
                             {% for level in unit.levels %}
                             <span title="{{ level.description() }}">
                                 {{ level }}{% if not loop.last %}, {% endif %}
@@ -110,9 +110,10 @@
                         {% endif %}
 
                         {% if unit.departments %}
-                        <span class="badge badge-neutral h-fit p-1">
+                        <span class="badge badge-neutral h-fit p-1 flex-wrap justify-start">
                             {% for dept in unit.departments %}
-                            <span title="{{ dept }}">{{ dept.short() }}{% if not loop.last %}, {% endif %}</span>
+                            <span class="text-nowrap" title="{{ dept }}">{{ dept.short() }}{% if not loop.last %},
+                                {% endif %}</span>
                             {% endfor %}
                         </span>
                         {% endif %}

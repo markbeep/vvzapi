@@ -10,13 +10,24 @@
             <div class="card-body">
                 <div class="flex flex-col gap-2">
                     <div class="flex flex-wrap items-center gap-2 mb-2 pr-24">
-                        <span class="badge badge-neutral font-mono h-fit p-1">{{ unit.number }}</span>
+                        <span class="badge badge-ghost font-mono h-fit p-1">{{ unit.number }}</span>
                         {% if unit.credits %}
-                        <span class="badge badge-success font-bold h-fit p-1"> {{ unit.credits|trim_float }}
+                        <span class="badge badge-info font-bold h-fit p-1"> {{ unit.credits|trim_float }}
                             Credits</span>
                         {% endif %}
+
+                        {% if unit.levels %}
+                        <span class="badge badge-success h-fit p-1 flex-wrap justify-start">
+                            {% for level in unit.levels %}
+                            <span title="{{ level.description() }}">
+                                {{ level }}{% if not loop.last %}, {% endif %}
+                            </span>
+                            {% endfor %}
+                        </span>
+                        {% endif %}
+
                         {% if unit.departments %}
-                        <span class="badge badge-outline h-fit p-1">
+                        <span class="badge badge-neutral h-fit p-1 flex-wrap justify-start">
                             {% for dept in unit.departments %}
                             <span title="{{ dept }}">{{ dept.short() }}{% if not loop.last %}, {% endif %}</span>
                             {% endfor %}
@@ -145,7 +156,8 @@
                                 {% for category, links in unit.learning_materials.items() %}
                                 <li class="font-semibold text-base-content list-none mt-2">{{ category }}</li>
                                 {% for link in links %}
-                                <li class="ml-4"><a href="{{ link.url }}" target="_blank" class="link link-hover">
+                                <li class="ml-4 break-all"><a href="{{ link.url }}" target="_blank"
+                                        class="link link-hover">
                                         {{ link.title or link.url }}</a></li>
                                 {% endfor %}
                                 {% endfor %}

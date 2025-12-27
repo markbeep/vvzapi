@@ -39,7 +39,7 @@
 ### Features
 
 * **api:** add daisyui styling ([548e1cd](https://github.com/markbeep/vvzapi/commit/548e1cde73f918e2cd0355a6b2fa135f88754628))
-* **api:** add level, deparment, and language operators ([5f6275a](https://github.com/markbeep/vvzapi/commit/5f6275a7f5e7c6cc928b73f7f2247c59fd57daf5))
+* **api:** add level, department, and language operators ([5f6275a](https://github.com/markbeep/vvzapi/commit/5f6275a7f5e7c6cc928b73f7f2247c59fd57daf5))
 * **api:** add negation for all non-integer filter values as well ([5f6275a](https://github.com/markbeep/vvzapi/commit/5f6275a7f5e7c6cc928b73f7f2247c59fd57daf5))
 * **api:** add opensearch spec ([6acabf4](https://github.com/markbeep/vvzapi/commit/6acabf4b5b373c16ff69ce845628c5e9e3cb6501))
 * **api:** add ordering options to search ([548e1cd](https://github.com/markbeep/vvzapi/commit/548e1cde73f918e2cd0355a6b2fa135f88754628))
