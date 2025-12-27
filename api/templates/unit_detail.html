@@ -89,9 +89,27 @@
                     <a target="_blank"
                         href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={{ unit.id }}&semkez={{ unit.semkez }}&lang=en&ansicht=ALLE"
                         class="btn btn-sm btn-outline" title="VVZ">VVZ</a>
-                    <a target="_blank" href="https://coursereview.ch/course/{{ unit.number }}"
+                    <a id="coursereview" target="_blank" href="https://coursereview.ch/course/{{ unit.number }}"
                         class="btn btn-sm btn-outline" title="CourseReview">
                         CR
+                        <script>
+                            fetch("https://cr.vsos.ethz.ch/getRatings?course={{ unit.number }}")
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (!data || data.length === 0) {
+                                        return;
+                                    }
+                                    const mapper = rating => {
+                                        return (rating.Recommended + rating.Engaging + rating.Difficulty + rating.Effort + rating.Resources) / 5;
+                                    };
+                                    const average_rating = data.map(mapper).reduce((a, b) => a + b, 0) / data.length;
+                                    if (!isNaN(average_rating)) {
+                                        document.getElementById("coursereview").innerText = `CR ${average_rating.toFixed(2)}/5`;
+                                    }
+                                }).catch(error => {
+                                    console.error("Error fetching CourseReview ratings:", error);
+                                });
+                        </script>
                     </a>
                 </div>
             </div>
