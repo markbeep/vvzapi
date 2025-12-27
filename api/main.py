@@ -109,8 +109,8 @@ async def root(
     query: Annotated[str | None, Query(alias="q"), str] = None,
     page: Annotated[int, Query(ge=1)] = 1,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
-    order_by: QueryKey = "year",
-    order: str = "desc",
+    order_by: QueryKey = "title_english",
+    order: str = "asc",
 ):
     if not query:
         return templates.TemplateResponse(
@@ -127,7 +127,11 @@ async def root(
     )
 
     if results.total == 1:
-        return RedirectResponse(f"/unit/{results.results[0].id}", status_code=303)
+        values = list(results.results.values())
+        if len(values) == 1:
+            first = values[0].latest_unit()
+            if first:
+                return RedirectResponse(f"/unit/{first.id}", status_code=303)
 
     return templates.TemplateResponse(
         "results.html",

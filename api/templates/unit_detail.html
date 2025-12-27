@@ -77,6 +77,12 @@
                     </div>
                     {% endif %}
                     {% endif %}
+
+                    {% if unit.comment or unit.comment_english %}
+                    <div class="mt-4 p-4 bg-base-200 rounded-md text-base-content/80 italic whitespace-pre-line">
+                        {{- unit.comment_english if unit.comment_english else unit.comment -}}
+                    </div>
+                    {% endif %}
                 </div>
 
                 <div class="card-actions justify-end absolute top-4 right-4">

@@ -1,3 +1,4 @@
+from collections import defaultdict
 from enum import Enum
 from typing import Annotated, Literal, cast
 from fastapi import APIRouter, Depends, Query
@@ -7,6 +8,7 @@ from sqlmodel import (
     String,
     Session,
     col,
+    distinct,
     not_,
     or_,
     select,
@@ -134,6 +136,36 @@ def find_closest_operators(key: str) -> QueryKey | None:
     return None
 
 
+class GroupedLearningUnits(BaseModel):
+    number: str
+    units: list[LearningUnit]
+
+    @property
+    def semkezs(self) -> list[str]:
+        return sorted({unit.semkez for unit in self.units if unit.semkez})
+
+    def latest_unit(self) -> LearningUnit | None:
+        if not self.units:
+            return None
+        return max(
+            self.units, key=lambda unit: unit.semkez.replace("W", "0").replace("S", "1")
+        )
+
+    def with_semkez(self, semkez: str) -> LearningUnit | None:
+        for unit in self.units:
+            if unit.semkez == semkez:
+                return unit
+        return None
+
+    def __iter__(self):
+        for unit in sorted(
+            self.units,
+            key=lambda u: u.semkez.replace("W", "0").replace("S", "1"),
+            reverse=True,
+        ):
+            yield unit.semkez, unit
+
+
 def match_filters(
     session: Session,
     filters: list[FilterOperator],
@@ -142,7 +174,7 @@ def match_filters(
     limit: int = 20,
     order_by: QueryKey = "year",
     descending: bool = True,
-) -> tuple[int, list[LearningUnit], list[FilterOperator]]:
+) -> tuple[int, dict[str, GroupedLearningUnits], list[FilterOperator]]:
     filters_used: list[FilterOperator] = []
 
     query = select(
@@ -456,12 +488,22 @@ def match_filters(
     if not_offered_in_ids:
         query = query.where(not_(col(Section.id).in_(not_offered_in_ids)))
 
-    # count is in separate query to make it easier
-    count = session.exec(select(func.count()).select_from(query.subquery())).one()
+    # we consider units with missing numbers a fluke anyway
+    query = query.where(col(LearningUnit.number).is_not(None))
+
+    # total unique numbered units with the filters
+    subquery = query.subquery()
+    count = session.exec(
+        select(func.count(distinct(subquery.c.number))).select_from(subquery)
+    ).one()
 
     # ordering
-    order_by_clauses = [year]
-    default_order_clauses = [col(LearningUnit.title_english), col(LearningUnit.title)]
+    order_by_clauses = []
+    default_order_clauses = [
+        col(LearningUnit.title_english).asc(),
+        col(LearningUnit.title).asc(),
+        year.desc(),
+    ]
     match order_by:
         case "title" | "title_english":
             order_by_clauses = [col(LearningUnit.title_english)]
@@ -492,23 +534,52 @@ def match_filters(
     if descending:
         query = query.order_by(
             *(x.desc() for x in order_by_clauses),
-            *(x.asc() for x in default_order_clauses),
+            *(x for x in default_order_clauses),
         )
     else:
         query = query.order_by(
             *(x.asc() for x in order_by_clauses),
-            *(x.asc() for x in default_order_clauses),
+            *(x for x in default_order_clauses),
         )
 
-    results = session.exec(query.offset(offset).limit(limit)).all()
+    # We first filter by numbers that are shown on the page (with sorting + page limits)
+    # for the results we also apply all filters again, since it is possible for a number to match,
+    # but all the information having been changed.
+    # For example: https://vvzapi.ch/unit/199098 got renamed from "Geo.BigData(Science)" to "Geospatial data processing with AI tools – an overview".
+    # Searching for "big data" would match the old one, but the new one would show if we didn't re-apply filters.
+    valid_numbers = (
+        query.with_only_columns(col(LearningUnit.number))
+        .distinct()
+        .offset(offset)
+        .limit(limit)
+    )
+    results = session.exec(
+        query.where(col(LearningUnit.number).in_(valid_numbers))
+    ).all()
 
-    return count, [unit for unit, _, _ in results], filters_used
+    numbered_units: dict[str, list[LearningUnit]] = defaultdict(list)
+    for unit, _, _ in results:
+        if unit.number:
+            numbered_units[unit.number].append(unit)
+
+    return (
+        count,
+        {
+            number: GroupedLearningUnits(number=number, units=units)
+            for number, units in numbered_units.items()
+        },
+        filters_used,
+    )
 
 
 class SearchResponse(BaseModel):
     total: int
-    results: list[LearningUnit]
+    results: dict[str, GroupedLearningUnits]
     filters_used: list[FilterOperator]
+
+    def __iter__(self):
+        for unit_number, grouped_units in self.results.items():
+            yield unit_number, grouped_units
 
 
 @router.get("/", response_model=SearchResponse)
