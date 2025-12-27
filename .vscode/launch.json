@@ -1,0 +1,32 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Scraper: catalogue page",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "scrapy",
+      "args": [
+        "parse",
+        "--spider=units",
+        "-c=parse_start_url",
+        "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?seite=1&semkez=2025W&ansicht=2&lang=en&abschnittId=117693"
+      ]
+    },
+    {
+      "name": "Scraper: unit page",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "scrapy",
+      "args": [
+        "parse",
+        "--spider=units",
+        "-c=parse_unit",
+        "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId=193444&semkez=2025W&lang=en&ansicht=ALLE"
+      ]
+    }
+  ]
+}

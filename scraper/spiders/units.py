@@ -651,7 +651,7 @@ class UnitsSpider(KeywordLoggerSpider):
             )
 
     def extract_single_slot_info(
-        self, slots: list[str], previous_day: DayInfo | None = None
+        self, slots: list[str], previous_day: TimeSlot | None = None
     ) -> tuple[int, TimeSlot]:
         """
         Gets the course time slots
@@ -685,7 +685,13 @@ class UnitsSpider(KeywordLoggerSpider):
                 )
         except ValueError:
             if previous_day:
-                day_info = previous_day
+                day_info = DayInfo(
+                    weekday=previous_day.weekday,
+                    date=previous_day.date,
+                    first_half_semester=previous_day.first_half_semester,
+                    second_half_semester=previous_day.second_half_semester,
+                    biweekly=previous_day.biweekly,
+                )
             else:
                 day_info = DayInfo(
                     weekday=WeekdayEnum.Invalid,
@@ -789,10 +795,10 @@ class UnitsSpider(KeywordLoggerSpider):
             ]
 
             i = 0
-            prev: DayInfo | None = None
+            prev: TimeSlot | None = None
             while i < len(slots):
                 inc, slot = self.extract_single_slot_info(slots[i:], previous_day=prev)
-                prev = slot.weekday
+                prev = slot
                 i += inc
                 timeslots.append(slot)
                 if slot.weekday in [WeekdayEnum.ByAppointment, WeekdayEnum.Invalid]:
