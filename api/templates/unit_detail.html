@@ -7,9 +7,9 @@
     <div class="max-w-7xl mx-auto space-y-8">
 
         <header class="card bg-base-100 shadow-sm">
-            <div class="card-body">
+            <div class="card-body flex-row gap-4 justify-between">
                 <div class="flex flex-col gap-2">
-                    <div class="flex flex-wrap items-center gap-2 mb-2 pr-24">
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
                         <span class="badge badge-ghost font-mono h-fit p-1">{{ unit.number }}</span>
                         {% if unit.credits %}
                         <span class="badge badge-info font-bold h-fit p-1"> {{ unit.credits|trim_float }}
@@ -85,13 +85,13 @@
                     {% endif %}
                 </div>
 
-                <div class="card-actions justify-end absolute top-4 right-4">
+                <div class="flex gap-2 flex-wrap justify-end h-fit">
                     <a target="_blank"
                         href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={{ unit.id }}&semkez={{ unit.semkez }}&lang=en&ansicht=ALLE"
                         class="btn btn-sm btn-outline" title="VVZ">VVZ</a>
                     <a id="coursereview" target="_blank" href="https://coursereview.ch/course/{{ unit.number }}"
                         class="btn btn-sm btn-outline" title="CourseReview">
-                        CR
+                        CR n/a
                         <script>
                             fetch("https://cr.vsos.ethz.ch/getRatings?course={{ unit.number }}")
                                 .then(response => response.json())

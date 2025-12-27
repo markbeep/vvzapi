@@ -72,76 +72,82 @@
         {% for _, grouped in results %}
         <div class="not-hover:stack group hover:flex hover:flex-wrap transition-all duration-300 hover:bg-base-100">
             {% set unit = grouped.latest_unit() %}
-            <div class="card bg-base-100 shadow-sm group-hover:shadow-none transition-shadow flex-row p-4 gap-4">
-                <a href="/unit/{{ unit.id }}" class="grow">
-                    <div class="flex flex-col gap-2 w-full">
+            <div
+                class="card bg-base-100 shadow-sm group-hover:shadow-none transition-shadow flex-row p-4 gap-4 relative group">
 
+                <div class="flex flex-col gap-2 w-full">
+                    <div class="flex justify-between">
                         <div>
                             <h3 class="text-lg font-bold text-neutral leading-tight">
-                                {{ unit.title_english if unit.title_english else unit.title }}
+                                <a href="/unit/{{ unit.id }}" class="after:absolute after:inset-0">
+                                    {{ unit.title_english if unit.title_english else unit.title }}
+                                </a>
                             </h3>
                             <h4 class="text-sm text-base-content/70 italic">
                                 {{ unit.title }}
                             </h4>
                         </div>
 
-                        <div class="flex flex-wrap gap-2 text-xs font-mono mt-1">
-                            <span class="badge badge-ghost h-fit p-1">
-                                {{ unit.number }}
-                            </span>
-
-                            <span class="badge badge-ghost h-fit p-1 flex-wrap justify-start">
-                                {% for sem in grouped.semkezs %}
-                                <span>
-                                    {{ sem }}{% if not loop.last %}, {% endif %}
-                                </span>
-                                {% endfor %}
-                            </span>
-
-                            {% if unit.credits %}
-                            <span class="badge badge-info h-fit p-1">
-                                {{ unit.credits|trim_float }} Credits
-                            </span>
-                            {% endif %}
-
-                            {% if unit.levels %}
-                            <span class="badge badge-success h-fit p-1 flex-wrap justify-start">
-                                {% for level in unit.levels %}
-                                <span title="{{ level.description() }}">
-                                    {{ level }}{% if not loop.last %}, {% endif %}
-                                </span>
-                                {% endfor %}
-                            </span>
-                            {% endif %}
-
-                            {% if unit.departments %}
-                            <span class="badge badge-neutral h-fit p-1 flex-wrap justify-start">
-                                {% for dept in unit.departments %}
-                                <span class="text-nowrap" title="{{ dept }}">{{ dept.short() }}{% if not loop.last %},
-                                    {% endif %}</span>
-                                {% endfor %}
-                            </span>
-                            {% endif %}
+                        <div class="flex gap-2 relative z-10">
+                            <a target="_blank"
+                                href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={{ unit.id }}&semkez={{ unit.semkez }}&lang=en&ansicht=ALLE"
+                                class="btn btn-sm btn-outline" title="VVZ">VVZ</a>
+                            <a target="_blank" href="https://coursereview.ch/course/{{ unit.number }}"
+                                class="btn btn-sm btn-outline" title="CourseReview">
+                                CR
+                            </a>
                         </div>
-
-                        <p class="text-sm text-base-content/80 leading-relaxed line-clamp-3 mt-1">
-                            {% if unit.abstract_english %}
-                            {{ unit.abstract_english }}
-                            {% elif unit.abstract %}
-                            {{ unit.abstract }}
-                            {% else %}
-                            <span class="text-base-content/50 italic">No description available.</span>
-                            {% endif %}
-                        </p>
                     </div>
-                </a>
-                <a target="_blank"
-                    href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={{ unit.id }}&semkez={{ unit.semkez }}&lang=en&ansicht=ALLE"
-                    class="btn btn-sm btn-outline" title="VVZ">VVZ</a>
-                <a target="_blank" href="https://coursereview.ch/course/{{ unit.number }}"
-                    class="btn btn-sm btn-outline" title="CourseReview">
-                    CR
-                </a>
+
+                    <div class="flex flex-wrap gap-2 text-xs font-mono mt-1">
+                        <span class="badge badge-ghost h-fit p-1">
+                            {{ unit.number }}
+                        </span>
+
+                        <span class="badge badge-ghost h-fit p-1 flex-wrap justify-start">
+                            {% for sem in grouped.semkezs %}
+                            <span>
+                                {{ sem }}{% if not loop.last %}, {% endif %}
+                            </span>
+                            {% endfor %}
+                        </span>
+
+                        {% if unit.credits %}
+                        <span class="badge badge-info h-fit p-1">
+                            {{ unit.credits|trim_float }} Credits
+                        </span>
+                        {% endif %}
+
+                        {% if unit.levels %}
+                        <span class="badge badge-success h-fit p-1 flex-wrap justify-start">
+                            {% for level in unit.levels %}
+                            <span title="{{ level.description() }}">
+                                {{ level }}{% if not loop.last %}, {% endif %}
+                            </span>
+                            {% endfor %}
+                        </span>
+                        {% endif %}
+
+                        {% if unit.departments %}
+                        <span class="badge badge-neutral h-fit p-1 flex-wrap justify-start">
+                            {% for dept in unit.departments %}
+                            <span class="text-nowrap" title="{{ dept }}">{{ dept.short() }}{% if not loop.last %},
+                                {% endif %}</span>
+                            {% endfor %}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <p class="text-sm text-base-content/80 leading-relaxed line-clamp-3 mt-1">
+                        {% if unit.abstract_english %}
+                        {{ unit.abstract_english }}
+                        {% elif unit.abstract %}
+                        {{ unit.abstract }}
+                        {% else %}
+                        <span class="text-base-content/50 italic">No description available.</span>
+                        {% endif %}
+                    </p>
+                </div>
             </div>
             {% for semkez in grouped.semkezs %}
             {% if semkez != unit.semkez %}
