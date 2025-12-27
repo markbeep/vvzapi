@@ -16,6 +16,7 @@ from fastapi.responses import (
 from pathlib import Path
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from jinja2_pluralize import pluralize_dj  # pyright: ignore[reportUnknownVariableType,reportMissingTypeStubs]
 import httpx
 from jinja2_htmlmin import minify_loader
@@ -42,6 +43,9 @@ app = FastAPI(title="VVZ API", version=get_api_version())
 app.include_router(v1_router)
 app.include_router(v2_router)
 app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
+app.add_middleware(
+    CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
+)
 
 templates = Jinja2Templates(
     env=Environment(
