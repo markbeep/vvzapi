@@ -268,6 +268,11 @@ class UnitsSpider(KeywordLoggerSpider):
             title = rows[0].css("::text")[1].get()
             title = title.strip() if title else None
             lang = "en" if "lang=en" in url else "de"
+            comment = "\n".join(
+                [x.strip() for x in rows[0].css(".kommentar-le::text").getall()]
+            )
+            if not comment:
+                comment = None
 
             table = Table(rows, pre_parsed=True)
             literature = "\n".join(table.get_texts("literature")) or None
@@ -275,7 +280,6 @@ class UnitsSpider(KeywordLoggerSpider):
             content = "\n".join(table.get_texts("content")) or None
             lecture_notes = "".join(table.get_texts("lecture_notes")) or None
             additional = "\n".join(table.get_texts("notice")) or None
-            comment = "".join(table.get_texts("comment")) or None
             abstract = "".join(table.get_texts("abstract")) or None
             competencies = {}
             if comp_cols := table.find("competencies"):
