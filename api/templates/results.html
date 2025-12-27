@@ -70,10 +70,11 @@
         {% include "components/pagination.html" %}
 
         {% for _, grouped in results %}
-        <div class="not-hover:stack group hover:flex hover:flex-wrap transition-all duration-300 hover:bg-base-100">
-            {% set unit = grouped.latest_unit() %}
+        {% set unit = grouped.latest_unit() %}
+        <div
+            class="{% if grouped.semkezs|length > 1 %}not-hover:stack hover:flex hover:flex-wrap hover:bg-base-100{% else %}flex{% endif %} group">
             <div
-                class="card bg-base-100 shadow-sm group-hover:shadow-none transition-shadow flex-row p-4 gap-4 relative group">
+                class="card bg-base-100 shadow-sm {% if grouped.semkezs|length > 1 %}group-hover:shadow-none{% endif %} not-hover:transition-shadow flex-row p-4 gap-4 relative group">
 
                 <div class="flex flex-col gap-2 w-full">
                     <div class="flex justify-between">
@@ -151,16 +152,14 @@
             </div>
             {% for semkez in grouped.semkezs %}
             {% if semkez != unit.semkez %}
-            <div
+            <a href="/unit/{{ grouped.with_semkez(semkez).id }}"
                 class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow flex-row p-4 group-hover:w-fit group-hover:mb-2 group-hover:ml-2 group-hover:mr-2">
-                <a href="/unit/{{ grouped.with_semkez(semkez).id }}" class="grow">
-                    <div class="flex flex-wrap gap-2 text-xs font-mono mt-1">
-                        <span class="badge badge-ghost h-fit p-1">
-                            {{ semkez }}
-                        </span>
-                    </div>
-                </a>
-            </div>
+                <div class="flex flex-wrap gap-2 text-xs font-mono mt-1">
+                    <span class="badge badge-ghost h-fit p-1">
+                        {{ semkez }}
+                    </span>
+                </div>
+            </a>
             {% endif %}
             {% endfor %}
         </div>

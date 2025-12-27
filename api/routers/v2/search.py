@@ -473,7 +473,10 @@ def match_filters(
                 if filter_.operator == Operator.ne:
                     not_offered_in_ids.update(ids)
                 else:
-                    offered_in_ids.update(ids)
+                    if not offered_in_ids:
+                        offered_in_ids.update(ids)
+                    else:
+                        offered_in_ids.intersection_update(ids)
 
                 if len(names) > 2:
                     names = list(names)[:2] + [f"... ({len(names) - 2} more)"]
