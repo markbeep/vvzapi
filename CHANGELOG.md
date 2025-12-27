@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.3.0](https://github.com/markbeep/vvzapi/compare/v1.2.0...v1.3.0) (2025-12-27)
+
+
+### Features
+
+* **api:** enable CORS ([ff61a23](https://github.com/markbeep/vvzapi/commit/ff61a231fc5a0e7c707a699302f67b335aba7106))
+* **api:** fetch coursereview score when visiting a unit page ([87d0302](https://github.com/markbeep/vvzapi/commit/87d0302313cfed00e3c4fbca40e8888928a0f755))
+* **api:** group together the same course by number ([2df51f7](https://github.com/markbeep/vvzapi/commit/2df51f755afec6e2a28f687d3f720b6840182f2d))
+
+
+### Bug Fixes
+
+* **api:** fix formatting on vvz/cr and results page links ([1d427ec](https://github.com/markbeep/vvzapi/commit/1d427ec980eb74f565f80fbee592528fbe2e1606))
+* **api:** intersect offered in filters instead of unioning ([c2ba0e8](https://github.com/markbeep/vvzapi/commit/c2ba0e85bd6bb82c1f13417f0ac85aaa150ab850))
+* **api:** wrap long links correctly ([f469251](https://github.com/markbeep/vvzapi/commit/f469251f1e2e45dfd44e4623f26a5751eee607c3))
+* **scraper:** make exercise sessions where weekdays are missing get parsed correctly ([1f28faa](https://github.com/markbeep/vvzapi/commit/1f28faa0467196245d7d2b252ea2d87c3e236092))
+
+
+### Styles
+
+* **api:** change to a blue theme for search ([a8ff8ca](https://github.com/markbeep/vvzapi/commit/a8ff8cabea29f6fd1fd80b42b456d2ace5c49e5d))
+
+
+### Miscellaneous Chores
+
+* replace pyright type checking with ty ([06eb0ab](https://github.com/markbeep/vvzapi/commit/06eb0abc514cfe89bf3a29181fdc54ba7bb6f094))
+
 ## [1.2.0](https://github.com/markbeep/vvzapi/compare/v1.1.3...v1.2.0) (2025-12-22)
 
 
