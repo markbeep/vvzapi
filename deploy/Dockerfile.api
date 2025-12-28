@@ -7,12 +7,13 @@ RUN curl https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.18/t
     chmod +x /bin/tailwindcss
 
 COPY uv.lock pyproject.toml .python-version alembic.ini ./ 
+RUN uv sync --frozen --no-cache
+
 COPY api api
 COPY alembic alembic
 # allows for debugging in the api pod
 COPY scraper scraper
 
-RUN uv sync --frozen --no-cache
 
 RUN curl -Lo api/static/daisyui.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs && \
     curl -Lo api/static/daisyui-theme.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.mjs
