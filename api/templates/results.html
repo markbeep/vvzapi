@@ -74,7 +74,7 @@
         <div
             class="{% if grouped.semkezs|length > 1 %}not-hover:stack hover:flex hover:flex-wrap hover:bg-base-100{% else %}flex{% endif %} group">
             <div
-                class="card bg-base-100 shadow-sm {% if grouped.semkezs|length > 1 %}group-hover:shadow-none{% endif %} not-hover:transition-shadow flex-row p-4 gap-4 relative group">
+                class="card bg-base-100 shadow-sm {% if grouped.semkezs|length > 1 %}group-hover:shadow-none{% endif %} not-hover:transition-shadow flex-row p-4 gap-4 relative group w-full">
 
                 <div class="flex flex-col gap-2 w-full">
                     <div class="flex justify-between">
@@ -84,9 +84,11 @@
                                     {{ unit.title_english if unit.title_english else unit.title }}
                                 </a>
                             </h3>
+                            {% if unit.title_english and unit.title and unit.title != unit.title_english %}
                             <h4 class="text-sm text-base-content/70 italic">
                                 {{ unit.title }}
                             </h4>
+                            {% endif %}
                         </div>
 
                         <div class="flex gap-2 relative z-10">
