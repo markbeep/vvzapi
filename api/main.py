@@ -92,20 +92,23 @@ def send_analytics_event(request: Request):
 @app.middleware("http")
 async def analytics_middleware(request: Request, call_next: Any):
     response: StreamingResponse = await call_next(request)
-    if (
-        not Settings().plausible_url
-        and not request.url.path.startswith("/api")
-        and not request.url.path == "/"
-        and not request.url.path.startswith("/docs")
-    ):
-        return response
-    task = BackgroundTask(send_analytics_event, request)
-    response.background = task
 
     if 200 <= response.status_code < 300:
         response.headers["Cache-Control"] = (
             f"Cache-Control: public, max-age={Settings().cache_expiry}"
         )
+
+    if (
+        response.status_code != 404
+        and response.status_code != 307
+        and Settings().plausible_url
+        and not request.url.path.startswith("/static")
+        and not request.url.path.endswith(".png")
+        and not request.url.path.endswith(".ico")
+    ):
+        task = BackgroundTask(send_analytics_event, request)
+        response.background = task
+
     return response
 
 
