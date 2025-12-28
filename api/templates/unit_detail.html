@@ -1,6 +1,12 @@
 {% extends "base_search.html" %}
 
-{% block title %}<title>VVZ - {{ unit.title_english }}</title>{% endblock title %}
+{% block title %}
+<title>VVZ - {{ unit.title_english }}</title>
+<meta name="description"
+    content="VVZ API — Details for {{ unit.number }} - {{ unit.title_english if unit.title_english else unit.title }}." />
+<meta property="og:description"
+    content="Details for {{ unit.number }} - {{ unit.title_english if unit.title_english else unit.title }}." />
+{% endblock title %}
 
 {% block content %}
 <main class="grow p-4 sm:p-8">
@@ -230,6 +236,7 @@
                     </div>
                 </section>
 
+                {% if unit.exam_type or unit.exam_language or unit.exam_duration %}
                 <section class="card bg-base-100 shadow-sm text-sm">
                     <div class="card-body p-5">
                         <h3 class="font-bold text-base-content border-b border-base-200 pb-2 mb-3">Examination</h3>
@@ -269,7 +276,9 @@
                         {% endif %}
                     </div>
                 </section>
+                {% endif %}
 
+                {% if unit.max_places or unit.signup_start or unit.signup_end or unit.priority %}
                 <section class="card bg-base-100 shadow-sm text-sm">
                     <div class="card-body p-5">
                         <h3 class="font-bold text-base-content border-b border-base-200 pb-2 mb-3">Registration & Places
@@ -307,6 +316,7 @@
                         </dl>
                     </div>
                 </section>
+                {% endif %}
 
             </div>
         </div>
