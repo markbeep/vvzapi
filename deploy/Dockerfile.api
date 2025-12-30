@@ -1,23 +1,30 @@
-FROM astral/uv:python3.13-trixie-slim
-
+FROM astral/uv:python3.13-alpine AS deps
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y curl
-RUN curl https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.18/tailwindcss-linux-x64 -L -o /bin/tailwindcss && \
+RUN apk add --no-cache curl build-base
+RUN curl https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.18/tailwindcss-linux-x64-musl -L -o /bin/tailwindcss && \
     chmod +x /bin/tailwindcss
 
-COPY uv.lock pyproject.toml .python-version alembic.ini ./ 
+COPY uv.lock pyproject.toml .python-version ./ 
 RUN uv sync --frozen --no-cache
 
 COPY api api
-COPY alembic alembic
-# allows for debugging in the api pod
-COPY scraper scraper
-
-
 RUN curl -Lo api/static/daisyui.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs && \
     curl -Lo api/static/daisyui-theme.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.mjs
 
 RUN tailwindcss -i ./api/static/tw.css -o ./api/static/globals.css --minify
 
-CMD ["/bin/sh", "-c", "uv run alembic upgrade heads && exec uv run fastapi run api/main.py"]
+FROM python:3.13-alpine AS final
+WORKDIR /app
+
+COPY --from=deps /app/.venv /app/.venv
+COPY --from=deps /app/api/static/globals.css api/static/globals.css
+
+# version is read from the pyproject.toml
+COPY alembic.ini pyproject.toml ./
+
+COPY scraper scraper 
+COPY alembic alembic
+COPY api api
+
+CMD ["/bin/sh", "-c", "/app/.venv/bin/alembic upgrade heads && /app/.venv/bin/fastapi run api/main.py"]
