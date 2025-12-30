@@ -1,3 +1,4 @@
+from typing import get_args
 import re
 from collections import defaultdict
 from enum import Enum
@@ -117,18 +118,18 @@ def find_closest_operators(key: str) -> QueryKey | None:
     key = key.lower()
     if key in mapping:
         return mapping[key]
-    if key in QueryKey.__args__:
+    if key in get_args(QueryKey):
         return cast(QueryKey, key)
 
     # first see if there's a key that starts the same
-    for query_key in QueryKey.__args__:
+    for query_key in get_args(QueryKey):
         if query_key.startswith(key):
             return query_key
 
     # try to figure out the closest match
     if result := process.extractOne(
         key,
-        QueryKey.__args__,
+        get_args(QueryKey),
         scorer=fuzz.partial_ratio,
         processor=utils.default_process,
     ):

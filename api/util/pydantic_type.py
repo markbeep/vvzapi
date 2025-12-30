@@ -4,8 +4,8 @@ from typing import Any, Sequence, cast
 
 import sqlalchemy as sa
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel, parse_obj_as  # ty: ignore[deprecated]
-from pydantic.json import pydantic_encoder
+from pydantic import BaseModel, parse_obj_as
+from pydantic.json import pydantic_encoder  # pyrefly: ignore[missing-module-attribute]
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import TypeDecorator
 
@@ -29,11 +29,20 @@ class PydanticType[T: BaseModel](TypeDecorator[sa.JSON]):
     def process_bind_param(self, value: Any, dialect: sa.Dialect):
         return jsonable_encoder(value) if value else None
 
-    def process_result_value(self, value: Any, dialect: sa.Dialect):
+    def process_result_value(  # pyrefly: ignore[bad-override]
+        self, value: Any, dialect: sa.Dialect
+    ):
         # Concerning the deprecation warning:
         # parse_obj_as works for Basemodels as well as list/dicts.
         # The "new" pydantic.TypeAdapter.validate_python does not.
-        return parse_obj_as(self.pydantic_type, value) if value else None  # ty: ignore[deprecated]
+        return (
+            parse_obj_as(
+                self.pydantic_type,  # pyrefly: ignore[bad-argument-type]
+                value,
+            )
+            if value
+            else None
+        )
 
 
 def json_serializer(*args: Any, **kwargs: Any) -> str:
@@ -58,7 +67,7 @@ class EnumList[T: Enum](TypeDecorator[sa.JSON]):
             for item in cast(list[Any], value)
         ]
 
-    def process_result_value(  # ty: ignore[invalid-method-override]
+    def process_result_value(  # pyrefly: ignore[bad-override]
         self,
         value: list[Any] | None,
         dialect: Any,

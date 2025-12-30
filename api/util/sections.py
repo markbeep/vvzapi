@@ -27,7 +27,7 @@ def get_child_sections(
         )
         SELECT id, level FROM section_tree;
     """
-    results = session.execute(text(children_sql), params={"root_id": parent_section_id})  # ty: ignore[deprecated]
+    results = session.execute(text(children_sql), params={"root_id": parent_section_id})
     child_sections = [
         SectionLevel(id=row[0], level=row[1]) for row in results.fetchall()
     ]
@@ -47,7 +47,7 @@ def get_parent_sections(session: Session, child_section_id: int):
         )
         SELECT id, level FROM section_tree WHERE id != :root_id;
     """
-    results = session.execute(text(parents_sql), params={"root_id": child_section_id})  # ty: ignore[deprecated]
+    results = session.execute(text(parents_sql), params={"root_id": child_section_id})
     parent_sections = [
         SectionLevel(id=row[0], level=row[1]) for row in results.fetchall()
     ]

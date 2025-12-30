@@ -12,5 +12,5 @@ engine = create_engine(
 
 def get_session():
     with Session(engine) as session:
-        session.execute(text("PRAGMA foreign_keys=ON"))  # ty: ignore[deprecated]
+        session.execute(text("PRAGMA foreign_keys=ON"))
         yield session

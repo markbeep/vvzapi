@@ -30,7 +30,13 @@ from api.models import (
     UnitType,
     UnitTypeLegends,
 )
-from api.util.types import CourseTypeEnum, Group, GroupSignupEnd, TimeSlot, WeekdayEnum
+from api.util.vvz_types import (
+    CourseTypeEnum,
+    Group,
+    GroupSignupEnd,
+    TimeSlot,
+    WeekdayEnum,
+)
 from scraper.env import Settings
 from scraper.util.logging import KeywordLoggerSpider
 from scraper.util.mappings import UnitDepartmentMapping, UnitLevelMapping

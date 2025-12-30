@@ -130,6 +130,5 @@ tailwindcss -i api/static/tw.css -o api/static/globals.css --watch
 ### Type Check
 
 ```sh
-uv run pyright api
-uv run pyright scraper
+uv run pyrefly check
 ```

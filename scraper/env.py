@@ -36,5 +36,5 @@ class Settings(BaseSettings):
         for s in self.semester.split(","):
             s = s.strip()
             if s == "W" or s == "S":
-                semesters.append(s)  # ty: ignore[invalid-argument-type]
+                semesters.append(s)
         return semesters

@@ -15,7 +15,7 @@
         "Gruntfuggly.todo-tree",
         "tamasfe.even-better-toml",
         "bradlc.vscode-tailwindcss",
-        "astral-sh.ty"
+        "meta.pyrefly"
       ]
     }
   }

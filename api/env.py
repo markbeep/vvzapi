@@ -8,5 +8,6 @@ class Settings(BaseSettings):
 
     db_path: str = "data/db.sqlite"
     cache_expiry: int = 3600  # in seconds
+    sitemap_expiry: int = 86400  # in seconds
     plausible_url: str | None = None
     """API event endpoint"""

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Annotated, Any, cast
 
@@ -36,14 +37,15 @@ from api.routers.v2.search import QueryKey, search_units
 from api.routers.v2_router import router as v2_router
 from api.util.db import get_session
 from api.util.sections import get_parent_from_unit
+from api.util.sitemap import generate_sitemap
 from api.util.version import get_api_version
 
 app = FastAPI(title="VVZ API", version=get_api_version())
 app.include_router(v1_router)
 app.include_router(v2_router)
-app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)  # ty: ignore[invalid-argument-type]
+app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
 app.add_middleware(
-    CORSMiddleware,  # ty: ignore[invalid-argument-type]
+    CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
@@ -53,10 +55,10 @@ templates = Jinja2Templates(
     env=Environment(
         loader=minify_loader(
             FileSystemLoader(str(Path(__file__).parent / "templates")),
-            remove_comments=True,
-            remove_empty_space=True,
-            remove_all_empty_space=True,
-            reduce_boolean_attributes=True,
+            remove_comments=True,  # pyrefly: ignore[bad-argument-type]
+            remove_empty_space=True,  # pyrefly: ignore[bad-argument-type]
+            remove_all_empty_space=True,  # pyrefly: ignore[bad-argument-type]
+            reduce_boolean_attributes=True,  # pyrefly: ignore[bad-argument-type]
         )
     )
 )
@@ -231,9 +233,9 @@ async def guide():
     )
 
 
-@app.get("/{favicon}", include_in_schema=False)
-async def favicon(favicon: str):
-    if favicon not in [
+@app.get("/{root}", include_in_schema=False)
+async def root_static(root: str):
+    if root not in [
         "android-chrome-192x192.png",
         "android-chrome-512x512.png",
         "apple-touch-icon.png",
@@ -241,22 +243,28 @@ async def favicon(favicon: str):
         "favicon-32x32.png",
         "favicon.ico",
         "site.webmanifest",
+        "sitemap.xml",
     ]:
         return HTMLResponse(status_code=404)
 
-    favicon_path = Path(__file__).parent / "static" / favicon
-    if favicon_path.exists():
-        match favicon_path.suffix:
+    if root == "sitemap.xml":
+        generate_sitemap(Settings().sitemap_expiry)
+        return FileResponse(
+            Path(__file__).parent / "static" / "sitemap" / "sitemap.xml",
+            media_type="application/xml",
+        )
+
+    root_path = Path(__file__).parent / "static" / root
+    if root_path.exists():
+        match root_path.suffix:
             case ".png":
-                return FileResponse(favicon_path, media_type="image/png")
+                return FileResponse(root_path, media_type="image/png")
             case ".ico":
-                return FileResponse(favicon_path, media_type="image/x-icon")
+                return FileResponse(root_path, media_type="image/x-icon")
             case ".webmanifest":
-                return FileResponse(
-                    favicon_path, media_type="application/manifest+json"
-                )
+                return FileResponse(root_path, media_type="application/manifest+json")
             case _:
-                return FileResponse(favicon_path)
+                return FileResponse(root_path)
 
     return HTMLResponse(status_code=404)
 
@@ -277,4 +285,22 @@ async def static_files(file_path: str):
                 return FileResponse(static_path, media_type="application/xml")
             case _:
                 return FileResponse(static_path)
+    return HTMLResponse(status_code=404)
+
+
+@app.get("/robots.txt", include_in_schema=False)
+async def robots_txt():
+    robots_path = Path(__file__).parent / "static" / "robots.txt"
+    if robots_path.exists():
+        return FileResponse(robots_path, media_type="text/plain")
+    return HTMLResponse(status_code=404)
+
+
+@app.get("/sitemap/{sitemap_file}", include_in_schema=False)
+async def sitemap_files(sitemap_file: str):
+    if re.match(r"sitemap(-\w+?)?\.xml", sitemap_file) is None:
+        return HTMLResponse(status_code=404)
+    sitemap_path = Path(__file__).parent / "static" / "sitemap" / sitemap_file
+    if sitemap_path.exists():
+        return FileResponse(sitemap_path, media_type="application/xml")
     return HTMLResponse(status_code=404)

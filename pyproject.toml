@@ -19,9 +19,10 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = [
-    "ty>=0.0.7",
-]
+dev = ["pyrefly>=0.46.2"]
 
-[tool.ty.src]
-include = ["api", "scraper"]
+[tool.pyrefly]
+project-includes = ["api", "scraper"]
+
+[tool.pyrefly.errors]
+deprecated = false

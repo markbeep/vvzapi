@@ -1,3 +1,4 @@
+from typing import cast
 import time
 import traceback
 from pathlib import Path
@@ -78,7 +79,7 @@ class DatabasePipeline:
 
             # Then we process models that get added to the database
             if isinstance(item, (LearningUnit, Section, Lecturer, UnitTypeLegends)):
-                old = self.session.get(type(item), item.id)
+                old = self.session.get(cast(type[BaseModel], type(item)), item.id)
             elif isinstance(item, Course):
                 old = self.session.exec(
                     select(Course).where(
@@ -94,7 +95,7 @@ class DatabasePipeline:
                 )
             elif isinstance(item, (UnitExaminerLink, UnitLecturerLink)):
                 old = self.session.get(
-                    type(item),
+                    cast(type[BaseModel], type(item)),
                     (item.unit_id, item.lecturer_id),
                 )
             elif isinstance(item, CourseLecturerLink):

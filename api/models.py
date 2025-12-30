@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import time
 from enum import Enum
-from typing import Any, cast
+from typing import Any
 
 from pydantic import BaseModel as PydanticBaseModel
 from rapidfuzz import fuzz, process, utils
 from sqlmodel import INTEGER, JSON, Column, Field, SQLModel
 
 from api.util.pydantic_type import EnumList, PydanticType
-from api.util.types import CourseTypeEnum, Group, TimeSlot
+from api.util.vvz_types import CourseTypeEnum, Group, TimeSlot
 
 
 class BaseModel(SQLModel):
@@ -230,7 +230,7 @@ class Department(Enum):
         ):
             matched_name, score, _ = result
             if score >= 80:
-                return Department.get(cast(str, matched_name).replace(" ", "_").upper())
+                return Department.get(matched_name.replace(" ", "_").upper())
         return None
 
 
