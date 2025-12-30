@@ -105,6 +105,9 @@ async def analytics_middleware(request: Request, call_next: Any):
         and not request.url.path.startswith("/static")
         and not request.url.path.endswith(".png")
         and not request.url.path.endswith(".ico")
+        and not request.url.path.endswith(".css")
+        and not request.url.path.endswith(".xml")
+        and not request.url.path.endswith(".webmanifest")
     ):
         task = BackgroundTask(send_analytics_event, request)
         response.background = task
@@ -243,7 +246,18 @@ async def favicon(favicon: str):
 
     favicon_path = Path(__file__).parent / "static" / favicon
     if favicon_path.exists():
-        return HTMLResponse(favicon_path.read_bytes(), media_type="image/x-icon")
+        match favicon_path.suffix:
+            case ".png":
+                return FileResponse(favicon_path, media_type="image/png")
+            case ".ico":
+                return FileResponse(favicon_path, media_type="image/x-icon")
+            case ".webmanifest":
+                return FileResponse(
+                    favicon_path, media_type="application/manifest+json"
+                )
+            case _:
+                return FileResponse(favicon_path)
+
     return HTMLResponse(status_code=404)
 
 
@@ -256,5 +270,11 @@ async def static_files(file_path: str):
         return HTMLResponse(status_code=404)
     static_path = Path(__file__).parent / "static" / file_path
     if static_path.exists():
-        return FileResponse(static_path)
+        match static_path.suffix:
+            case ".css":
+                return FileResponse(static_path, media_type="text/css")
+            case ".xml":
+                return FileResponse(static_path, media_type="application/xml")
+            case _:
+                return FileResponse(static_path)
     return HTMLResponse(status_code=404)
