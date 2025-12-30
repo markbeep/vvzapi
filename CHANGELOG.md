@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.4.0](https://github.com/markbeep/vvzapi/compare/v1.3.0...v1.4.0) (2025-12-30)
+
+
+### Features
+
+* add sitemap ([ae0afb0](https://github.com/markbeep/vvzapi/commit/ae0afb030c469a1e2ba1bf161e43811cc1768122))
+
+
+### Bug Fixes
+
+* **api:** display search and unit information in embed description ([6152a74](https://github.com/markbeep/vvzapi/commit/6152a74909695e01d1fd8a2c961aa209f3fb539a))
+* **api:** fix non-stacked elements not expanding correctly ([0c7704b](https://github.com/markbeep/vvzapi/commit/0c7704b18efca36b8bf8a63cd0159643996a2269))
+* **api:** fix plausible event condition ([77655df](https://github.com/markbeep/vvzapi/commit/77655df00f87ddc1927d225e2b37c23943d4b9e6))
+* **api:** remove empty examination/registration block if no information exists ([6152a74](https://github.com/markbeep/vvzapi/commit/6152a74909695e01d1fd8a2c961aa209f3fb539a))
+* **api:** remove german title if it's the same as the english ([0c7704b](https://github.com/markbeep/vvzapi/commit/0c7704b18efca36b8bf8a63cd0159643996a2269))
+* fix incorrect media type for static files ([65db758](https://github.com/markbeep/vvzapi/commit/65db758647d8f28d324e953f29ed016d1f30a88f))
+
+
+### Miscellaneous Chores
+
+* move uv sync ahead of copy in dockerfiles ([2941916](https://github.com/markbeep/vvzapi/commit/29419166ba94fbd96c6ed644d74dc775a427c7f4))
+
+
+### Tests
+
+* replace ty with pyrefly type checking ([ae0afb0](https://github.com/markbeep/vvzapi/commit/ae0afb030c469a1e2ba1bf161e43811cc1768122))
+
+
+### Build System
+
+* **api:** reduce docker image size by splitting the build steps ([11c64e0](https://github.com/markbeep/vvzapi/commit/11c64e02367e12fb422d87410cecf8eed00ad861))
+
 ## [1.3.0](https://github.com/markbeep/vvzapi/compare/v1.2.0...v1.3.0) (2025-12-27)
 
 
