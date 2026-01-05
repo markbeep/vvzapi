@@ -364,9 +364,11 @@
                                 {% endif %}
                             </td>
                             <td class="text-base-content/70">
+                                {% if course.hours %}
                                 {{ course.hours|trim_float }} h {{ "weekly" if
                                 course.hour_type.value
                                 == 1 else 'semesterly' }}
+                                {% else %}-{% endif %}
                             </td>
                         </tr>
                         {% endfor %}
