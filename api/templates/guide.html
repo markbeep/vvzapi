@@ -106,12 +106,14 @@
                   Winter/Autumn.
                 </td>
               </tr>
-              <!-- <tr>
-                            <td class="px-4 py-3 font-mono font-bold">level</td>
-                            <td class="px-4 py-3 font-mono text-gray-500">-</td>
-                            <td class="px-4 py-3">Course level (e.g., <code>Bachelor</code>, <code>Master</code>).
-                            </td>
-                        </tr> -->
+              <tr>
+                <td class="px-4 py-3 font-mono font-bold">examtype</td>
+                <td class="px-4 py-3 font-mono text-gray-500">e</td>
+                <td class="px-4 py-3">
+                  Type of examination (e.g., <code>Session Examination</code>,
+                  <code>Graded Semester Performance</code>, <code>Graded</code>).
+                </td>
+              </tr>
               <tr>
                 <td class="px-4 py-3 font-mono font-bold">descriptions</td>
                 <td class="px-4 py-3 font-mono text-gray-500">d</td>
@@ -150,7 +152,10 @@
                 <td class="px-4 py-3 font-mono text-gray-500">off, o</td>
                 <td class="px-4 py-3">
                   Section or program the course is offered in (e.g., "Computer Science
-                  Bachelor", "Data Science Master").
+                  Bachelor", "Data Science Master"). When multiple values are given, any courses are matched that have a
+                  section <span class="italic">path</span> (meaning from root to leaf section) that includes all of the
+                  given
+                  values.
                 </td>
               </tr>
             </tbody>
@@ -197,6 +202,18 @@
     <section>
       <h2 class="text-xl font-bold text-base-content mb-4">Examples</h2>
       <div class="space-y-3">
+        <a href="?q=y%3D2026+s%3Afs+o%3A%22computer+science+master%22+o%3Aminor+o%3A%22computer+vision%22"
+          class="block group">
+          <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="card-body p-4">
+              <code
+                class="text-accent font-bold block mb-1">y=2026 s:fs o:"computer science master" o:minor o:"computer vision"</code>
+              <span class="text-sm text-base-content/80">Find all courses taking place in FS 2026 that count as a minor
+                for the Computer Vision Major.</span>
+            </div>
+          </div>
+        </a>
+
         <a href="/?q=credits%3E%3D10" class="block group">
           <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
             <div class="card-body p-4">

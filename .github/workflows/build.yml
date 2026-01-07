@@ -26,13 +26,13 @@ jobs:
 
       - run: uv sync --all-extras
 
+      - name: Type check
+        run: uv run basedpyright
+
       - name: Install sqlite3
         run: |
           sudo apt-get update
           sudo apt-get install -y sqlite3 gcc
-
-      - name: Type check
-        run: uv run pyrefly check
 
       - name: Check SQLite Alembic Migrations
         run: |

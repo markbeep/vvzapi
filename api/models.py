@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from enum import Enum
-from typing import Any
+from typing import Any, override
 
 from pydantic import BaseModel as PydanticBaseModel
 from rapidfuzz import fuzz, process, utils
@@ -96,6 +96,7 @@ class Periodicity(Enum):
     SEMESTER = 2
     BIENNIAL = 3
 
+    @override
     def __str__(self) -> str:
         if self == Periodicity.ONETIME:
             return "Onetime"
@@ -146,6 +147,7 @@ class Level(str, Enum):
     NDS = "NDS"
     """Master of Advanced Studies"""
 
+    @override
     def __str__(self) -> str:
         return self.value
 
@@ -198,6 +200,7 @@ class Department(Enum):
             return Department(v)
         return Department[v]
 
+    @override
     def __str__(self) -> str:
         return self.name.replace("_", " ").title()
 
@@ -457,6 +460,7 @@ class Lecturer(BaseModel, Overwriteable, table=True):
         sa_column=Column(INTEGER, nullable=False),
     )
 
+    @override
     def __str__(self) -> str:
         return f"{self.surname} {self.name}"
 

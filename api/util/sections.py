@@ -72,3 +72,25 @@ def get_parent_from_unit(unit_id: int | None = None):
         .join(section_cte, col(Section.id) == section_cte.c.id)
         .distinct()
     )
+
+
+def concatenate_section_names(cte_name: str = "section_paths"):
+    """Creates a CTE that concatenates section names from root to leaf."""
+    anchor = select(
+        Section.id,
+        Section.parent_id,
+        col(Section.name_english).label("path_en"),
+        col(Section.name).label("path_de"),
+    ).where(col(Section.parent_id).is_(None))
+
+    cte = anchor.cte(cte_name, recursive=True)
+    Parent = aliased(Section)
+    recursive = select(
+        Parent.id,
+        Parent.parent_id,
+        (cte.c.path_en + " > " + Parent.name_english).label("path_en"),
+        (cte.c.path_de + " > " + Parent.name).label("path_de"),
+    ).join(cte, col(Parent.parent_id) == cte.c.id)
+
+    cte = cte.union_all(recursive)
+    return select(cte.c.id, cte.c.path_en, cte.c.path_de)

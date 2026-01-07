@@ -1,3 +1,4 @@
+from typing import override
 import json
 from enum import Enum
 from typing import Any, Sequence, cast
@@ -20,16 +21,19 @@ class PydanticType[T: BaseModel](TypeDecorator[sa.JSON]):
         super().__init__()
         self.pydantic_type = pydantic_type
 
+    @override
     def load_dialect_impl(self, dialect: sa.Dialect):
         if dialect.name == "postgresql":
             return dialect.type_descriptor(JSONB())
         else:
             return dialect.type_descriptor(sa.JSON())
 
+    @override
     def process_bind_param(self, value: Any, dialect: sa.Dialect):
         return jsonable_encoder(value) if value else None
 
-    def process_result_value(  # pyrefly: ignore[bad-override]
+    @override
+    def process_result_value(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, value: Any, dialect: sa.Dialect
     ):
         # Concerning the deprecation warning:
@@ -57,6 +61,7 @@ class EnumList[T: Enum](TypeDecorator[sa.JSON]):
         super().__init__()
         self.enum_cls = enum_cls
 
+    @override
     def process_bind_param(self, value: Any | None, dialect: Any) -> list[Any] | None:
         if value is None:
             return None
@@ -67,7 +72,8 @@ class EnumList[T: Enum](TypeDecorator[sa.JSON]):
             for item in cast(list[Any], value)
         ]
 
-    def process_result_value(  # pyrefly: ignore[bad-override]
+    @override
+    def process_result_value(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         value: list[Any] | None,
         dialect: Any,

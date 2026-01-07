@@ -15,7 +15,7 @@
         "Gruntfuggly.todo-tree",
         "tamasfe.even-better-toml",
         "bradlc.vscode-tailwindcss",
-        "meta.pyrefly"
+        "detachhead.basedpyright"
       ]
     }
   }

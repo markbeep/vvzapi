@@ -19,10 +19,13 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pyrefly>=0.46.2"]
+dev = ["basedpyright>=1.37.0", "pyrefly>=0.47.0"]
 
-[tool.pyrefly]
-project-includes = ["api", "scraper"]
+[tool.basedpyright]
+typeCheckingMode = "standard"
+include = ["api", "scraper"]
+reportDeprecated = false
+reportUninitializedInstanceVariable = false
 
 [tool.pyrefly.errors]
 deprecated = false

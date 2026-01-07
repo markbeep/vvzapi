@@ -1,3 +1,4 @@
+from typing import override
 import re
 from collections import defaultdict
 from enum import Enum
@@ -6,7 +7,7 @@ from typing import Annotated, Literal, cast, get_args
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from rapidfuzz import fuzz, process, utils
-from sqlalchemy import exists, not_, literal_column
+from sqlalchemy import exists, literal_column, not_
 from sqlmodel import (
     Integer,
     Session,
@@ -31,6 +32,7 @@ from api.models import (
     UnitSectionLink,
 )
 from api.util.db import get_session
+from api.util.sections import concatenate_section_names
 
 router = APIRouter(prefix="/search", tags=["Search"])
 
@@ -205,8 +207,8 @@ def match_filters(
             )
         )
 
-    offered_in_ids: set[int] = set()
-    not_offered_in_ids: set[int] = set()
+    offered_in_names: set[str] = set()
+    not_offered_in_names: set[str] = set()
     if any(f.key == "offered" for f in filters):
         query = query.join(
             UnitSectionLink, onclause=col(LearningUnit.id) == UnitSectionLink.unit_id
@@ -464,37 +466,11 @@ def match_filters(
                 query = query.where(clause)
                 filters_used.append(filter_)
             case "offered":
-                result = session.exec(
-                    select(
-                        Section.id, func.coalesce(Section.name_english, Section.name)
-                    )
-                    .where(
-                        or_(
-                            col(Section.name_english).icontains(filter_.value),
-                            col(Section.name).icontains(filter_.value),
-                        )
-                    )
-                    .distinct()
-                ).all()
-                ids = [section_id for section_id, _ in result]
-                names = set([name for _, name in result if name])
                 if filter_.operator == Operator.ne:
-                    not_offered_in_ids.update(ids)
+                    not_offered_in_names.add(filter_.value)
                 else:
-                    if not offered_in_ids:
-                        offered_in_ids.update(ids)
-                    else:
-                        offered_in_ids.intersection_update(ids)
-
-                if len(names) > 2:
-                    names = list(names)[:2] + [f"... ({len(names) - 2} more)"]
-                filters_used.append(
-                    FilterOperator(
-                        key=filter_.key,
-                        operator=filter_.operator,
-                        value=" | ".join(names),
-                    )
-                )
+                    offered_in_names.add(filter_.value)
+                filters_used.append(filter_)
             case "examtype":
                 clause = col(LearningUnit.exam_type).icontains(filter_.value)
                 if filter_.operator == Operator.ne:
@@ -502,10 +478,27 @@ def match_filters(
                 query = query.where(clause)
                 filters_used.append(filter_)
 
-    if offered_in_ids:
+    # matches all filters
+    if offered_in_names:
+        c = concatenate_section_names()
+        offered_in_ids = c.where(
+            *(
+                c.c.path_en.icontains(name) | c.c.path_de.icontains(name)
+                for name in offered_in_names
+            )
+        ).with_only_columns(c.c.id)
         query = query.where(col(Section.id).in_(offered_in_ids))
-    if not_offered_in_ids:
-        query = query.where(not_(col(Section.id).in_(not_offered_in_ids)))
+    if not_offered_in_names:
+        c = concatenate_section_names("not_offered_in_sections")
+        not_offered_in_ids = c.where(
+            or_(
+                *(
+                    c.c.path_en.icontains(name) | c.c.path_de.icontains(name)
+                    for name in not_offered_in_names
+                )
+            )
+        ).with_only_columns(c.c.id)
+        query = query.where(col(Section.id).not_in(not_offered_in_ids))
 
     # we consider units with missing numbers a fluke anyway
     query = query.where(col(LearningUnit.number).is_not(None))
@@ -548,6 +541,7 @@ def match_filters(
             | "descriptions_english"
             | "descriptions_german"
             | "offered"
+            | "examtype"
         ):
             pass
     if descending:
@@ -596,6 +590,7 @@ class SearchResponse(BaseModel):
     results: dict[str, GroupedLearningUnits]
     filters_used: list[FilterOperator]
 
+    @override
     def __iter__(self):
         for unit_number, grouped_units in self.results.items():
             yield unit_number, grouped_units
