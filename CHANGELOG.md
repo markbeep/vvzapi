@@ -1,5 +1,41 @@
 # Changelog
 
+## [1.4.0](https://github.com/markbeep/vvzapi/compare/v1.3.0...v1.4.0) (2026-01-07)
+
+
+### Features
+
+* add exam type filter ([03baace](https://github.com/markbeep/vvzapi/commit/03baacecd35a80ba3b3d250176e6cf6b5f86ca95))
+* add sitemap ([ae0afb0](https://github.com/markbeep/vvzapi/commit/ae0afb030c469a1e2ba1bf161e43811cc1768122))
+* **api:** offered in filters are now all matched against a single path of sections instead of against arbitrary matching sections ([e6e47b1](https://github.com/markbeep/vvzapi/commit/e6e47b1c76f50c002a98fc01b31b3e8d221b7ac8))
+
+
+### Bug Fixes
+
+* **api:** display search and unit information in embed description ([6152a74](https://github.com/markbeep/vvzapi/commit/6152a74909695e01d1fd8a2c961aa209f3fb539a))
+* **api:** fix crashing of unit pages if course hours are missing ([488491b](https://github.com/markbeep/vvzapi/commit/488491b4473bf95281e28aadbd25d9b511cbdce9))
+* **api:** fix non-stacked elements not expanding correctly ([0c7704b](https://github.com/markbeep/vvzapi/commit/0c7704b18efca36b8bf8a63cd0159643996a2269))
+* **api:** fix plausible event condition ([77655df](https://github.com/markbeep/vvzapi/commit/77655df00f87ddc1927d225e2b37c23943d4b9e6))
+* **api:** remove empty examination/registration block if no information exists ([6152a74](https://github.com/markbeep/vvzapi/commit/6152a74909695e01d1fd8a2c961aa209f3fb539a))
+* **api:** remove german title if it's the same as the english ([0c7704b](https://github.com/markbeep/vvzapi/commit/0c7704b18efca36b8bf8a63cd0159643996a2269))
+* fix departments filter showing other departments ([03baace](https://github.com/markbeep/vvzapi/commit/03baacecd35a80ba3b3d250176e6cf6b5f86ca95))
+* fix incorrect media type for static files ([65db758](https://github.com/markbeep/vvzapi/commit/65db758647d8f28d324e953f29ed016d1f30a88f))
+
+
+### Miscellaneous Chores
+
+* move uv sync ahead of copy in dockerfiles ([2941916](https://github.com/markbeep/vvzapi/commit/29419166ba94fbd96c6ed644d74dc775a427c7f4))
+
+
+### Tests
+
+* replace ty with pyrefly type checking ([ae0afb0](https://github.com/markbeep/vvzapi/commit/ae0afb030c469a1e2ba1bf161e43811cc1768122))
+
+
+### Build System
+
+* **api:** reduce docker image size by splitting the build steps ([11c64e0](https://github.com/markbeep/vvzapi/commit/11c64e02367e12fb422d87410cecf8eed00ad861))
+
 ## [1.3.0](https://github.com/markbeep/vvzapi/compare/v1.2.0...v1.3.0) (2025-12-27)
 
 
