@@ -1,13 +1,12 @@
-from typing import get_args
 import re
 from collections import defaultdict
 from enum import Enum
-from typing import Annotated, Literal, cast
+from typing import Annotated, Literal, cast, get_args
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from rapidfuzz import fuzz, process, utils
-from sqlalchemy import not_
+from sqlalchemy import exists, not_, literal_column
 from sqlmodel import (
     Integer,
     Session,
@@ -58,6 +57,7 @@ QueryKey = Literal[
     "department",
     "language",
     "offered",
+    "examtype",
 ]
 
 mapping: dict[str, QueryKey] = {
@@ -83,6 +83,7 @@ mapping: dict[str, QueryKey] = {
     "offeredin": "offered",
     "o": "offered",
     "off": "offered",
+    "e": "examtype",
 }
 
 
@@ -427,7 +428,13 @@ def match_filters(
                 closest_dept = Department.closest_match(filter_.value)
                 if not closest_dept:
                     continue
-                clause = col(LearningUnit.departments).contains(closest_dept.value)
+                clause = exists(
+                    (
+                        select(1)
+                        .select_from(func.json_each(LearningUnit.departments))
+                        .where(literal_column("value") == closest_dept.value)
+                    )
+                )
                 if filter_.operator == Operator.ne:
                     clause = not_(clause)
                 query = query.where(clause)
@@ -488,6 +495,12 @@ def match_filters(
                         value=" | ".join(names),
                     )
                 )
+            case "examtype":
+                clause = col(LearningUnit.exam_type).icontains(filter_.value)
+                if filter_.operator == Operator.ne:
+                    clause = not_(clause)
+                query = query.where(clause)
+                filters_used.append(filter_)
 
     if offered_in_ids:
         query = query.where(col(Section.id).in_(offered_in_ids))
