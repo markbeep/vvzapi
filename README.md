@@ -130,5 +130,5 @@ tailwindcss -i api/static/tw.css -o api/static/globals.css --watch
 ### Type Check
 
 ```sh
-uv run pyrefly check
+uv run basedpyright
 ```

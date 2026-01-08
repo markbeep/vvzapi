@@ -55,10 +55,10 @@ templates = Jinja2Templates(
     env=Environment(
         loader=minify_loader(
             FileSystemLoader(str(Path(__file__).parent / "templates")),
-            remove_comments=True,  # pyrefly: ignore[bad-argument-type]
-            remove_empty_space=True,  # pyrefly: ignore[bad-argument-type]
-            remove_all_empty_space=True,  # pyrefly: ignore[bad-argument-type]
-            reduce_boolean_attributes=True,  # pyrefly: ignore[bad-argument-type]
+            remove_comments=True,
+            remove_empty_space=True,
+            remove_all_empty_space=True,
+            reduce_boolean_attributes=True,
         )
     )
 )

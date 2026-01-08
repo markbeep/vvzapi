@@ -6,7 +6,7 @@ from typing import Any, Sequence, cast
 import sqlalchemy as sa
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, parse_obj_as
-from pydantic.json import pydantic_encoder  # pyrefly: ignore[missing-module-attribute]
+from pydantic.json import pydantic_encoder
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import TypeDecorator
 
@@ -41,7 +41,7 @@ class PydanticType[T: BaseModel](TypeDecorator[sa.JSON]):
         # The "new" pydantic.TypeAdapter.validate_python does not.
         return (
             parse_obj_as(
-                self.pydantic_type,  # pyrefly: ignore[bad-argument-type]
+                self.pydantic_type,
                 value,
             )
             if value
