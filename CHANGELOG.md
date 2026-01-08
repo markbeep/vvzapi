@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.5.0](https://github.com/markbeep/vvzapi/compare/v1.4.0...v1.5.0) (2026-01-08)
+
+
+### Features
+
+* **search:** add query time to results ([c9378cf](https://github.com/markbeep/vvzapi/commit/c9378cfd836f0676e1a08d862a325391e85cda1a))
+* **search:** OR operator and parentheses for more complex queries ([45227ea](https://github.com/markbeep/vvzapi/commit/45227ea909ea3d8527b3c9052b567337cb0fcf2a))
+* **search:** remove awkward '!:' operator and instead use prefixed minus operator for negation ([3c76208](https://github.com/markbeep/vvzapi/commit/3c76208dcc9b9d5d38b0281948f119e629f83cfd))
+
+
+### Bug Fixes
+
+* **api:** fix wrong path in guide for first example ([80d6452](https://github.com/markbeep/vvzapi/commit/80d64528ba1679c389f85dc1c38845bd96ac7fc0))
+* **search:** fix course numbers not being matched by regex ([3c76208](https://github.com/markbeep/vvzapi/commit/3c76208dcc9b9d5d38b0281948f119e629f83cfd))
+* **search:** fix query from becoming infinitely big and fix invalid offered in results page filters ([231d929](https://github.com/markbeep/vvzapi/commit/231d92972e4d2dffd15c9df873896cc3a762a568))
+
+
+### Miscellaneous Chores
+
+* add back warnings for basedpyright ([05906df](https://github.com/markbeep/vvzapi/commit/05906df9900bf2e9a1d0d399680a53ad9f5830be))
+
 ## [1.4.0](https://github.com/markbeep/vvzapi/compare/v1.3.0...v1.4.0) (2026-01-07)
 
 
