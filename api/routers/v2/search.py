@@ -36,9 +36,9 @@ from api.util.sections import concatenate_section_names
 
 router = APIRouter(prefix="/search", tags=["Search"])
 
-# Matches query operators ('c:analysis y>=2020')
+# Matches query operators ('c:analysis y>=2020') or ('-o:20-3434-13L1')
 query_ops = re.compile(
-    r'(\w+)(:|=|>|<|(?:<=)|(?:>=)|(?:!:))(\w+|(?:".+?")|(?:\'.+?\'))'
+    r'(-?)(\w+)(:|=|>|<|(?:<=)|(?:>=)|(?:!=))(\S+|(?:".+?")|(?:\'.+?\'))'
 )
 
 
@@ -105,6 +105,7 @@ class FilterOperatorUnparsed(BaseModel):
     key: QueryKey
     operator: str
     value: str
+    negated: bool
 
 
 class FilterOperator(BaseModel):
@@ -605,9 +606,9 @@ async def search_units(
     order_by: QueryKey = "year",
     order: str = "desc",
 ) -> SearchResponse:
-    operators: list[tuple[str, str, str]] = query_ops.findall(query)
+    operators: list[tuple[str, str, str, str]] = query_ops.findall(query)
     unparsed_filters: list[FilterOperatorUnparsed] = []
-    for key, operator, value in operators:
+    for neg, key, operator, value in operators:
         query = query.replace(f"{key}{operator}{value}", "").strip()
         value = value.strip("\"'")
         if query_key := find_closest_operators(key):
@@ -616,6 +617,7 @@ async def search_units(
                     key=query_key,
                     operator=operator,
                     value=value,
+                    negated=neg == "-",
                 )
             )
 
@@ -623,21 +625,47 @@ async def search_units(
     query = re.sub(r"\s+", " ", query).strip()
     if query:
         for word in query.split(" "):
-            unparsed_filters.append(
-                FilterOperatorUnparsed(
-                    key="title",
-                    operator="=",
-                    value=word,
+            if word.startswith("-"):
+                unparsed_filters.append(
+                    FilterOperatorUnparsed(
+                        key="title",
+                        operator="=",
+                        value=word[1:],
+                        negated=True,
+                    )
                 )
-            )
+            else:
+                unparsed_filters.append(
+                    FilterOperatorUnparsed(
+                        key="title",
+                        operator="=",
+                        value=word,
+                        negated=False,
+                    )
+                )
 
-    # convert to FilterOperator (basically just turn colons into equals)
+    # convert to FilterOperator (apply any negations and turn colons into equals)
     filters: list[FilterOperator] = []
     for filter_ in unparsed_filters:
+        # negation
+        if filter_.negated:
+            if filter_.operator == ":":
+                filter_.operator = "!="
+            elif filter_.operator == "=":
+                filter_.operator = "!="
+            elif filter_.operator == "!=":
+                filter_.operator = ":"
+            elif filter_.operator == ">":
+                filter_.operator = "<="
+            elif filter_.operator == "<":
+                filter_.operator = ">="
+            elif filter_.operator == ">=":
+                filter_.operator = "<"
+            elif filter_.operator == "<=":
+                filter_.operator = ">"
+
         if filter_.operator == ":":
             operator = Operator.eq
-        elif filter_.operator == "!:":
-            operator = Operator.ne
         else:
             try:
                 operator = Operator(filter_.operator)

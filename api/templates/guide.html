@@ -35,6 +35,16 @@
             it in quotes <span class="whitespace-nowrap">(e.g.,
               <code class="kbd kbd-sm">lecturer:"John Doe"</code>).</span>
           </p>
+          <p>
+            You can combine multiple filters to narrow down your search results.
+            Only results are shown for which all specified filters are satisfied (logical AND).
+          </p>
+          <p>
+            You can also negate filters by prefixing terms or keys with a minus sign
+            <span class="whitespace-nowrap">(e.g.,
+              <code class="kbd kbd-sm">-description:advanced</code> or <code class="kbd kbd-sm">-math</code> to hide any
+              courses without "math" in the title).</span>
+          </p>
         </div>
       </div>
     </section>
@@ -179,8 +189,7 @@
             <div class="text-base-content/60 text-xs font-sans mt-1">Equal</div>
           </div>
           <div class="bg-base-200 p-2 rounded text-center">
-            <span class="font-bold text-accent">!=</span> or
-            <span class="font-bold text-accent">!:</span>
+            <span class="font-bold text-accent">!=</span>
             <div class="text-base-content/60 text-xs font-sans mt-1">Not Equal</div>
           </div>
           <div class="bg-base-200 p-2 rounded text-center">
@@ -232,10 +241,10 @@
           </div>
         </a>
 
-        <a href="/?q=physics+s%3AW+d%21%3Aanalysis" class="block group">
+        <a href="/?q=physics+s%3AW+-d%3Aanalysis" class="block group">
           <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
             <div class="card-body p-4">
-              <code class="text-accent font-bold block mb-1">physics s:W d!:analysis</code>
+              <code class="text-accent font-bold block mb-1">physics s:W -d:analysis</code>
               <span class="text-sm text-base-content/80">Search for "physics" in the Winter semester without any mention
                 of "analyis" in the description.</span>
             </div>
