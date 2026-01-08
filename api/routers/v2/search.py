@@ -75,6 +75,9 @@ class GroupedLearningUnits(BaseModel):
             yield unit.semkez, unit
 
 
+SectionCTE = concatenate_section_names()
+
+
 def _build_boolean_clause(op: AND | OR):
     booleans: list[BinaryExpression[bool] | ColumnElement[bool]] = []
     filters_used = OR(ops=[]) if isinstance(op, OR) else AND(ops=[])
@@ -367,39 +370,27 @@ def _build_boolean_clause(op: AND | OR):
 
     # matches all filters
     if offered_in_names:
-        c = concatenate_section_names()
-        offered_in_ids = c.where(
-            *(
-                c.c.path_en.icontains(name) | c.c.path_de.icontains(name)
-                for name in offered_in_names
-            )
-        ).with_only_columns(c.c.id)
-        booleans.append(col(Section.id).in_(offered_in_ids))
-        filters_used.ops.append(
-            FilterOperator(
-                key="offered",
-                operator=Operator.eq,
-                value=", ".join(sorted(offered_in_names)),
-            )
+        clauses = (
+            SectionCTE.c.path_en.icontains(name) | SectionCTE.c.path_de.icontains(name)
+            for name in offered_in_names
         )
+        if isinstance(op, OR):
+            clauses = or_(*clauses)
+        else:
+            clauses = and_(*clauses)
+        offered_ids = SectionCTE.where(clauses).with_only_columns(SectionCTE.c.id)
+        booleans.append(col(Section.id).in_(offered_ids))
     if not_offered_in_names:
-        c = concatenate_section_names("not_offered_in_sections")
-        not_offered_in_ids = c.where(
-            or_(
-                *(
-                    c.c.path_en.icontains(name) | c.c.path_de.icontains(name)
-                    for name in not_offered_in_names
-                )
-            )
-        ).with_only_columns(c.c.id)
-        booleans.append(col(Section.id).not_in(not_offered_in_ids))
-        filters_used.ops.append(
-            FilterOperator(
-                key="offered",
-                operator=Operator.ne,
-                value=", ".join(sorted(not_offered_in_names)),
-            )
+        clauses = (
+            SectionCTE.c.path_en.icontains(name) | SectionCTE.c.path_de.icontains(name)
+            for name in offered_in_names
         )
+        if isinstance(op, OR):
+            clauses = or_(*clauses)
+        else:
+            clauses = and_(*clauses)
+        not_offered_ids = SectionCTE.where(clauses).with_only_columns(SectionCTE.c.id)
+        booleans.append(not_(col(Section.id).in_(not_offered_ids)))
 
     if isinstance(op, AND):
         return and_(*booleans), filters_used

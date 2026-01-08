@@ -87,7 +87,8 @@ class FilterOperator(BaseModel):
 
     @override
     def __str__(self) -> str:
-        return f"{self.key} {self.operator} {self.value}"
+        val = self.value if " " not in self.value else f'"{self.value}"'
+        return f"{self.key}{self.operator}{val}"
 
 
 class LogicalOperator(BaseModel):
@@ -106,7 +107,7 @@ class LogicalOperator(BaseModel):
         result = ""
         for i, op in enumerate(self.ops):
             if i > 0:
-                result += f" {self.__class__.__name__} "
+                result += f" {self.__class__.__name__} "  # AND / OR
             if isinstance(op, (AND, OR)):
                 result += f"({str(op)})"
             else:

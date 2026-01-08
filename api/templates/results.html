@@ -178,7 +178,7 @@
         {% else %}
         <div class="text-center text-gray-500 mt-10">
             <p class="text-xs">No results found where
-                <span class="bg-base-100 py-0.5 px-1 rounded">{{ results.filters_used|join(', ') }}</span>
+                <span class="bg-base-100 py-0.5 px-1 rounded">{{ results.parsed_query }}</span>
             </p>
         </div>
         {% endif %}

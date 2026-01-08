@@ -74,7 +74,7 @@ def get_parent_from_unit(unit_id: int | None = None):
     )
 
 
-def concatenate_section_names(cte_name: str = "section_paths"):
+def concatenate_section_names():
     """Creates a CTE that concatenates section names from root to leaf."""
     anchor = select(
         Section.id,
@@ -83,7 +83,7 @@ def concatenate_section_names(cte_name: str = "section_paths"):
         col(Section.name).label("path_de"),
     ).where(col(Section.parent_id).is_(None))
 
-    cte = anchor.cte(cte_name, recursive=True)
+    cte = anchor.cte("section_paths", recursive=True)
     Parent = aliased(Section)
     recursive = select(
         Parent.id,
