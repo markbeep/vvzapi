@@ -119,7 +119,7 @@ async def analytics_middleware(request: Request, call_next: Any):
 
 @app.get("/", include_in_schema=False)
 async def root(
-    session: Annotated[Any, Depends(get_session)],
+    session: Annotated[Session, Depends(get_session)],
     query: Annotated[str | None, Query(alias="q"), str] = None,
     page: Annotated[int, Query(ge=1)] = 1,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,

@@ -45,6 +45,11 @@
               <code class="kbd kbd-sm">-description:advanced</code> or <code class="kbd kbd-sm">-math</code> to hide any
               courses without "math" in the title).</span>
           </p>
+          <p>
+            You can add parentheses to group filters and <code class="kbd kbd-sm">OR</code> operators to create more
+            complex queries. For example,
+            <code class="kbd kbd-sm">c&gt;=6 (title_english:Network OR title_german:Netzwerk)</code>
+          </p>
         </div>
       </div>
     </section>
@@ -219,6 +224,20 @@
                 class="text-accent font-bold block mb-1">y=2026 s:fs o:"computer science master" o:minor o:"computer vision"</code>
               <span class="text-sm text-base-content/80">Find all courses taking place in FS 2026 that count as a minor
                 for the Computer Vision Major.</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="/?q=s%3Afs+y%3A2026+((dept%3Acomputer+c<%3D4+o%3A&quot;data+management+systems&quot;)+or+(dept%3Aarchitecture+c>%3D10))"
+          class="block group">
+          <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="card-body p-4">
+              <code
+                class="text-accent font-bold block mb-1">s:fs y:2026 ((dept:computer c&gt;=4 o:"data management systems") or (dept:architecture c>=10))</code>
+              <span class="text-sm text-base-content/80">Find all courses in the Spring semester of 2026 that are either
+                offered by the Computer Science department
+                with at most 4 credits and are part of the "Data Management Systems" program, or are offered by the
+                Architecture department with at least 10 credits.</span>
             </div>
           </div>
         </a>
