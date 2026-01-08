@@ -383,7 +383,7 @@ def _build_boolean_clause(op: AND | OR):
     if not_offered_in_names:
         clauses = (
             SectionCTE.c.path_en.icontains(name) | SectionCTE.c.path_de.icontains(name)
-            for name in offered_in_names
+            for name in not_offered_in_names
         )
         if isinstance(op, OR):
             clauses = or_(*clauses)
