@@ -1,8 +1,8 @@
-from typing import override
 import re
 from collections import defaultdict
 from enum import Enum
-from typing import Annotated, Literal, cast, get_args
+from timeit import default_timer
+from typing import Annotated, Literal, cast, get_args, override
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
@@ -590,6 +590,7 @@ class SearchResponse(BaseModel):
     total: int
     results: dict[str, GroupedLearningUnits]
     filters_used: list[FilterOperator]
+    exec_time_ms: float
 
     @override
     def __iter__(self):
@@ -682,6 +683,7 @@ async def search_units(
     # default to desc
     descending = not order.startswith("asc")
 
+    start = default_timer()
     count, results, filters_used = match_filters(
         session,
         filters,
@@ -690,5 +692,11 @@ async def search_units(
         order_by=order_by,
         descending=descending,
     )
+    end = default_timer()
 
-    return SearchResponse(total=count, results=results, filters_used=filters_used)
+    return SearchResponse(
+        total=count,
+        results=results,
+        filters_used=filters_used,
+        exec_time_ms=(end - start) * 1000,
+    )
