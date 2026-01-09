@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.6.0](https://github.com/markbeep/vvzapi/compare/v1.5.0...v1.6.0) (2026-01-09)
+
+
+### Features
+
+* **api:** data dump endpoint to download database. Closes [#27](https://github.com/markbeep/vvzapi/issues/27) ([cb62114](https://github.com/markbeep/vvzapi/commit/cb62114741038240efb80eb7e78f3480249dbf69))
+* **search:** add link anchors to guide page ([efa91cc](https://github.com/markbeep/vvzapi/commit/efa91cc1750d579496a65e1acf44c903cb685639))
+* **search:** make external links more clear with an icon ([42bc492](https://github.com/markbeep/vvzapi/commit/42bc4922845e28ae0ab30248bd34fab0d4adc170))
+* **search:** show last scraped_at time on unit details page ([799c6f4](https://github.com/markbeep/vvzapi/commit/799c6f429975f5ae149f029fa7471d9ec333cafc))
+
+
+### Bug Fixes
+
+* **search:** fix offered in typo ([a38350d](https://github.com/markbeep/vvzapi/commit/a38350d3f2400c7269c3f66db58c52744a3fdd40))
+* **search:** fix order of operator parsing to correctly match &gt;= and &lt;= ([4637d95](https://github.com/markbeep/vvzapi/commit/4637d95372a31eb14238b4ba3719dc30953b9aa2))
+* **search:** fix wrongly overflowing text about filter negation on guide page ([41db41e](https://github.com/markbeep/vvzapi/commit/41db41efa0656b556370d9d0eea49078c099a59b))
+
+
+### Reverts
+
+* "feat(search): show last scraped_at time on unit details page" ([d59c37c](https://github.com/markbeep/vvzapi/commit/d59c37cef664f29fdc7c19757c7fd4cb277ac999))
+
+
+### Documentation
+
+* update readme with model name explanation and details on how to contribute ([cb62114](https://github.com/markbeep/vvzapi/commit/cb62114741038240efb80eb7e78f3480249dbf69))
+
+
+### Continuous Integration
+
+* increase basedpyright typing from 'recommended' to 'strict' ([af123b0](https://github.com/markbeep/vvzapi/commit/af123b009826ef6f14c859f086dd3e9042031dde))
+
 ## [1.5.0](https://github.com/markbeep/vvzapi/compare/v1.4.0...v1.5.0) (2026-01-08)
 
 
