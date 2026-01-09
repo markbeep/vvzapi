@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Annotated, Any, cast
+from typing import Annotated, Awaitable, Callable
 
 import httpx
 from fastapi import Depends, FastAPI, Query, Request
@@ -33,7 +33,8 @@ from api.models import (
 )
 from api.routers.v1.units import get_unit
 from api.routers.v1_router import router as v1_router
-from api.routers.v2.search import QueryKey, search_units
+from api.util.parse_query import QueryKey
+from api.routers.v2.search import search_units
 from api.routers.v2_router import router as v2_router
 from api.util.db import get_session
 from api.util.sections import get_parent_from_unit
@@ -62,10 +63,16 @@ templates = Jinja2Templates(
         )
     )
 )
-templates.env.filters["pluralize"] = pluralize_dj
-templates.env.filters["trim_float"] = (
-    lambda x: round(cast(float, x), 3) if x % 1 else int(cast(float, x))
-)
+
+
+def trim_float(value: float) -> int | float:
+    if value % 1 == 0:
+        return int(value)
+    return round(value, 3)
+
+
+templates.env.filters["pluralize"] = pluralize_dj  # pyright: ignore[reportUnknownMemberType]
+templates.env.filters["trim_float"] = trim_float  # pyright: ignore[reportUnknownMemberType]
 
 
 def send_analytics_event(request: Request):
@@ -92,7 +99,9 @@ def send_analytics_event(request: Request):
 
 
 @app.middleware("http")
-async def analytics_middleware(request: Request, call_next: Any):
+async def analytics_middleware(
+    request: Request, call_next: Callable[[Request], Awaitable[StreamingResponse]]
+):
     response: StreamingResponse = await call_next(request)
 
     if 200 <= response.status_code < 300:

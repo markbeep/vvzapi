@@ -4,6 +4,7 @@ import argparse
 import re
 from shutil import rmtree
 import time
+from typing import TypedDict, cast
 
 import yaml
 
@@ -15,6 +16,11 @@ re_root_units = r"https://www\.vvz\.ethz\.ch/Vorlesungsverzeichnis/sucheLehrange
 re_legends = r"https://www\.vvz\.ethz\.ch/Vorlesungsverzeichnis/legendeStudienplanangaben\.view\?abschnittId=\d+&lang=en&semkez=\d{4}\w"
 
 re_lecturers_root = r"https://www\.vvz\.ethz\.ch/Vorlesungsverzeichnis/sucheDozierende\.view\?lang=de&semkez=\d{4}\w&seite=0"
+
+
+class FileMetadata(TypedDict):
+    url: str
+    timestamp: int
 
 
 def get_files(path: Path):
@@ -29,7 +35,10 @@ def get_files(path: Path):
                         yield "", bot, 0
                     with open(meta, "r") as f:
                         # yaml allows us to open the invalid formatted json file
-                        data = yaml.load(f, Loader=yaml.SafeLoader)
+                        data = cast(
+                            FileMetadata,
+                            yaml.load(f, Loader=yaml.SafeLoader),
+                        )
                     yield data.get("url", ""), bot, data.get("timestamp", 0)
 
 
@@ -85,6 +94,13 @@ def cleanup_scrapy(
 
 
 if __name__ == "__main__":
+
+    class Arguments(argparse.Namespace):
+        dry_run: bool
+        delete_cached_semesters: list[str]
+        amount: int
+        age_seconds: int
+
     parser = argparse.ArgumentParser(description="Cleanup scrapy cache")
     parser.add_argument(
         "--dry-run",
@@ -112,7 +128,13 @@ if __name__ == "__main__":
         help="Delete cached files older than this many seconds",
         default=0,
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--age-seconds",
+        type=int,
+        help="Delete cached files older than this many seconds",
+        default=0,
+    )
+    args = parser.parse_args(namespace=Arguments())
     cleanup_scrapy(
         dry_run=args.dry_run,
         delete_cached_semesters=args.delete_cached_semesters,

@@ -1,12 +1,11 @@
 from typing import Annotated, Sequence
 
 from fastapi import APIRouter, Depends
-from sqlmodel import Session, func, select
+from sqlalchemy.sql.functions import count
+from sqlmodel import Session, select
 
 from api.models import BaseModel
-from api.models import Course
-from api.models import LearningUnit, Section
-from api.models import Lecturer
+from api.models import LearningUnit
 from api.util.db import get_session
 from api.util.version import get_api_version
 
@@ -25,10 +24,10 @@ class MetricsResponse(BaseModel):
 async def get_metrics(
     session: Annotated[Session, Depends(get_session)],
 ) -> MetricsResponse:
-    total_learning_units = session.exec(select(func.Count(LearningUnit.id))).one()
-    total_courses = session.exec(select(func.Count(Course.number))).one()
-    total_lecturers = session.exec(select(func.Count(Lecturer.id))).one()
-    total_sections = session.exec(select(func.Count(Section.id))).one()
+    total_learning_units = session.exec(select(count("*"))).one()
+    total_courses = session.exec(select(count("*"))).one()
+    total_lecturers = session.exec(select(count("*"))).one()
+    total_sections = session.exec(select(count("*"))).one()
 
     return MetricsResponse(
         total_learning_units=total_learning_units,

@@ -1,4 +1,6 @@
-from typing import override
+# pyright: reportAny=false, reportExplicitAny=false
+
+from typing import final, override
 import json
 from enum import Enum
 from typing import Any, Sequence, cast
@@ -11,6 +13,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import TypeDecorator
 
 
+@final
 class PydanticType[T: BaseModel](TypeDecorator[sa.JSON]):
     impl = sa.JSON
 
@@ -53,6 +56,7 @@ def json_serializer(*args: Any, **kwargs: Any) -> str:
     return json.dumps(*args, default=pydantic_encoder, **kwargs)
 
 
+@final
 class EnumList[T: Enum](TypeDecorator[sa.JSON]):
     impl = sa.JSON
     cache_ok = True

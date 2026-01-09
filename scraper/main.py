@@ -1,14 +1,16 @@
-from scrapy.crawler import CrawlerProcess
-from scrapy.utils.project import get_project_settings
-from scrapy.settings import Settings
+# pyright: reportAny=false, reportExplicitAny=false
 
 import logging
 import sys
 
+from scrapy.crawler import CrawlerProcess
+from scrapy.settings import Settings
+from scrapy.utils.project import get_project_settings
+
+from scraper.env import Settings as EnvSettings
 from scraper.spiders.lecturers import LecturersSpider
 from scraper.spiders.units import UnitsSpider
 from scraper.util.delete_cached import delete_cached
-from scraper.env import Settings as EnvSettings
 
 
 def add_stdout_logging(settings: Settings):

@@ -1,6 +1,8 @@
+from typing import cast
 from pydantic import BaseModel
+from sqlalchemy import Label
 from sqlalchemy.orm import aliased
-from sqlmodel import Session, col, select, text
+from sqlmodel import Session, col, select
 
 from api.models import Section, UnitSectionLink
 
@@ -15,41 +17,44 @@ def get_child_sections(
     parent_section_id: int,
 ):
     # Find all sections below the given section_id
-    children_sql = """
-        WITH RECURSIVE section_tree AS (
-            SELECT id, parent_id, level
-            FROM Section
-            WHERE parent_id = :root_id
-            UNION ALL
-            SELECT s.id, s.parent_id, s.level
-            FROM Section s
-            INNER JOIN section_tree st ON s.parent_id = st.id
-        )
-        SELECT id, level FROM section_tree;
-    """
-    results = session.execute(text(children_sql), params={"root_id": parent_section_id})
+    base_stmt = select(Section.id, Section.parent_id, Section.level).where(
+        Section.parent_id == parent_section_id
+    )
+    cte = base_stmt.cte("section_tree", recursive=True)
+    Parent = aliased(Section)
+    recursive = select(Parent.id, Parent.parent_id, Parent.level).join(
+        cte, col(Parent.parent_id) == cte.c.id
+    )
+    cte = cte.union_all(recursive)
+
+    results = session.exec(
+        select(Section.id, Section.level).join(cte, col(Section.id) == cte.c.id)
+    )
+
     child_sections = [
-        SectionLevel(id=row[0], level=row[1]) for row in results.fetchall()
+        SectionLevel(id=row[0], level=cast(int, row[1])) for row in results.fetchall()
     ]
     return child_sections
 
 
 def get_parent_sections(session: Session, child_section_id: int):
-    parents_sql = """
-        WITH RECURSIVE section_tree AS (
-            SELECT id, parent_id, level
-            FROM Section
-            WHERE id = :root_id
-            UNION ALL
-            SELECT s.id, s.parent_id, s.level
-            FROM Section s
-            INNER JOIN section_tree st ON s.id = st.parent_id
-        )
-        SELECT id, level FROM section_tree WHERE id != :root_id;
-    """
-    results = session.execute(text(parents_sql), params={"root_id": child_section_id})
+    base_stmt = select(Section.id, Section.parent_id, Section.level).where(
+        Section.id == child_section_id
+    )
+    cte = base_stmt.cte("section_tree", recursive=True)
+    Parent = aliased(Section)
+    recursive = select(Parent.id, Parent.parent_id, Parent.level).join(
+        cte, col(Parent.id) == cte.c.parent_id
+    )
+    cte = cte.union_all(recursive)
+    results = session.exec(
+        select(Section.id, Section.level)
+        .join(cte, col(Section.id) == cte.c.id)
+        .where(Section.id != child_section_id)
+    )
+
     parent_sections = [
-        SectionLevel(id=row[0], level=row[1]) for row in results.fetchall()
+        SectionLevel(id=row[0], level=row[1] or 0) for row in results.fetchall()
     ]
     return parent_sections
 
@@ -79,8 +84,8 @@ def concatenate_section_names():
     anchor = select(
         Section.id,
         Section.parent_id,
-        col(Section.name_english).label("path_en"),
-        col(Section.name).label("path_de"),
+        cast(Label[str | None], col(Section.name_english).label("path_en")),
+        cast(Label[str | None], col(Section.name).label("path_de")),
     ).where(col(Section.parent_id).is_(None))
 
     cte = anchor.cte("section_paths", recursive=True)

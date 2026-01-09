@@ -3,7 +3,7 @@ import toml
 # get current version
 with open("pyproject.toml", "r") as f:
     pyproject = toml.load(f)
-    version = pyproject["project"]["version"]
+    version = str(pyproject["project"]["version"])  # pyright: ignore[reportAny]
 
 
 def get_api_version() -> str:

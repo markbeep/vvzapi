@@ -4,7 +4,7 @@ import json
 import re
 import traceback
 from collections import defaultdict
-from typing import Any, Generator, override
+from typing import Any, Generator, Sequence, cast, override
 
 from parsel import Selector, SelectorList
 from pydantic import BaseModel
@@ -69,6 +69,22 @@ def get_urls(year: int, semester: Literal["W", "S"]):
         yield url + f"&studiengangTyp={level.value}&lang=en"
 
 
+def similarize_url(url: str) -> str:
+    """
+    Sometimes URLs use the .vorlesungen. domain instead of .vvz or link to http (which also works).
+    We want to use the same link because local caching is based on the URL.
+    """
+    return url.replace(".vorlesungen.", ".vvz.").replace("http://", "https://")
+
+
+def similarize_unit_url(url: str) -> str:
+    return edit_url_key(
+        similarize_url(url),
+        "ansicht",
+        ["ALLE"],
+    )
+
+
 class UnitsSpider(KeywordLoggerSpider):
     """
     The main learning unit (lerneinheit) scraper that handles scraping all the lecture-specific data that is available on VVZ.
@@ -88,8 +104,8 @@ class UnitsSpider(KeywordLoggerSpider):
         additionally scrape these.
     """
 
-    name = "units"
-    rules = (
+    name: str = "units"
+    rules: Sequence[Rule] = (
         # VVZ uses both https://www.vorlesungen.ethz.ch/ and https://www.vvz.ethz.ch/ domains, but both point to the same locations.
         Rule(
             LinkExtractor(
@@ -97,9 +113,7 @@ class UnitsSpider(KeywordLoggerSpider):
                 allow=r"lerneinheit\.view",
                 deny=[r"lang=de", r"cookietest=true", r"red9.ethz.ch"],
                 canonicalize=True,
-                process_value=lambda url: edit_url_key(url, "ansicht", ["ALLE"])
-                .replace(".vorlesungen.", ".vvz.")
-                .replace("http://", "https://"),
+                process_value=similarize_unit_url,
             ),
             follow=True,
             callback="parse_unit",
@@ -109,9 +123,7 @@ class UnitsSpider(KeywordLoggerSpider):
                 allow=r"legendeStudienplanangaben\.view",
                 deny=[r"lang=de", r"cookietest=true", r"red9.ethz.ch"],
                 canonicalize=True,
-                process_value=lambda url: url.replace(".vorlesungen.", ".vvz.").replace(
-                    "http://", "https://"
-                ),
+                process_value=similarize_url,
             ),
             follow=True,
             callback="parse_legend",
@@ -119,9 +131,9 @@ class UnitsSpider(KeywordLoggerSpider):
     )
     course_ids: dict[str, set[int]] = defaultdict(set)
 
-    def __init__(self, semkezs: list[str] | None = None, *a: Any, **kw: Any):
+    def __init__(self, semkezs: list[str] | None = None, *a: Any, **kw: Any):  # pyright: ignore[reportAny,reportExplicitAny]
         if semkezs is not None:
-            self.start_urls = [
+            self.start_urls: list[str] = [
                 url
                 for semkez in semkezs
                 for url in get_urls(int(semkez[:-1]), "S" if semkez[-1] == "S" else "W")
@@ -136,7 +148,7 @@ class UnitsSpider(KeywordLoggerSpider):
         super().__init__(*a, **kw)
 
     @override
-    def parse_start_url(self, response: Response, **kwargs: Any):
+    def parse_start_url(self, response: Response, **_: Any):  # pyright: ignore[reportExplicitAny]
         try:
             catalog_semkez = re.search(RE_SEMKEZ, response.url)
             if not catalog_semkez:
@@ -271,7 +283,7 @@ class UnitsSpider(KeywordLoggerSpider):
                 return
             number = number.group(0)
             number = number.replace("\xa0", " ").strip()
-            title = rows[0].css("::text")[1].get()
+            title = cast(str, rows[0].css("::text")[1].get())
             title = title.strip() if title else None
             lang = "en" if "lang=en" in url else "de"
             comment = "\n".join(
@@ -342,9 +354,7 @@ class UnitsSpider(KeywordLoggerSpider):
         | LearningUnit
         | Course
         | CourseLecturerLink
-        | UnitSectionLink,
-        Any,
-        None,
+        | UnitSectionLink
     ]:
         """
         Extracts information from a unit page that is not available on the main catalogue page.
@@ -547,7 +557,7 @@ class UnitsSpider(KeywordLoggerSpider):
                 },
             )
 
-    def parse_legend(self, response: Response) -> Generator[UnitTypeLegends, Any, None]:
+    def parse_legend(self, response: Response) -> Generator[UnitTypeLegends]:
         """
         Example: www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=117361&semkez=2025W&lang=en
         """

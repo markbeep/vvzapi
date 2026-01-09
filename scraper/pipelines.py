@@ -2,11 +2,11 @@ from typing import cast
 import time
 import traceback
 from pathlib import Path
-from typing import Any
 
 from pydantic import BaseModel
 from scrapy import Spider
-from sqlmodel import col, select
+from scrapy.utils.log import SpiderLoggerAdapter
+from sqlmodel import Session, col, select
 
 from api.models import (
     Course,
@@ -47,11 +47,11 @@ def iter_lines(file_path: Path):
 
 class DatabasePipeline:
     def open_spider(self, spider: Spider):
-        self.session = next(db.get_session())
-        self.logger = spider.logger
+        self.session: Session = next(db.get_session())
+        self.logger: SpiderLoggerAdapter = spider.logger
         CACHE_PATH.mkdir(parents=True, exist_ok=True)
 
-    def process_item(self, item: Any, spider: Spider):
+    def process_item(self, item: object, spider: Spider):
         try:
             # first check if they are mappings. Dept/level mappings update
             # existing unit models

@@ -1,3 +1,6 @@
+# pyright: reportExplicitAny=false,reportAny=false
+
+
 from typing import Any, Literal
 from api.models import LearningUnit, UnitChanges
 

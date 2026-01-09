@@ -121,7 +121,7 @@ class LogicalOperator(BaseModel):
     @override
     def __repr__(self) -> str:
         def _format_ops(ops: list["FilterOperator | AND | OR"], indent: int = 0) -> str:
-            lines = []
+            lines: list[str] = []
             for op in ops:
                 if isinstance(op, (AND, OR)):
                     lines.append(" " * indent + f"{op.__class__.__name__}:")
@@ -146,24 +146,27 @@ def _find_closest_operators(key: str) -> QueryKey | None:
     key = key.lower()
     if key in mapping:
         return mapping[key]
-    if key in get_args(QueryKey):
+
+    args = cast(Sequence[QueryKey], get_args(QueryKey))
+
+    if key in args:
         return cast(QueryKey, key)
 
     # first see if there's a key that starts the same
-    for query_key in get_args(QueryKey):
+    for query_key in args:
         if query_key.startswith(key):
             return query_key
 
     # try to figure out the closest match
     if result := process.extractOne(
         key,
-        get_args(QueryKey),
+        args,
         scorer=fuzz.partial_ratio,
         processor=utils.default_process,
     ):
         matched_name, score, _ = result
         if score >= 60:
-            return cast(QueryKey, matched_name)
+            return matched_name
     return None
 
 

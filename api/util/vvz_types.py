@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import NewType
+from typing import NewType, override
 from pydantic import BaseModel
 
 
@@ -24,6 +24,7 @@ class WeekdayEnum(Enum):
     Date = 8
     Invalid = 9
 
+    @override
     def __str__(self) -> str:
         if self == WeekdayEnum.Mon:
             return "Mon"

@@ -23,7 +23,9 @@ dependencies = [
 dev = ["basedpyright>=1.37.0"]
 
 [tool.basedpyright]
+typeCheckingMode = "strict"
 include = ["api", "scraper"]
-failOnWarnings = false
 reportDeprecated = false
 reportUninitializedInstanceVariable = false
+reportUnusedCallResult = false
+allowedUntypedLibraries = ["jinja2_pluralize"]

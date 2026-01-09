@@ -57,8 +57,8 @@ async def get_unit_lecturers(
     "/{unit_id}/changes",
     response_model=Sequence[UnitChanges],
     description="Get a list of changes that the course details have undergone. "
-    "Changes are a JSON object that describe what the values were before they "
-    "got updated to either the next change or whatever the model currently has.",
+    + "Changes are a JSON object that describe what the values were before they "
+    + "got updated to either the next change or whatever the model currently has.",
 )
 async def get_unit_changes(
     unit_id: int,
@@ -115,10 +115,10 @@ async def list_units(
         Department | None,
         Query(
             description="Department offering the unit. 1=ARCHITECTURE, 2=CIVIL_ENVIRONMENTAL_AND_GEOMATIC_ENGINEERING, "
-            "3=MECHANICAL_AND_PROCESS_ENGINEERING, 5=COMPUTER_SCIENCE, 7=MANAGEMENT_TECHNOLOGY_AND_ECONOMICS, "
-            "8=MATHEMATICS, 9=PHYSICS, 11=BIOLOGY, 13=EARTH_AND_PLANETARY_SCIENCES, 17=HUMANITIES_SOCIAL_AND_POLITICAL_SCIENCES, "
-            "18=INFORMATION_TECHNOLOGY_AND_ELECTRICAL_ENGINEERING, 19=MATERIALS, 20=CHEMISTRY_AND_APPLIED_BIOSCIENCES, "
-            "23=BIOSYSTEMS_SCIENCE_AND_ENGINEERING, 24=HEALTH_SCIENCES_AND_TECHNOLOGY, 25=ENVIRONMENTAL_SYSTEMS_SCIENCE"
+            + "3=MECHANICAL_AND_PROCESS_ENGINEERING, 5=COMPUTER_SCIENCE, 7=MANAGEMENT_TECHNOLOGY_AND_ECONOMICS, "
+            + "8=MATHEMATICS, 9=PHYSICS, 11=BIOLOGY, 13=EARTH_AND_PLANETARY_SCIENCES, 17=HUMANITIES_SOCIAL_AND_POLITICAL_SCIENCES, "
+            + "18=INFORMATION_TECHNOLOGY_AND_ELECTRICAL_ENGINEERING, 19=MATERIALS, 20=CHEMISTRY_AND_APPLIED_BIOSCIENCES, "
+            + "23=BIOSYSTEMS_SCIENCE_AND_ENGINEERING, 24=HEALTH_SCIENCES_AND_TECHNOLOGY, 25=ENVIRONMENTAL_SYSTEMS_SCIENCE"
         ),
     ] = None,
     # VVZ filters: "Structure"

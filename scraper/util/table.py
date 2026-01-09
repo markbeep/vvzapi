@@ -1,4 +1,3 @@
-from typing import cast
 from re import Pattern
 from scrapy.http import Response
 from parsel import Selector, SelectorList
@@ -17,7 +16,7 @@ class Table:
         /,
         pre_parsed: bool = False,
     ) -> None:
-        self.response = response
+        self.response: Response | SelectorList[Selector] | Selector = response
         self.accessed_keys: set[str] = set()
         self.rows: list[tuple[str, SelectorList[Selector]]] = []
         if isinstance(response, Response):
@@ -31,7 +30,7 @@ class Table:
             else:
                 xpath_rows = response.xpath(".//tr")
         for r in xpath_rows:
-            cols = cast(Selector, r).xpath("./td")
+            cols = r.xpath("./td")
             if len(cols) == 0:
                 continue
             key = cols[0].xpath("string()").get()

@@ -16,11 +16,11 @@ def get_urls(year: int, semester: Literal["W", "S"]):
 
 
 class LecturersSpider(KeywordLoggerSpider):
-    name = "lecturers"
+    name: str = "lecturers"
 
-    def __init__(self, semkezs: list[str] | None = None, *a: Any, **kw: Any):
+    def __init__(self, semkezs: list[str] | None = None, *a: Any, **kw: Any):  # pyright: ignore[reportAny,reportExplicitAny]
         if semkezs is not None:
-            self.start_urls = [
+            self.start_urls: list[str] = [
                 url
                 for semkez in semkezs
                 for url in get_urls(int(semkez[:-1]), "S" if semkez[-1] == "S" else "W")
@@ -35,7 +35,7 @@ class LecturersSpider(KeywordLoggerSpider):
         super().__init__(*a, **kw)
 
     @override
-    def parse_start_url(self, response: Response, **kwargs: Any):
+    def parse_start_url(self, response: Response, **_: Any):  # pyright: ignore[reportExplicitAny]
         semkez = re.search(RE_SEMKEZ, response.url)
         if not semkez:
             self.logger.error(

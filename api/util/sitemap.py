@@ -11,7 +11,7 @@ from api.util.db import get_session
 
 def _parse_index(root: ET.Element) -> dict[str, datetime]:
     namespace = {"ns": "http://www.sitemaps.org/schemas/sitemap/0.9"}
-    sitemap_data = {}
+    sitemap_data: dict[str, datetime] = {}
 
     for sitemap in root.findall("ns:sitemap", namespace):
         loc = sitemap.find("ns:loc", namespace)

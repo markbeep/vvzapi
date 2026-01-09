@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import time
 from enum import Enum
-from typing import Any, override
+from typing import override
 
 from pydantic import BaseModel as PydanticBaseModel
 from rapidfuzz import fuzz, process, utils
-from sqlmodel import INTEGER, JSON, Column, Field, SQLModel
+from sqlmodel import INTEGER, JSON, Column, Field, SQLModel  # pyright: ignore[reportUnknownVariableType]
 
 from api.util.pydantic_type import EnumList, PydanticType
 from api.util.vvz_types import CourseTypeEnum, Group, TimeSlot
@@ -26,7 +26,7 @@ class Overwriteable:
         if not isinstance(other, type(self)):
             return
         for field in other.model_fields_set:
-            value_other = getattr(other, field)
+            value_other = getattr(other, field)  # pyright: ignore[reportAny]
             setattr(self, field, value_other)
 
 
@@ -490,7 +490,7 @@ class UnitChanges(BaseModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     unit_id: int
-    changes: dict[str, Any] = Field(sa_column=Column(JSON()))
+    changes: dict[str, object] = Field(sa_column=Column(JSON()))
     scraped_at: int
     """The scraped_at before the changes were applied"""
 

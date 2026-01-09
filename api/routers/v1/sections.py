@@ -40,10 +40,10 @@ async def list_sections(
         int | None, Query(description="Filter sections by **direct** parent section ID")
     ] = None,
 ) -> Sequence[int]:
+    name = (func.COALESCE(Section.name_english, Section.name),)
     query = (
         select(
             Section.id,
-            name := func.COALESCE(Section.name_english, Section.name),
         )
         .where(
             Section.semkez == semkez if semkez is not None else True,
@@ -68,15 +68,15 @@ async def list_sections(
 
     if sort_lex:
         query = query.order_by(
-            case((name.is_not(None), 1), else_=0).desc(),  # null last
+            case((col(name).is_not(None), 1), else_=0).desc(),  # null last
             col(Section.level).asc(),
-            name.op("GLOB")("[^0-9]*").desc(),  # text before numeric
+            col(name).op("GLOB")("[^0-9]*").desc(),  # text before numeric
             func.LOWER(name).asc(),
         )
     else:
         query = query.order_by(col(Section.id).asc())
 
-    return [section_id for section_id, _ in session.exec(query).all()]
+    return [section_id for section_id in session.exec(query).all()]
 
 
 class LearningUnitType(BaseModel):
