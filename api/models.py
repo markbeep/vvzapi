@@ -338,17 +338,6 @@ class LearningUnit(BaseModel, Overwriteable, table=True):
     def departments_as_str(self) -> str:
         return ", ".join([str(dep) for dep in self.departments])
 
-    def last_scraped_at(self) -> str:
-        seconds_passed = int(time.time()) - self.scraped_at
-        if seconds_passed < 60:
-            return f"{int(seconds_passed)} seconds ago"
-        elif seconds_passed < 3600:
-            return f"{int(seconds_passed // 60)} minutes ago"
-        elif seconds_passed < 86400:
-            return f"{int(seconds_passed // 3600)} hours ago"
-        else:
-            return f"{int(seconds_passed // 86400)} days ago"
-
 
 """
 
