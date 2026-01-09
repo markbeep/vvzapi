@@ -99,10 +99,14 @@
                         <div class="flex gap-2 relative z-10">
                             <a target="_blank"
                                 href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={{ unit.id }}&semkez={{ unit.semkez }}&lang=en&ansicht=ALLE"
-                                class="btn btn-sm btn-outline" title="VVZ">VVZ</a>
+                                class="btn btn-sm btn-outline" title="VVZ">
+                                VVZ
+                                <span class="[&>svg]:size-4">{% include "icons/external.svg" %}</span>
+                            </a>
                             <a target="_blank" href="https://coursereview.ch/course/{{ unit.number }}"
                                 class="btn btn-sm btn-outline" title="CourseReview">
                                 CR
+                                <span class="[&>svg]:size-4">{% include "icons/external.svg" %}</span>
                             </a>
                         </div>
                     </div>

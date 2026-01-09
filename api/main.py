@@ -19,6 +19,9 @@ from jinja2 import Environment, FileSystemLoader
 from jinja2_htmlmin import minify_loader
 from jinja2_pluralize import pluralize_dj
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from sqlmodel import Session, col, select
 from starlette.background import BackgroundTask
 
@@ -33,16 +36,13 @@ from api.models import (
 )
 from api.routers.v1.units import get_unit
 from api.routers.v1_router import router as v1_router
-from api.util.parse_query import QueryKey
 from api.routers.v2.search import search_units
 from api.routers.v2_router import router as v2_router
 from api.util.db import get_session
+from api.util.parse_query import QueryKey
 from api.util.sections import get_parent_from_unit
 from api.util.sitemap import generate_sitemap
 from api.util.version import get_api_version
-from slowapi.errors import RateLimitExceeded
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 
 app = FastAPI(title="VVZ API", version=get_api_version())
 app.include_router(v1_router)

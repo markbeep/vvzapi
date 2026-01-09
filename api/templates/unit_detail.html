@@ -94,10 +94,14 @@
                 <div class="flex gap-2 flex-wrap justify-end h-fit">
                     <a target="_blank"
                         href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={{ unit.id }}&semkez={{ unit.semkez }}&lang=en&ansicht=ALLE"
-                        class="btn btn-sm btn-outline" title="VVZ">VVZ</a>
-                    <a id="coursereview" target="_blank" href="https://coursereview.ch/course/{{ unit.number }}"
+                        class="btn btn-sm btn-outline" title="VVZ">
+                        VVZ
+                        <span class="[&>svg]:size-4">{% include "icons/external.svg" %}</span>
+                    </a>
+                    <a target="_blank" href="https://coursereview.ch/course/{{ unit.number }}"
                         class="btn btn-sm btn-outline" title="CourseReview">
-                        CR n/a
+                        <span id="coursereview">CR n/a</span>
+                        <span class="[&>svg]:size-4">{% include "icons/external.svg" %}</span>
                         <script>
                             fetch("https://cr.vsos.ethz.ch/getRatings?course={{ unit.number }}")
                                 .then(response => response.json())
@@ -391,6 +395,8 @@
                             href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?abschnittId={{ tree.section.id }}&semkez={{ tree.section.semkez }}&lang=en"
                             class="text-sm text-base-content font-medium hover:underline">
                             {{ tree.section.name_english if tree.section.name_english else tree.section.name }}
+                            <span class="[&>svg]:size-3 inline-block">{% include "icons/external.svg"
+                                %}</span>
                         </a>
                         {% if tree.section.comment_english or tree.section.comment %}
                         <span class="text-xs text-base-content/70 italic">
