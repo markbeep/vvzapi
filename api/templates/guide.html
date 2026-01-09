@@ -15,9 +15,12 @@
       </p>
     </header>
 
-    <section class="card bg-base-100 shadow-sm">
+    <section id="how-it-works" class="card bg-base-100 shadow-sm">
       <div class="card-body">
-        <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2">
+        <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+          <a href="#how-it-works" class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+            {% include 'icons/link.svg' %}
+          </a>
           How it works
         </h2>
         <div class="space-y-4 text-sm">
@@ -54,9 +57,12 @@
       </div>
     </section>
 
-    <section class="card bg-base-100 shadow-sm">
+    <section id="filter-keys" class="card bg-base-100 shadow-sm">
       <div class="card-body">
-        <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2">
+        <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+          <a href="#filter-keys" class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+            {% include 'icons/link.svg' %}
+          </a>
           Filter Keys
         </h2>
         <div class="overflow-x-auto">
@@ -178,9 +184,12 @@
         </div>
     </section>
 
-    <section class="card bg-base-100 shadow-sm">
+    <section id="comparison-operators" class="card bg-base-100 shadow-sm">
       <div class="card-body">
-        <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2">
+        <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+          <a href="#comparison-operators" class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+            {% include 'icons/link.svg' %}
+          </a>
           Comparison Operators
         </h2>
         <p class="text-sm text-base-content/80 mb-4">
@@ -213,8 +222,13 @@
       </div>
     </section>
 
-    <section>
-      <h2 class="text-xl font-bold text-base-content mb-4">Examples</h2>
+    <section id="examples">
+      <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+        <a href="#examples" class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+          {% include 'icons/link.svg' %}
+        </a>
+        Examples
+      </h2>
       <div class="space-y-3">
         <a href="/?q=y%3D2026+s%3Afs+o%3A%22computer+science+master%22+o%3Aminor+o%3A%22computer+vision%22"
           class="block group">
