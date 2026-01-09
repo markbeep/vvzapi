@@ -40,6 +40,9 @@ from api.util.db import get_session
 from api.util.sections import get_parent_from_unit
 from api.util.sitemap import generate_sitemap
 from api.util.version import get_api_version
+from slowapi.errors import RateLimitExceeded
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
 
 app = FastAPI(title="VVZ API", version=get_api_version())
 app.include_router(v1_router)
@@ -51,6 +54,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# enables rate limitting if needed (like for data dump endpoint)
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # pyright: ignore[reportArgumentType]
 
 templates = Jinja2Templates(
     env=Environment(
@@ -105,9 +113,10 @@ async def analytics_middleware(
     response: StreamingResponse = await call_next(request)
 
     if 200 <= response.status_code < 300:
-        response.headers["Cache-Control"] = (
-            f"Cache-Control: public, max-age={Settings().cache_expiry}"
-        )
+        if "Cache-Control" not in response.headers:
+            response.headers["Cache-Control"] = (
+                f"Cache-Control: public, max-age={Settings().cache_expiry}"
+            )
 
     if (
         response.status_code != 404

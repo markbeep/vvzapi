@@ -1,22 +1,24 @@
 # VVZ REST API
 
-Community-made REST API for [VVZ](https://www.vvz.ethz.ch/Vorlesungsverzeichnis)
+Community-made simple search and REST API for [VVZ](https://www.vvz.ethz.ch/Vorlesungsverzeichnis).
 
 ## Quick Start
 
-Head to https://vvzapi.ch and start playing around with the API.
-
-Currently there's barely any documentation. If you want to help out with documentation, you're always open to creating a pull request.
-
-## Search Design
-
-The search is inspired by [Scryfall](https://scryfall.com/).
+Head to https://vvzapi.ch and start playing around with the search or API!
 
 ## Schema
 
 The schema is inspired by the [VVZ Manual](https://www.bi.id.ethz.ch/soapvvz-2023-1/manual/SoapVVZ.pdf#page=18) (starts page 18).
 
 Attributes have been translated to english, dropped (in cases where the value was internal and not visible on VVZ), or additional attributes have been added that were not present in the documentation.
+
+The word choices might be confusing if you're not used to them. **Importantly, the term "unit" (or "learning unit" as the 1:1 translated from the German "Lerneinheit") is used for what is commonly understood as a course (Discrete Mathematics, Big Data, etc.).** "Unit" is the more general term, as VVZ also lists non-courses like thesis and other projects.
+
+A unit can have multiple times and places it can take place at. These individual slots are called **"courses"** in the API (a somewhat loose translation of the German "Lehrveranstaltung").
+
+## Search Design
+
+The search is inspired by [Scryfall](https://scryfall.com/).
 
 ## Semester Status
 
@@ -32,11 +34,23 @@ This project uses semantic versioning. Breaking changes will result in a bump of
 
 ---
 
+## Contribution
+
+The idea behind the VVZ API is to more easily enable the creation of various cool tools requiring course/VVZ data. If you have an idea for something that should absolutely be in the API, but is missing, open up an issue and let's start discussing it!
+
+I'm grateful for any form of contribution, may it be adding documentation, implementing new features, opening issues for errors or something else. Head to the `Local Development` section below to learn more about how to get the API running locally.
+
+---
+
 ## Local Development
+
+Depending on what you intend to test locally, you can opt to download a dump of the database (head to the API docs to find the endpoint) to develop locally with the most up-to-date data.
+
+Additionally, for ease of development, the devcontainer setup will initialze the essentials in a docker/podman container without cluttering your system with dependencies.
 
 ### Alembic Migrations
 
-Locally a SQLite database is used. Running the migrations automatically creates the database.
+Locally, a SQLite database is used. Running the migrations automatically creates the database.
 
 #### Run migrations
 
@@ -45,6 +59,8 @@ uv run alembic upgrade heads
 ```
 
 #### Create revision
+
+Required if any model was modified.
 
 ```sh
 uv run alembic revision --autogenerate -m "message"
@@ -85,7 +101,17 @@ uv run scrapy parse --spider=units -c parse_start_url "https://www.vvz.ethz.ch/V
 uv run scrapy parse --spider=units -c parse_unit "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?semkez=2025W&ansicht=ALLE&lerneinheitId=192945&lang=en"
 ```
 
+#### Cleanup html cache directory
+
+There might be outdated or unused files in the html cache directories. Using the cleanup script everything that is not needed can be removed. Additionally it can also be used to purposely delete at most `amount` valid cached files from one or more `semester`s that are older than `age-seconds`.
+
+```sh
+uv run scraper/util/cleanup_scrapy.py [--dry-run] [--amount <int>] [--age-seconds <int>] [-d <semester>]*
+```
+
 #### Scrape locally
+
+The scraper can also be started locally by running the docker image directly, if desired.
 
 ```sh
 docker run \
@@ -98,13 +124,7 @@ docker run \
 
 In the data directory there'll be a `httpcache` directory containing all crawled HTML files and a `scrapercache` directory containing scraper specific files and potentially a file called `error_pages.jsonl` with errors.
 
-#### Cleanup html cache directory
-
-There might be outdated or unused files in the html cache directories. Using the cleanup script everything that is not needed can be removed. Additionally it can also be used to purposely delete at most `amount` valid cached files from one or more `semester`s that are older than `age-seconds`.
-
-```sh
-uv run scraper/util/cleanup_scrapy.py [--dry-run] [--amount <int>] [--age-seconds <int>] [-d <semester>]*
-```
+---
 
 ### API Server
 

@@ -537,7 +537,7 @@ class SearchResponse(BaseModel):
             yield unit_number, grouped_units
 
 
-@router.get("/", response_model=SearchResponse)
+@router.get("", response_model=SearchResponse)
 async def search_units(
     query: Annotated[str, Query(alias="q")],
     session: Annotated[Session, Depends(get_session)],

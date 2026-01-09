@@ -13,3 +13,7 @@ class Settings(BaseSettings):
     sitemap_expiry: int = 86400  # in seconds
     plausible_url: str | None = None
     """API event endpoint"""
+
+    @property
+    def zip_path(self) -> str:
+        return self.db_path + ".zip"
