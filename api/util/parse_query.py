@@ -87,7 +87,11 @@ class FilterOperator(BaseModel):
 
     @override
     def __str__(self) -> str:
-        val = self.value if " " not in self.value else f'"{self.value}"'
+        val = (
+            f'"{self.value}"'
+            if " " in self.value or '"' in self.value
+            else f"'{self.value}'"
+        )
         return f"{self.key}{self.operator}{val}"
 
 
@@ -259,14 +263,15 @@ def _parse_query(query: str) -> ParsedType:
     unquoted = Word(printables, excludeChars="()")
     quoted = QuotedString('"') | QuotedString("'")
     operand = quoted | unquoted
+    # NOTE: ensure order of operators from longest to shortest to prevent parsing issues
     operator = (
-        Literal(":")
-        | Literal("=")
-        | Literal("!=")
-        | Literal(">")
-        | Literal("<")
+        Literal("!=")
         | Literal(">=")
         | Literal("<=")
+        | Literal(":")
+        | Literal("=")
+        | Literal(">")
+        | Literal("<")
     )
     operator_term = Group(Optional(Literal("-")) + key + operator + operand)
     plain_term = Group(Optional(Literal("-")) + operand)

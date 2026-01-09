@@ -392,6 +392,9 @@ def _build_boolean_clause(op: AND | OR):
         not_offered_ids = SectionCTE.where(clauses).with_only_columns(SectionCTE.c.id)
         booleans.append(not_(col(Section.id).in_(not_offered_ids)))
 
+    if len(booleans) == 0:
+        raise ValueError("No valid filters found")
+
     if isinstance(op, AND):
         return and_(*booleans), filters_used
     else:
@@ -548,16 +551,24 @@ async def search_units(
     # default to desc
     descending = not order.startswith("asc")
 
-    start = default_timer()
-    count, results, filters_used = match_filters(
-        session,
-        search_operators,
-        offset=offset,
-        limit=limit,
-        order_by=order_by,
-        descending=descending,
-    )
-    end = default_timer()
+    try:
+        start = default_timer()
+        count, results, filters_used = match_filters(
+            session,
+            search_operators,
+            offset=offset,
+            limit=limit,
+            order_by=order_by,
+            descending=descending,
+        )
+        end = default_timer()
+    except ValueError:
+        return SearchResponse(
+            total=0,
+            results={},
+            parsed_query="ERROR IN QUERY",
+            exec_time_ms=0.0,
+        )
 
     parsed_query = str(filters_used)
     if parsed_query.startswith("(") and parsed_query.endswith(")"):
