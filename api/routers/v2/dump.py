@@ -16,8 +16,8 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 @router.get("")
-@limiter.limit("2/minute")  # pyright: ignore[reportUnknownMemberType]
-def get_data_dump(request: Request):  # limiter requires request
+@limiter.limit("2/minute")
+def get_data_dump(request: Request):  # limiter requires request parameter
     """
     ## Data Dump Endpoint
     This downloads a ZIP file containing the entire sqlite3 database.
@@ -29,6 +29,7 @@ def get_data_dump(request: Request):  # limiter requires request
 
     **Rate Limiting:** This endpoint is rate-limited to 2 requests per minute.
     """
+    _ = request
     if not Path(Settings().zip_path).exists():
         raise HTTPException(status_code=404, detail="Data dump not found")
     return FileResponse(
