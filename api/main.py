@@ -262,6 +262,7 @@ async def root_static(root: str):
         "favicon.ico",
         "site.webmanifest",
         "sitemap.xml",
+        "robots.txt",
     ]:
         return HTMLResponse(status_code=404)
 
@@ -271,6 +272,11 @@ async def root_static(root: str):
             Path(__file__).parent / "static" / "sitemap" / "sitemap.xml",
             media_type="application/xml",
         )
+    elif root == "robots.txt":
+        robots_path = Path(__file__).parent / "static" / "robots.txt"
+        if robots_path.exists():
+            return FileResponse(robots_path, media_type="text/plain")
+        return HTMLResponse(status_code=404)
 
     root_path = Path(__file__).parent / "static" / root
     if root_path.exists():
@@ -303,14 +309,6 @@ async def static_files(file_path: str):
                 return FileResponse(static_path, media_type="application/xml")
             case _:
                 return FileResponse(static_path)
-    return HTMLResponse(status_code=404)
-
-
-@app.get("/robots.txt", include_in_schema=False)
-async def robots_txt():
-    robots_path = Path(__file__).parent / "static" / "robots.txt"
-    if robots_path.exists():
-        return FileResponse(robots_path, media_type="text/plain")
     return HTMLResponse(status_code=404)
 
 
