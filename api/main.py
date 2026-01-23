@@ -89,18 +89,29 @@ def send_analytics_event(request: Request):
         return
     headers = {
         "Content-Type": "application/json",
-        "User-Agent": request.headers.get("user-agent", "vvzapi"),
     }
-    if request.client:
+    if user_agent := request.headers.get("user-agent"):
+        headers["User-Agent"] = user_agent
+
+    if request.headers.get("cf-connecting-ip"):
+        headers["X-Forwarded-For"] = request.headers["cf-connecting-ip"]
+    elif request.headers.get("x-forwarded-for"):
+        headers["X-Forwarded-For"] = request.headers["x-forwarded-for"]
+    elif request.client:
         headers["X-Forwarded-For"] = request.client.host
+
+    body = {
+        "name": "pageview",
+        "url": str(request.url),
+        "domain": request.url.hostname,
+        "props": dict(request.query_params),
+    }
+    if request.headers.get("referer"):
+        body["referrer"] = request.headers.get("referer")
 
     httpx.post(
         plausible_url,
-        json={
-            "name": "pageview",
-            "url": str(request.url),
-            "domain": request.url.hostname,
-        },
+        json=body,
         headers=headers,
         timeout=10,
     )
@@ -128,6 +139,8 @@ async def analytics_middleware(
         and not request.url.path.endswith(".css")
         and not request.url.path.endswith(".xml")
         and not request.url.path.endswith(".webmanifest")
+        and not request.url.path.endswith(".txt")
+        and not request.url.path.endswith(".json")
     ):
         task = BackgroundTask(send_analytics_event, request)
         response.background = task
