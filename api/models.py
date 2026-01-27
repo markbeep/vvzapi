@@ -227,6 +227,29 @@ class Department(Enum):
 
     @staticmethod
     def closest_match(name: str) -> Department | None:
+        short_names = {
+            "ARCH": Department.ARCHITECTURE,
+            "BAUG": Department.CIVIL_ENVIRONMENTAL_AND_GEOMATIC_ENGINEERING,
+            "MAVT": Department.MECHANICAL_AND_PROCESS_ENGINEERING,
+            "INFK": Department.COMPUTER_SCIENCE,
+            "MTEC": Department.MANAGEMENT_TECHNOLOGY_AND_ECONOMICS,
+            "MATH": Department.MATHEMATICS,
+            "PHYS": Department.PHYSICS,
+            "BIOL": Department.BIOLOGY,
+            "ERDW": Department.EARTH_AND_PLANETARY_SCIENCES,
+            "GESS": Department.HUMANITIES_SOCIAL_AND_POLITICAL_SCIENCES,
+            "ITET": Department.INFORMATION_TECHNOLOGY_AND_ELECTRICAL_ENGINEERING,
+            "MATL": Department.MATERIALS,
+            "CHAB": Department.CHEMISTRY_AND_APPLIED_BIOSCIENCES,
+            "BSSE": Department.BIOSYSTEMS_SCIENCE_AND_ENGINEERING,
+            "HEST": Department.HEALTH_SCIENCES_AND_TECHNOLOGY,
+            "USYS": Department.ENVIRONMENTAL_SYSTEMS_SCIENCE,
+        }
+        for short_name, dept in short_names.items():
+            if short_name in name.upper():
+                return dept
+
+        # fuzzy match with full name
         keys = list(str(x) for x in Department)
         if result := process.extractOne(
             name, keys, scorer=fuzz.WRatio, processor=utils.default_process
