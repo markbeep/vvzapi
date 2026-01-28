@@ -52,13 +52,25 @@ process.start()
 # vacuum/zip db
 logger = logging.getLogger(__name__)
 
-logger.info(f"Vacuuming database {APISettings().db_path}")
+logger.info(f"Vacuuming database into {APISettings().vacuum_path}")
+if Path(APISettings().vacuum_path).exists():  # required for VACUUM INTO to work
+    Path(APISettings().vacuum_path).unlink()
 with next(get_session()) as session:
-    session.execute(text("VACUUM"))
+    session.execute(
+        text("VACUUM INTO :vacuum_path"),
+        {"vacuum_path": f"{APISettings().vacuum_path}"},
+    )
 logger.info("Finished vacuuming database")
 logger.info(f"Creating database zip file at {APISettings().zip_path}")
 with zipfile.ZipFile(APISettings().zip_path, "w", zipfile.ZIP_DEFLATED) as z:
-    z.write(APISettings().db_path, arcname="database.db")
+    z.write(APISettings().vacuum_path, arcname="database.db")
+logger.info("Finished creating database zip file")
 db_size = Path(APISettings().db_path).stat().st_size / (1024 * 1024)
+vacuum_size = Path(APISettings().vacuum_path).stat().st_size / (1024 * 1024)
 zip_size = Path(APISettings().zip_path).stat().st_size / (1024 * 1024)
-logger.info(f"Database size: {db_size:.2f} MB, zipped size: {zip_size:.2f} MB")
+logger.info(
+    f"Database size: {db_size:.2f} MB, vacuum size: {vacuum_size:.2f} MB, zipped size: {zip_size:.2f} MB"
+)
+logger.info(f"Deleting vacuum file at {APISettings().vacuum_path}")
+Path(APISettings().vacuum_path).unlink(missing_ok=True)
+logger.info("Finished deleting vacuum file.")

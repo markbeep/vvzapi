@@ -17,3 +17,7 @@ class Settings(BaseSettings):
     @property
     def zip_path(self) -> str:
         return self.db_path + ".zip"
+
+    @property
+    def vacuum_path(self) -> str:
+        return self.db_path + ".vacuum"
