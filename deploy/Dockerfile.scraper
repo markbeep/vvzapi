@@ -1,13 +1,19 @@
-FROM astral/uv:python3.13-trixie-slim
-
+FROM astral/uv:python3.13-alpine AS deps
 WORKDIR /app
 
-COPY uv.lock pyproject.toml .python-version alembic.ini scrapy.cfg ./ 
-RUN uv sync --frozen --no-cache
+COPY uv.lock pyproject.toml .python-version ./
+RUN uv sync --frozen --no-cache --no-dev
+
+FROM python:3.13-alpine AS final
+WORKDIR /app
+
+COPY --from=deps /app/.venv /app/.venv
+
+# version is read from the pyproject.toml
+COPY alembic.ini pyproject.toml scrapy.cfg ./
 
 COPY scraper scraper
 COPY api api
 COPY alembic alembic
 
-
-CMD uv run alembic upgrade heads && uv run -m scraper.main
+CMD ["/bin/sh", "-c", "/app/.venv/bin/alembic upgrade heads && /app/.venv/bin/python -m scraper.main"]
