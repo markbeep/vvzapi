@@ -16,3 +16,10 @@ scrape:
 
 tailwind:
     tailwindcss -i api/static/tw.css -o api/static/globals.css --watch
+
+# update all uv packages
+upgrade:
+    uvx uv-upgrade
+
+test:
+    uv run basedpyright
