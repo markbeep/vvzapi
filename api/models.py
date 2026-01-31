@@ -6,7 +6,13 @@ from typing import override
 
 from pydantic import BaseModel as PydanticBaseModel
 from rapidfuzz import fuzz, process, utils
-from sqlmodel import INTEGER, JSON, Column, Field, SQLModel  # pyright: ignore[reportUnknownVariableType]
+from sqlmodel import (
+    INTEGER,
+    JSON,
+    Column,
+    Field,  # pyright: ignore[reportUnknownVariableType]
+    SQLModel,
+)
 
 from api.util.pydantic_type import EnumList, PydanticType
 from api.util.vvz_types import CourseTypeEnum, Group, TimeSlot

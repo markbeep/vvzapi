@@ -238,6 +238,9 @@ async def unit_detail(
         else:
             root_sections.append(section_ids[section.id])
 
+    newest_semkez = max(sk.replace("W", "0").replace("S", "1") for _, sk in semkezs)
+    is_outdated = unit.semkez.replace("W", "0").replace("S", "1") != newest_semkez
+
     return templates.TemplateResponse(
         "unit_detail.html",
         {
@@ -249,6 +252,7 @@ async def unit_detail(
             "lecturers": lecturers,
             "examiners": examiners,
             "semkezs": semkezs,
+            "is_outdated": is_outdated,
         },
     )
 

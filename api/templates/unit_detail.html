@@ -40,11 +40,13 @@
                         </span>
                         {% endif %}
                         {% if semkezs %}
-                        <select onchange="location = this.value;"
-                            class="badge badge-ghost font-mono h-fit p-1.5 bg-base-200 cursor-pointer">
+
+
+                        <select onchange="window.location = this.value;"
+                            class="badge font-mono h-fit p-1.5 cursor-pointer {% if is_outdated %}bg-warning badge-warning{% else %}bg-base-200 badge-ghost{% endif %}">
                             {% for id, sk in semkezs %}
-                            <option value="{{ url_for('unit_detail', unit_id=id) }}" {% if sk==unit.semkez %}selected
-                                disabled{% endif %}>
+                            <option value="{{ url_for('unit_detail', unit_id=id) }}"
+                                {% if sk==unit.semkez %}selected disabled{% endif %}>
                                 {{ sk }}
                             </option>
                             {% endfor %}
@@ -53,6 +55,12 @@
                         <span class="badge badge-ghost font-mono h-fit p-1">{{ unit.semkez }}</span>
                         {% endif %}
                     </div>
+
+                    {% if is_outdated %}
+                    <div class="alert alert-warning p-2 text-sm max-w-md">
+                        <span>This unit is from a past semester. Please check the latest semester for more up-to-date information.</span>
+                    </div>
+                    {% endif %}
 
                     <h1 class="text-3xl font-bold text-base-content">
                         {{ unit.title_english if unit.title_english else unit.title }}
