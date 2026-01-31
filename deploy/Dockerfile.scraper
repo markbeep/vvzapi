@@ -1,10 +1,10 @@
-FROM astral/uv:python3.13-alpine AS deps
+FROM astral/uv:python3.14-alpine AS deps
 WORKDIR /app
 
 COPY uv.lock pyproject.toml .python-version ./
 RUN uv sync --frozen --no-cache --no-dev
 
-FROM python:3.13-alpine AS final
+FROM python:3.14-alpine AS final
 WORKDIR /app
 
 COPY --from=deps /app/.venv /app/.venv

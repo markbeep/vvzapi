@@ -1,4 +1,4 @@
-FROM docker.io/astral/uv:python3.13-trixie-slim
+FROM docker.io/astral/uv:python3.14-trixie-slim
 
 # dev tools
 RUN apt-get update && apt-get install -y \

@@ -1,11 +1,11 @@
-FROM astral/uv:python3.13-alpine AS deps
+FROM astral/uv:python3.14-alpine AS deps
 WORKDIR /app
 
 RUN apk add --no-cache curl build-base
 RUN curl https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.18/tailwindcss-linux-x64-musl -L -o /bin/tailwindcss && \
     chmod +x /bin/tailwindcss
 
-COPY uv.lock pyproject.toml .python-version ./ 
+COPY uv.lock pyproject.toml .python-version ./
 RUN uv sync --frozen --no-cache --no-dev
 
 COPY api api
@@ -14,7 +14,7 @@ RUN curl -Lo api/static/daisyui.mjs https://github.com/saadeghi/daisyui/releases
 
 RUN tailwindcss -i ./api/static/tw.css -o ./api/static/globals.css --minify
 
-FROM python:3.13-alpine AS final
+FROM python:3.14-alpine AS final
 WORKDIR /app
 
 COPY --from=deps /app/.venv /app/.venv
@@ -23,7 +23,7 @@ COPY --from=deps /app/api/static/globals.css api/static/globals.css
 # version is read from the pyproject.toml
 COPY alembic.ini pyproject.toml ./
 
-COPY scraper scraper 
+COPY scraper scraper
 COPY alembic alembic
 COPY api api
 
