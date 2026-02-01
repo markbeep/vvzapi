@@ -1,5 +1,42 @@
 # Changelog
 
+## [1.7.0](https://github.com/markbeep/vvzapi/compare/v1.6.0...v1.7.0) (2026-02-01)
+
+
+### Features
+
+* **search:** add notice when viewing out-of-date units ([c7cfddc](https://github.com/markbeep/vvzapi/commit/c7cfddc943a90f41f7fa4321f648a8f2682add68))
+* **search:** match department on short acronym/name ([e2718d2](https://github.com/markbeep/vvzapi/commit/e2718d2c51cfcf6fb9b8b9ace65574e6ebcebf94))
+
+
+### Bug Fixes
+
+* **search:** add cache busting to site CSS to circumvent cloudflare ([eb6df48](https://github.com/markbeep/vvzapi/commit/eb6df486fec3d09aeab2f164c080e3eb107de6d3))
+* **search:** add reference to favicon in header ([d2ff3bb](https://github.com/markbeep/vvzapi/commit/d2ff3bbbcd86fb19e00427149710dff7986e9a48))
+* **search:** fix robots.txt not being returned ([6c5fcf8](https://github.com/markbeep/vvzapi/commit/6c5fcf83fdc36de5319cdcd68dd76fc46866ba1e))
+* vacuum db into separate file to prevent file corruption ([9d1fc6e](https://github.com/markbeep/vvzapi/commit/9d1fc6e1c349485d412120f6ede5622ef2f99711))
+
+
+### Dependencies
+
+* update dependencies for python 3.14 compatibility ([f5bf30e](https://github.com/markbeep/vvzapi/commit/f5bf30ea2628288674f7ddbe5e5d9a44328b8843))
+* update python to 3.14 ([ab908d9](https://github.com/markbeep/vvzapi/commit/ab908d90cbb283bf306244d7d952fa828f3e1536))
+
+
+### Miscellaneous Chores
+
+* add GPLv3 license ([ff6c5b1](https://github.com/markbeep/vvzapi/commit/ff6c5b136d1f0985624ac1bbb3fdca83fc7c7133))
+* add jj to devcontainer ([cc9483e](https://github.com/markbeep/vvzapi/commit/cc9483e1f97c91da4dd5e127a09e45cae5c96bf6))
+* add justfile for local development ([625f501](https://github.com/markbeep/vvzapi/commit/625f50153d88d57ce8dfc000a755e007cab0bc00))
+* **api:** send more info to plausible ([d810e07](https://github.com/markbeep/vvzapi/commit/d810e0788c617931dc08d0ac6c1d9627c9e4d03a))
+* set type checking mode to more strict "all" ([757bf6e](https://github.com/markbeep/vvzapi/commit/757bf6e0c1661e67fde9a951078cf1bee354e84e))
+* test mise for local development ([652525f](https://github.com/markbeep/vvzapi/commit/652525fd73f95d760529dc3703ac9e9521abd294))
+
+
+### Build System
+
+* reduce scraper docker image size by removing uv from final step ([b688a53](https://github.com/markbeep/vvzapi/commit/b688a53c5824362b8682e5927f47907b9b47e8b5))
+
 ## [1.6.0](https://github.com/markbeep/vvzapi/compare/v1.5.0...v1.6.0) (2026-01-09)
 
 
