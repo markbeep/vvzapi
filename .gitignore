@@ -14,3 +14,6 @@ data
 .scrapy
 
 .env
+
+# lighthouse outputs
+localhost*.html

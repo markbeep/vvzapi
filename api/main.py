@@ -238,8 +238,11 @@ async def unit_detail(
         else:
             root_sections.append(section_ids[section.id])
 
-    newest_semkez = max(sk.replace("W", "0").replace("S", "1") for _, sk in semkezs)
-    is_outdated = unit.semkez.replace("W", "0").replace("S", "1") != newest_semkez
+    # allows us to add canonical links to the newest unit
+    newest_unit_id, _ = max(
+        [(id, sk.replace("W", "0").replace("S", "1")) for id, sk in semkezs],
+        key=lambda x: x[1],
+    )
 
     return templates.TemplateResponse(
         "unit_detail.html",
@@ -251,7 +254,8 @@ async def unit_detail(
             "lecturers": lecturers,
             "examiners": examiners,
             "semkezs": semkezs,
-            "is_outdated": is_outdated,
+            "is_outdated": newest_unit_id != unit.id,
+            "newest_unit_id": newest_unit_id,
         },
     )
 

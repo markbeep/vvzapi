@@ -3,7 +3,7 @@
 <body class="bg-base-200 flex flex-col justify-center">
   <div class="hero bg-base-200 min-h-dvh">
     <div class="hero-content text-center">
-      <div class="max-w-md">
+      <main class="max-w-md">
         <div class="flex justify-center items-start gap-2 mb-4">
           <h1 class="text-5xl font-bold">VVZ API</h1>
           <span class="badge badge-neutral">{{ version }}</span>
@@ -14,8 +14,8 @@
           ETHZ
           course catalogue website.
         </p>
-        <form action="/" method="get" class="w-full flex flex-col gap-4">
-          <input type="search" id="search-input" name="q" class="input input-bordered w-full" autofocus />
+        <form action="/" method="get" class="w-full flex flex-col gap-4" label="Search form">
+          <input id="search-bar" type="search" id="search-input" name="q" class="input input-bordered w-full" autofocus aria-label="Search query" />
 
           <div class="flex flex-wrap justify-center gap-2">
             <a href="/guide" class="btn btn-sm">Syntax Guide</a>
@@ -29,7 +29,7 @@
               <span class="[&>svg]:size-4">{% include "icons/external.svg" %}</span>
             </a>
         </form>
-      </div>
+      </main>
     </div>
   </div>
 </body>

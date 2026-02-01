@@ -1,5 +1,10 @@
 [tools]
 "http:tailwindcss" = { version = "4.1.17", url = "https://github.com/tailwindlabs/tailwindcss/releases/download/v{{version}}/tailwindcss-linux-{{arch()}}" }
 just = "latest"
+"npm:chromium" = "latest"
+"npm:lighthouse" = "latest"
 sqlite3def = "latest"
 uv = "latest"
+
+[env]
+CHROME_PATH = { value = "{{ exec(command='mise where npm:chromium') }}/lib/node_modules/chromium/lib/chromium/chrome-linux/chrome", tools = true }

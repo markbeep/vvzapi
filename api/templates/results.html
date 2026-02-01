@@ -18,14 +18,14 @@
                 <span class="bg-base-100 py-0.5 px-1 rounded">{{ results.parsed_query }}</span>
             </p>
 
-            <div class="collapse bg-base-100 border-base-300 border">
+            <div class="collapse bg-base-100 border-base-300 border" aria-label="Search options">
                 <input type="checkbox" />
                 <div class="collapse-title">
                     Search options
                 </div>
                 <div class="collapse-content text-sm">
                     Showing
-                    <select name="limit" class="select select-ghost select-sm max-w-fit">
+                    <select name="limit" class="select select-ghost select-sm max-w-fit" aria-label="Number of results to show">
                         <option value="20">20</option>
                         <option value="40">40</option>
                         <option value="60">60</option>
@@ -33,7 +33,7 @@
                         <option value="100">100</option>
                     </select>
                     results ordered by
-                    <select name="order_by" class="select select-ghost select-sm max-w-fit">
+                    <select name="order_by" class="select select-ghost select-sm max-w-fit" aria-label="Order results by">
                         <option selected value="title">English title</option>
                         <option value="title_german">German title</option>
                         <option value="number">number</option>
@@ -43,7 +43,7 @@
                         <option value="level">level</option>
                         <option value="language">language</option>
                     </select>
-                    <select name="order" class="select select-ghost select-sm max-w-fit">
+                    <select name="order" class="select select-ghost select-sm max-w-fit" aria-label="Order direction">
                         <option selected value="asc">ascending</option>
                         <option value="desc">descending</option>
                     </select>

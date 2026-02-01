@@ -23,3 +23,6 @@ upgrade:
 
 test:
     uv run basedpyright
+
+lighthouse PATH="":
+    lighthouse http://localhost:8000{{PATH}} --output-path=localhost.html

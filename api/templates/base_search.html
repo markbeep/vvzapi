@@ -1,33 +1,54 @@
 {% extends "base.html" %} {% block body %}
 
 <body class="bg-base-200 min-h-screen flex flex-col min-w-[20rem]">
-  <div id="navbar" class="navbar bg-base-100 shadow-sm sticky top-0 z-10 gap-2 transition-all duration-500 ease-in-out">
-    <script>
-      let lastScrollPosition = 0;
-      const navbar = document.getElementById("navbar");
-      document.addEventListener('scroll', function (e) {
-        if (lastScrollPosition > 100 && window.scrollY > lastScrollPosition) {
-          navbar.style.top = "-100%";
-          navbar.style.opacity = 0;
-        } else {
-          navbar.style.top = 0;
-          navbar.style.opacity = "100%";
-        }
-        lastScrollPosition = window.scrollY;
-      }, { passive: true });
-    </script>
-    <div>
-      <a href="/" class="btn btn-ghost text-xl p-1">VVZ API</a>
+    <div
+        id="navbar"
+        class="navbar bg-base-100 shadow-sm sticky top-0 z-10 gap-2 transition-all duration-500 ease-in-out"
+    >
+        <script>
+            let lastScrollPosition = 0;
+            const navbar = document.getElementById("navbar");
+            document.addEventListener(
+                "scroll",
+                function (e) {
+                    if (
+                        lastScrollPosition > 100 &&
+                        window.scrollY > lastScrollPosition
+                    ) {
+                        navbar.style.top = "-100%";
+                        navbar.style.opacity = 0;
+                    } else {
+                        navbar.style.top = 0;
+                        navbar.style.opacity = "100%";
+                    }
+                    lastScrollPosition = window.scrollY;
+                },
+                { passive: true },
+            );
+        </script>
+        <div>
+            <a href="/" class="btn btn-ghost text-xl p-1">VVZ API</a>
+        </div>
+        <form
+            action="/"
+            method="get"
+            class="flex-1 join"
+            aria-label="Search form"
+        >
+            <input
+                type="search"
+                name="q"
+                value="{{ query|e }}"
+                placeholder="Search..."
+                class="input input-bordered w-full join-item"
+                aria-label="Search query"
+            />
+        </form>
+        <div class="flex-none gap-2">
+            <a href="/guide" class="btn" title="Syntax Guide">Syntax</a>
+        </div>
     </div>
-    <form action="/" method="get" class="flex-1 join">
-      <input type="search" name="q" value="{{ query|e }}" placeholder="Search..."
-        class="input input-bordered w-full join-item" />
-    </form>
-    <div class="flex-none gap-2">
-      <a href="/guide" class="btn" title="Syntax Guide">Syntax</a>
-    </div>
-  </div>
 
-  {% block content %}{% endblock content %}
+    {% block content %}{% endblock content %}
 </body>
 {% endblock body %}

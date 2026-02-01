@@ -1,4 +1,5 @@
 from typing import final
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,7 +10,7 @@ class Settings(BaseSettings):
     )
 
     db_path: str = "data/db.sqlite"
-    cache_expiry: int = 3600  # in seconds
+    cache_expiry: int = 60 * 60 * 24 * 30  # in seconds (30 days)
     sitemap_expiry: int = 86400  # in seconds
     plausible_url: str | None = None
     """API event endpoint"""

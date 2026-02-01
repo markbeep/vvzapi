@@ -1,5 +1,9 @@
 {% extends "base_search.html" %}
 
+{% block head %}
+<link rel="preconnect" href="https://cr.vsos.ethz.ch"/>
+{% endblock head %}
+
 {% block title %}
 <title>VVZ - {{ unit.title_english }}</title>
 <meta name="description"
@@ -11,7 +15,6 @@
 {% block content %}
 <main class="grow p-4 sm:p-8">
     <div class="max-w-7xl mx-auto space-y-8">
-
         <header class="card bg-base-100 shadow-sm">
             <div class="card-body flex-row gap-4 justify-between">
                 <div class="flex flex-col gap-2">
@@ -42,7 +45,7 @@
                         {% if semkezs %}
 
 
-                        <select onchange="window.location = this.value;"
+                        <select onchange="window.location = this.value;" aria-label="Select Semester"
                             class="badge font-mono h-fit p-1.5 cursor-pointer {% if is_outdated %}bg-warning badge-warning{% else %}bg-base-200 badge-ghost{% endif %}">
                             {% for id, sk in semkezs %}
                             <option value="{{ url_for('unit_detail', unit_id=id) }}"
@@ -111,22 +114,24 @@
                         <span id="coursereview">CR n/a</span>
                         <span class="[&>svg]:size-4">{% include "icons/external.svg" %}</span>
                         <script>
-                            fetch("https://cr.vsos.ethz.ch/getRatings?course={{ unit.number }}")
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (!data || data.length === 0) {
-                                        return;
-                                    }
-                                    const mapper = rating => {
-                                        return (rating.Recommended + rating.Engaging + rating.Difficulty + rating.Effort + rating.Resources) / 5;
-                                    };
-                                    const average_rating = data.map(mapper).reduce((a, b) => a + b, 0) / data.length;
-                                    if (!isNaN(average_rating)) {
-                                        document.getElementById("coursereview").innerText = `CR ${average_rating.toFixed(2)}/5`;
-                                    }
-                                }).catch(error => {
-                                    console.error("Error fetching CourseReview ratings:", error);
-                                });
+                            window.addEventListener('DOMContentLoaded', function () {
+                              fetch("https://cr.vsos.ethz.ch/getRatings?course={{ unit.number }}")
+                                  .then(response => response.json())
+                                  .then(data => {
+                                      if (!data || data.length === 0) {
+                                          return;
+                                      }
+                                      const mapper = rating => {
+                                          return (rating.Recommended + rating.Engaging + rating.Difficulty + rating.Effort + rating.Resources) / 5;
+                                      };
+                                      const average_rating = data.map(mapper).reduce((a, b) => a + b, 0) / data.length;
+                                      if (!isNaN(average_rating)) {
+                                          document.getElementById("coursereview").innerText = `CR ${average_rating.toFixed(2)}/5`;
+                                      }
+                                  }).catch(error => {
+                                      console.error("Error fetching CourseReview ratings:", error);
+                                  });
+                            });
                         </script>
                     </a>
                 </div>
@@ -220,14 +225,14 @@
                         <dl class="space-y-2">
                             {% if unit.language %}
                             <div class="flex justify-between">
-                                <dt class="text-base-content/60">Language</dt>
+                                <dt class="text-base-content/70">Language</dt>
                                 <dd class="font-medium text-base-content">{{ unit.language }}</dd>
                             </div>
                             {% endif %}
 
                             {% if unit.levels %}
                             <div class="flex justify-between">
-                                <dt class="text-base-content/60">Levels</dt>
+                                <dt class="text-base-content/70">Levels</dt>
                                 <dd class="font-medium text-base-content text-right">
                                     {% for level in unit.levels %}
                                     <span title="{{ level.description() }}">
@@ -240,7 +245,7 @@
 
                             {% if unit.course_frequency %}
                             <div class="flex justify-between">
-                                <dt class="text-base-content/60">Frequency</dt>
+                                <dt class="text-base-content/70">Frequency</dt>
                                 <dd class="font-medium text-base-content">{{ unit.course_frequency }}</dd>
                             </div>
                             {% endif %}
