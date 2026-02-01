@@ -81,6 +81,7 @@ def trim_float(value: float) -> int | float:
 
 templates.env.filters["pluralize"] = pluralize_dj  # pyright: ignore[reportUnknownMemberType]
 templates.env.filters["trim_float"] = trim_float  # pyright: ignore[reportUnknownMemberType]
+templates.env.globals["version"] = get_api_version()  # pyright: ignore[reportUnknownMemberType]
 
 
 def send_analytics_event(request: Request):
@@ -182,7 +183,6 @@ async def root(
         "results.html",
         {
             "request": {},
-            "version": get_api_version(),
             "query": query,
             "page": page,
             "limit": limit,
@@ -245,7 +245,6 @@ async def unit_detail(
         "unit_detail.html",
         {
             "request": request,
-            "version": get_api_version(),
             "unit": unit,
             "sections": root_sections,
             "courses": courses,
@@ -259,13 +258,7 @@ async def unit_detail(
 
 @app.get("/guide", include_in_schema=False)
 async def guide():
-    return templates.TemplateResponse(
-        "guide.html",
-        {
-            "request": {},
-            "version": get_api_version(),
-        },
-    )
+    return templates.TemplateResponse("guide.html", {"request": {}})
 
 
 @app.get("/{root}", include_in_schema=False)
