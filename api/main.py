@@ -312,6 +312,7 @@ async def static_files(file_path: str):
     if file_path not in [
         "globals.css",
         "opensearch.xml",
+        "search_hints.js",
     ]:
         return HTMLResponse(status_code=404)
     static_path = Path(__file__).parent / "static" / file_path
@@ -321,6 +322,8 @@ async def static_files(file_path: str):
                 return FileResponse(static_path, media_type="text/css")
             case ".xml":
                 return FileResponse(static_path, media_type="application/xml")
+            case ".js":
+                return FileResponse(static_path, media_type="application/javascript")
             case _:
                 return FileResponse(static_path)
     return HTMLResponse(status_code=404)
