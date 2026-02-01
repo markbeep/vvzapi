@@ -1,4 +1,8 @@
-{% extends "base.html" %} {% block body %}
+{% extends "base.html" %}
+{% block head %}
+<script defer src="/static/search_hints.js"></script>
+{% endblock head %}
+{% block body %}
 
 <body class="bg-base-200 flex flex-col justify-center">
   <div class="hero bg-base-200 min-h-dvh">
