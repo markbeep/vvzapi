@@ -1,5 +1,5 @@
 import re
-from typing import Literal, Any, override
+from typing import Any, Literal, override
 
 from scrapy.http import Response
 
@@ -57,10 +57,17 @@ class LecturersSpider(KeywordLoggerSpider):
 
             surname = row.xpath("string(./td[1])").get(default="").strip()
             name = row.xpath("string(./td[2])").get(default="").strip()
-            title = row.xpath("string(./td[3])").get(default="").strip().replace("\xa0", " ")
-            department = row.xpath('string(./td[5])').get(default='').strip()
+            # title is optional
+            title = (
+                row.xpath("string(./td[3])")
+                .get(default="")
+                .strip()
+                .replace("\xa0", " ")
+                or None
+            )
+            department = row.xpath("string(./td[5])").get(default="").strip()
 
-            if dozid and surname and name and title and department:
+            if dozid and surname and name and department:
                 count += 1
                 yield Lecturer(
                     id=int(dozid),
