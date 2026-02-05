@@ -55,8 +55,8 @@ class LecturersSpider(KeywordLoggerSpider):
         for row in rows:
             dozid = row.css("a::attr(href)").re_first(RE_DOZIDE)
 
-            surname = row.xpath('string(./td[1])').get().strip()
-            name = row.xpath('string(./td[2])').get().strip()
+            surname = row.xpath("string(./td[1])").get(default="").strip()
+            name = row.xpath("string(./td[2])").get(default="").strip()
             title = row.xpath('string(./td[3])').get(default='').strip()
             department = row.xpath('string(./td[5])').get(default='').strip()
 
