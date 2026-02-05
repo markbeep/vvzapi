@@ -17,3 +17,6 @@ data
 
 # lighthouse outputs
 localhost*.html
+
+# IDE files
+.idea

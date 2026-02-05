@@ -54,14 +54,20 @@ class LecturersSpider(KeywordLoggerSpider):
         count = 0
         for row in rows:
             dozid = row.css("a::attr(href)").re_first(RE_DOZIDE)
-            surname = row.css("a::text").get()
-            name = row.css("b::text").get()
-            if dozid and surname and name:
+
+            surname = row.xpath("string(./td[1])").get(default="").strip()
+            name = row.xpath("string(./td[2])").get(default="").strip()
+            title = row.xpath("string(./td[3])").get(default="").strip().replace("\xa0", " ")
+            department = row.xpath('string(./td[5])').get(default='').strip()
+
+            if dozid and surname and name and title and department:
                 count += 1
                 yield Lecturer(
                     id=int(dozid),
                     surname=surname,
                     name=name,
+                    title=title,
+                    department=department,
                 )
         self.logger.info(
             "Extracted lecturers", extra={"count": count, "semkez": semkez}

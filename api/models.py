@@ -478,6 +478,8 @@ class Lecturer(BaseModel, Overwriteable, table=True):
     id: int = Field(primary_key=True)
     surname: str = Field()
     name: str = Field()
+    title: str = Field()
+    department: str = Field()
     scraped_at: int = Field(
         default_factory=lambda: int(time.time()),
         sa_column=Column(INTEGER, nullable=False),
