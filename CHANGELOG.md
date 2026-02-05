@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.8.0](https://github.com/markbeep/vvzapi/compare/v1.7.0...v1.8.0) (2026-02-05)
+
+
+### Features
+
+* **scraper:** add lecturer title and department ([30b591b](https://github.com/markbeep/vvzapi/commit/30b591b55ac8799a3183c474de1ff253cdf357c0))
+* **search:** add animated search placeholders on root page ([a765f14](https://github.com/markbeep/vvzapi/commit/a765f14fc4788ce35b8f25cc465c127ead992874))
+
+
+### Bug Fixes
+
+* fix ints being read out as strings from json array ([ddfcacb](https://github.com/markbeep/vvzapi/commit/ddfcacb7d04bf88677fef456a96e12c095b968e1))
+* **search:** add cannonical link to unit pages leading to newest page ([9491f1a](https://github.com/markbeep/vvzapi/commit/9491f1a1102c6468948b60d99240ccaadbeba83b))
+
+
+### Performance Improvements
+
+* **search:** improve page load metrics ([e5f1db7](https://github.com/markbeep/vvzapi/commit/e5f1db74df52d16b1cd50b0caad16146a68b8cf6))
+
+
+### Miscellaneous Chores
+
+* add example commands for how to solely scrape lecturers ([1b6242a](https://github.com/markbeep/vvzapi/commit/1b6242a3faa9844f593cccc49c6b081c4db9f9f7))
+* install arm tools in devcontainer ([30b591b](https://github.com/markbeep/vvzapi/commit/30b591b55ac8799a3183c474de1ff253cdf357c0))
+
+
+### Continuous Integration
+
+* enable type/tests to run on pull requests ([99fde66](https://github.com/markbeep/vvzapi/commit/99fde666ebc52c6441a2a8d2ed1fa90bfc96c858))
+
 ## [1.7.0](https://github.com/markbeep/vvzapi/compare/v1.6.0...v1.7.0) (2026-02-01)
 
 
