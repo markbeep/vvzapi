@@ -57,7 +57,7 @@ class LecturersSpider(KeywordLoggerSpider):
 
             surname = row.xpath("string(./td[1])").get(default="").strip()
             name = row.xpath("string(./td[2])").get(default="").strip()
-            title = row.xpath('string(./td[3])').get(default='').strip()
+            title = row.xpath("string(./td[3])").get(default="").strip().replace("\xa0", " ")
             department = row.xpath('string(./td[5])').get(default='').strip()
 
             if dozid and surname and name and title and department:
