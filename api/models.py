@@ -196,8 +196,8 @@ class Department(Enum):
     def get(v: str | int | Department) -> Department:
         if isinstance(v, Department):
             return v
-        if isinstance(v, int):
-            return Department(v)
+        if isinstance(v, int) or v.isdigit():
+            return Department(int(v))
         return Department[v]
 
     @override
