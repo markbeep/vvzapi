@@ -46,7 +46,7 @@ I'm grateful for any form of contribution, may it be adding documentation, imple
 
 Depending on what you intend to test locally, you can opt to download a dump of the database (head to the API docs to find the endpoint) to develop locally with the most up-to-date data.
 
-Additionally, for ease of development, the devcontainer setup will initialze the essentials in a docker/podman container without cluttering your system with dependencies.
+Additionally, for ease of development, there is both a devcontainer (`.devcontainer/devcontainer.json`) and a mise (`mise.toml`) config that can help with setting up the local development environment. The devcontainer setup will initialze the essentials in a docker/podman container without cluttering your system with dependencies, while [mise](https://mise.jdx.dev/) installs packages into your shell environment. 
 
 ### Alembic Migrations
 
@@ -96,9 +96,14 @@ uv run scrapy shell "<url>"
 #### Debug spider
 
 ```sh
+# general syntax
 uv run scrapy parse --spider=units -c <cb func> "<url>"
+# scrape all units
 uv run scrapy parse --spider=units -c parse_start_url "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?lang=de&semkez=2003S&seite=0"
+# scrape a single unit
 uv run scrapy parse --spider=units -c parse_unit "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?semkez=2025W&ansicht=ALLE&lerneinheitId=192945&lang=en"
+# scrape all lecturers
+uv run scrapy parse --spider=lecturers -c parse_start_url "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheDozierende.view?lang=de&semkez=2026S&seite=0"
 ```
 
 #### Cleanup html cache directory
