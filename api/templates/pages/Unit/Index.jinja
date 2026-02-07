@@ -12,7 +12,7 @@
     links: dict[str, str] = {}, # href:rel mapping
 #}
 
-<SearchLayout query={{ query }} title={{ unit.title_english + " - VVZ API" }} description={{"Details for " + unit.number + " - " + (unit.title_english if unit.title_english else unit.title) + "."}} links={{ links }}>
+<SearchLayout query={{ query }} title={{ unit.title_english + " - VVZ API" }} description={{ unit.abstract }} links={{ links }}>
 
 <main class="grow p-4 sm:p-8">
     <div class="max-w-7xl mx-auto space-y-8">
