@@ -1,0 +1,381 @@
+<SearchLayout title="VVZ API - Syntax Guide" description="VVZ API - Search Syntax Guide" query="">
+
+<main class="grow p-4 sm:p-8">
+    <div class="max-w-3xl mx-auto space-y-8">
+        <header>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                Search Syntax Guide
+            </h1>
+            <p class="text-gray-600">
+                Learn how to filter courses effectively using specific keywords and
+                operators.
+            </p>
+        </header>
+
+        <section id="how-it-works" class="card bg-base-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+                    <a href="#how-it-works"
+                       class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+                        <icons.Link />
+                    </a>
+                    How it works
+                </h2>
+                <div class="space-y-4 text-sm">
+                    <p>
+                        By default, any text you type is searched against the course
+                        <strong>titles</strong>. To refine your search, you can use specific
+                        <strong>keys</strong> followed by an <strong>operator</strong> and a
+                        <strong>value</strong>.
+                    </p>
+                    <div class="bg-base-200 text-base-content p-4 rounded">
+                        <pre><code class="font-semibold">key:value</code></pre>
+                    </div>
+                    <p>
+                        Spaces separate different filters. If your value contains spaces, wrap
+                        it in quotes <span class="whitespace-nowrap">(e.g.,
+                        <code class="kbd kbd-sm">lecturer:"John Doe"</code>).</span>
+                </p>
+                <p>
+                    You can combine multiple filters to narrow down your search results.
+                    Only results are shown for which all specified filters are satisfied (logical AND).
+                </p>
+                <p>
+                    You can also negate filters by prefixing terms or keys with a minus sign (e.g.,
+                    <code class="kbd kbd-sm whitespace-nowrap">-description:advanced</code> or <code class="kbd kbd-sm whitespace-nowrap">-math</code> to hide any
+                    courses without "math" in the title).
+                </p>
+                <p>
+                    You can add parentheses to group filters and <code class="kbd kbd-sm">OR</code> operators to create more
+                    complex queries. For example,
+                    <code class="kbd kbd-sm h-fit">c&gt;=6 (title_english:Network OR title_german:Netzwerk)</code>
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section id="filter-keys" class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+            <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+                <a href="#filter-keys"
+                   class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+                    <icons.Link />
+                </a>
+                Filter Keys
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <th>
+                                Key
+                            </th>
+                            <th>
+                                Aliases
+                            </th>
+                            <th>
+                                Description
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                title
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                t
+                            </td>
+                            <td class="px-4 py-3">
+                                Matches course title (English or German).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                title_english
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                te
+                            </td>
+                            <td class="px-4 py-3">
+                                Matches English course title.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                title_german
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                tg
+                            </td>
+                            <td class="px-4 py-3">
+                                Matches German course title.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                number
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                n
+                            </td>
+                            <td class="px-4 py-3">
+                                Matches part of course number (e.g., <code>252-0027</code>).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                lecturer
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                l, i, instructor
+                            </td>
+                            <td class="px-4 py-3">
+                                Matches lecturer name or surname.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                credits
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                c, ects, mv
+                            </td>
+                            <td class="px-4 py-3">
+                                Number of ECTS credits.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                year
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                y
+                            </td>
+                            <td class="px-4 py-3">
+                                Academic year (e.g., <code>2024</code>).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                semester
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                s
+                            </td>
+                            <td class="px-4 py-3">
+                                Semester type. Use <code>S</code>/<code>FS</code> for
+                                Summer/Spring or <code>W</code>/<code>HS</code> for
+                                Winter/Autumn.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                examtype
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                e
+                            </td>
+                            <td class="px-4 py-3">
+                                Type of examination (e.g., <code>Session Examination</code>,
+                                <code>Graded Semester Performance</code>, <code>Graded</code>).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                descriptions
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                d
+                            </td>
+                            <td class="px-4 py-3">
+                                Searches full content (abstract, objectives, etc.).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                description_english
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                de
+                            </td>
+                            <td class="px-4 py-3">
+                                Searches full content in English.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                description_german
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                dg
+                            </td>
+                            <td class="px-4 py-3">
+                                Searches full content in German.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                department
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                dep
+                            </td>
+                            <td class="px-4 py-3">
+                                Department as in "Computer Science" or "Management Technology and
+                                Economics".
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                level
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                lvl, lev
+                            </td>
+                            <td class="px-4 py-3">
+                                Course level. One of BSC, MSC, DZ, DS, DR, SHE, GS, WBZ, NDS.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                language
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                lang
+                            </td>
+                            <td class="px-4 py-3">
+                                The language the course is held in.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                offered
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                off, o
+                            </td>
+                            <td class="px-4 py-3">
+                                Section or program the course is offered in (e.g., "Computer Science
+                                Bachelor", "Data Science Master"). When multiple values are given, any courses are matched that have a
+                                section <span class="italic">path</span> (meaning from root to leaf section) that includes all of the
+                                given
+                                values.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="comparison-operators" class="card bg-base-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+                    <a href="#comparison-operators"
+                       class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+                        <icons.Link />
+                    </a>
+                    Comparison Operators
+                </h2>
+                <p class="text-sm text-base-content/80 mb-4">
+                    For numeric values like <strong>credits</strong> or
+                    <strong>year</strong>, you can use comparison operators.
+                </p>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 font-mono text-sm">
+                    <div class="bg-base-200 p-2 rounded text-center">
+                        <span class="font-bold text-accent">:</span> or
+                        <span class="font-bold text-accent">=</span>
+                        <div class="text-base-content/60 text-xs font-sans mt-1">
+                            Equal
+                        </div>
+                    </div>
+                    <div class="bg-base-200 p-2 rounded text-center">
+                        <span class="font-bold text-accent">!=</span>
+                        <div class="text-base-content/60 text-xs font-sans mt-1">
+                            Not Equal
+                        </div>
+                    </div>
+                    <div class="bg-base-200 p-2 rounded text-center">
+                        <span class="font-bold text-accent">&gt;</span> /
+                        <span class="font-bold text-accent">&lt;</span>
+                        <div class="text-base-content/60 text-xs font-sans mt-1">
+                            Greater / Less
+                        </div>
+                    </div>
+                    <div class="bg-base-200 p-2 rounded text-center">
+                        <span class="font-bold text-accent">&gt;=</span> /
+                        <span class="font-bold text-accent">&lt;=</span>
+                        <div class="text-base-content/60 text-xs font-sans mt-1">
+                            Greater/Less or Equal
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="examples">
+            <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+                <a href="#examples"
+                   class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+                    <icons.Link />
+                </a>
+                Examples
+            </h2>
+            <div class="space-y-3">
+                <a href="/?q=y%3D2026+s%3Afs+o%3A%22computer+science+master%22+o%3Aminor+o%3A%22computer+vision%22"
+                   class="block group">
+                    <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="card-body p-4">
+                            <code class="text-accent font-bold block mb-1">y=2026 s:fs o:"computer science master" o:minor o:"computer vision"</code>
+                            <span class="text-sm text-base-content/80">Find all courses taking place in FS 2026 that count as a minor
+                            for the Computer Vision Major.</span>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="/?q=s%3Afs+y%3A2026+((dept%3Acomputer+c<%3D4+o%3A&quot;data+management+systems&quot;)+or+(dept%3Aarchitecture+c>%3D10))"
+                   class="block group">
+                    <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="card-body p-4">
+                            <code class="text-accent font-bold block mb-1">s:fs y:2026 ((dept:computer c&gt;=4 o:"data management systems") or (dept:architecture c>=10))</code>
+                            <span class="text-sm text-base-content/80">Find all courses in the Spring semester of 2026 that are either
+                                offered by the Computer Science department
+                                with at most 4 credits and are part of the "Data Management Systems" program, or are offered by the
+                            Architecture department with at least 10 credits.</span>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="/?q=credits%3E%3D10" class="block group">
+                    <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="card-body p-4">
+                            <code class="text-accent font-bold block mb-1">credits>=10</code>
+                            <span class="text-sm text-base-content/80">Find all courses with 10 or more credits.</span>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="/?q=lecturer%3AMüller+year%3A2024" class="block group">
+                    <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="card-body p-4">
+                            <code class="text-accent font-bold block mb-1">lecturer:Müller year:2024</code>
+                            <span class="text-sm text-base-content/80">Find courses taught by Müller in 2024.</span>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="/?q=physics+s%3AW+-d%3Aanalysis" class="block group">
+                    <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="card-body p-4">
+                            <code class="text-accent font-bold block mb-1">physics s:W -d:analysis</code>
+                            <span class="text-sm text-base-content/80">Search for "physics" in the Winter semester without any mention
+                            of "analyis" in the description.</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </section>
+    </div>
+</main>
+
+</SearchLayout>

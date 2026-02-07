@@ -10,6 +10,7 @@ dependencies = [
     "jinja2>=3.1.6",
     "jinja2-htmlmin>=1.0.1",
     "jinja2-pluralize>=0.3.0",
+    "jinjax>=0.63",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.12.0",
     "pyparsing>=3.3.2",
@@ -23,6 +24,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "basedpyright>=1.37.2",
+    "djlint>=1.36.4",
 ]
 
 [tool.basedpyright]
@@ -31,4 +33,12 @@ include = ["api", "scraper"]
 reportDeprecated = false
 reportUninitializedInstanceVariable = false
 reportUnusedCallResult = false
-allowedUntypedLibraries = ["jinja2_pluralize", "slowapi"]
+allowedUntypedLibraries = ["jinja2_pluralize", "slowapi", "jinjax"]
+
+[tool.djlint]
+profile = "django"
+ignore = "H021"
+format_js=true
+line_break_after_multiline_tag=true
+max_blank_lines=1
+ignore_case=true

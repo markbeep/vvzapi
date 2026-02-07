@@ -1,0 +1,58 @@
+{#def
+    title: str,
+    description: str = "VVZ API — Community-made REST API for VVZ (course catalogue).",
+    keywords: str = "VVZ, ETH, ETHZ, API, course, lecture, schedule, catalogue",
+    og_description: str | None  = None,
+    links: dict[str, str] = {}, # href:rel mapping
+#}
+
+{% set og_description = og_description or description %}
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>{{ title }}</title>
+        <meta name="description" content="{{ description }}" />
+        <meta property="og:description" content="{{ og_description }}" />
+        <meta property="og:title" content="{{ title }}" />
+        <meta name="keywords" content="{{ keywords }}" />
+
+        <meta name="author" content="VVZ API" />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary" />
+
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="icon"
+              type="image/png"
+              sizes="32x32"
+              href="/favicon-32x32.png"
+              type="image/x-icon" />
+        <link rel="icon"
+              type="image/png"
+              sizes="16x16"
+              href="/favicon-16x16.png"
+              type="image/x-icon" />
+        <link rel="icon" href="favicon.ico" type="image/x-icon" />
+        <link rel="manifest" href="/site.webmanifest" />
+
+        <link rel="preload" href="/static/globals.css?v={{ version }}" as="style" />
+        <link rel="stylesheet" href="/static/globals.css?v={{ version }}" />
+
+        <link rel="search"
+              type="application/opensearchdescription+xml"
+              title="VVZAPI"
+              href="https://vvzapi.ch/static/opensearch.xml" />
+
+        <link rel="help" href="/docs" />
+
+        {% for href, rel in links.items() %}
+            <link rel="{{ rel }}" href="{{ href }}" />
+        {% endfor %}
+
+        {{ catalog.render_assets() }}
+    </head>
+
+    {{ content }}
+</html>

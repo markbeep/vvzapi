@@ -1,0 +1,55 @@
+{#js pages/Index/empty.js #}
+
+<BaseLayout title="VVZ API">
+<body class="bg-base-200 flex flex-col justify-center">
+    <div class="hero bg-base-200 min-h-dvh">
+        <div class="hero-content text-center">
+            <main class="max-w-md">
+                <div class="flex justify-center items-start gap-2 mb-4">
+                    <h1 class="text-5xl font-bold">
+                        VVZ API
+                    </h1>
+                    <span class="badge badge-neutral">{{ version }}</span>
+                </div>
+                <p class="py-6">
+                    A community-made REST API and search for
+                    <a href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis"
+                       target="_blank"
+                       class="link link-neutral">VVZ</a>, the
+                    ETHZ
+                    course catalogue website.
+                </p>
+                <form action="/"
+                      method="get"
+                      class="w-full flex flex-col gap-4"
+                      label="Search form">
+                    <input id="search-bar"
+                           type="search"
+                           id="search-input"
+                           name="q"
+                           class="input input-bordered w-full"
+                           autofocus
+                           aria-label="Search query" />
+
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <a href="/guide" class="btn btn-sm">Syntax Guide</a>
+                        <a href="/docs" class="btn btn-sm">API Docs</a>
+                        <a href="https://github.com/markbeep/vvzapi"
+                           target="_blank"
+                           class="btn btn-sm">
+                            GitHub
+                            <span class="[&>svg]:size-4"><icons.External /></span>
+                        </a>
+                        <a href="https://github.com/markbeep/vvzapi/releases"
+                           target="_blank"
+                           class="btn btn-sm">
+                            Changelog
+                            <span class="[&>svg]:size-4"><icons.External /></span>
+                        </a>
+                    </form>
+                </main>
+            </div>
+        </div>
+    </body>
+
+    </BaseLayout>

@@ -1,0 +1,250 @@
+{#def
+    query: str,
+    page: int,
+    limit: int,
+    order_by: QueryKey,
+    order: str,
+    results: SearchResponse,
+#}
+
+<SearchLayout query={{ query }} title={{ query + " - VVZ API" }} description={{ "Search results for " + query }}>
+
+<main class="grow p-4 sm:p-8">
+    <div class="flex flex-col max-w-5xl mx-auto space-y-4">
+
+        {% if results.total %}
+            <div class="text-gray-600">
+                <p class="text-xs pb-2">
+                    Found {{ results.total }} relevant result{{ results.total|pluralize }}
+                    in {{ '%0.2f' % (results.exec_time_ms/1000) }}s where
+                    <span class="bg-base-100 py-0.5 px-1 rounded">{{ results.parsed_query }}</span>
+                </p>
+
+                <div class="collapse bg-base-100 border-base-300 border"
+                     aria-label="Search options">
+                    <input type="checkbox" />
+                    <div class="collapse-title">
+                        Search options
+                    </div>
+                    <div class="collapse-content text-sm">
+                        Showing
+                        <select name="limit"
+                                class="select select-ghost select-sm max-w-fit"
+                                aria-label="Number of results to show">
+                            <option value="20">
+                                20
+                            </option>
+                            <option value="40">
+                                40
+                            </option>
+                            <option value="60">
+                                60
+                            </option>
+                            <option value="80">
+                                80
+                            </option>
+                            <option value="100">
+                                100
+                            </option>
+                        </select>
+                        results ordered by
+                        <select name="order_by"
+                                class="select select-ghost select-sm max-w-fit"
+                                aria-label="Order results by">
+                            <option selected value="title">
+                                English title
+                            </option>
+                            <option value="title_german">
+                                German title
+                            </option>
+                            <option value="number">
+                                number
+                            </option>
+                            <option value="semester">
+                                semester
+                            </option>
+                            <option value="lecturer">
+                                lecturer name
+                            </option>
+                            <option value="department">
+                                department
+                            </option>
+                            <option value="level">
+                                level
+                            </option>
+                            <option value="language">
+                                language
+                            </option>
+                        </select>
+                        <select name="order"
+                                class="select select-ghost select-sm max-w-fit"
+                                aria-label="Order direction">
+                            <option selected value="asc">
+                                ascending
+                            </option>
+                            <option value="desc">
+                                descending
+                            </option>
+                        </select>
+
+                        <script>
+                            document.addEventListener('DOMContentLoaded', () => {
+                                const inputs = document.querySelectorAll('select[name="limit"], select[name="order_by"], select[name="order"]');
+                                const currentUrl = new URL(window.location);
+                                const params = currentUrl.searchParams;
+                                inputs.forEach(input => {
+                                    const paramValue = params.get(input.name);
+                                    if (paramValue) {
+                                        input.value = paramValue;
+                                    }
+                                    input.addEventListener('change', (event) => {
+                                        const url = new URL(window.location);
+                                        url.searchParams.set(event.target.name, event.target.value);
+                                        url.searchParams.set('page', '1');
+                                        window.location.href = url.toString();
+                                    });
+
+                                });
+                            });
+                        </script>
+                    </div>
+                </div>
+            </div>
+
+            {% if results.total > results.results|length %}
+                <Pagination query={{ query }} page={{ page }} limit={{ limit }} order_by={{ order_by }} order={{ order }} results={{ results }} />
+            {% endif %}
+
+            {% for _, grouped in results %}
+                {% set unit = grouped.latest_unit() %}
+                <div class="{% if grouped.semkezs|length > 1 %}not-hover:stack hover:flex hover:flex-wrap hover:bg-base-100{% else %}flex{% endif %} group">
+                    <div class="card bg-base-100 shadow-sm {% if grouped.semkezs|length > 1 %}group-hover:shadow-none{% endif %} not-hover:transition-shadow flex-row p-4 gap-4 relative group w-full">
+
+                        <div class="flex flex-col gap-2 w-full">
+                            <div class="flex justify-between">
+                                <div>
+                                    <h3 class="text-lg font-bold text-neutral leading-tight">
+                                        <a href="/unit/{{ unit.id }}" class="after:absolute after:inset-0">
+                                            {{ unit.title_english if unit.title_english else unit.title }}
+                                        </a>
+                                    </h3>
+                                    {% if unit.title_english and unit.title and unit.title != unit.title_english %}
+                                        <h4 class="text-sm text-base-content/70 italic">
+                                            {{ unit.title }}
+                                        </h4>
+                                    {% endif %}
+                                </div>
+
+                                <div class="flex gap-2 relative z-10">
+                                    <a target="_blank"
+                                       href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={{ unit.id }}&semkez={{ unit.semkez }}&lang=en&ansicht=ALLE"
+                                       class="btn btn-sm btn-outline"
+                                       title="VVZ">
+                                        VVZ
+                                        <span class="[&>svg]:size-4">
+                                            <icons.External />
+                                        </span>
+                                    </a>
+                                    <a target="_blank"
+                                       href="https://coursereview.ch/course/{{ unit.number }}"
+                                       class="btn btn-sm btn-outline"
+                                       title="CourseReview">
+                                        CR
+                                        <span class="[&>svg]:size-4">
+                                            <icons.External />
+                                        </span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap gap-2 text-xs font-mono mt-1">
+                                <span class="badge badge-ghost h-fit p-1">
+                                    {{ unit.number }}
+                                </span>
+
+                                <span class="badge badge-ghost h-fit p-1 flex-wrap justify-start">
+                                    {% for sem in grouped.semkezs %}
+                                        <span>
+                                            {{ sem }}
+                                            {% if not loop.last %}
+                                                ,
+                                            {% endif %}
+                                        </span>
+                                    {% endfor %}
+                                </span>
+
+                                {% if unit.credits %}
+                                    <span class="badge badge-info h-fit p-1">
+                                        {{ unit.credits|trim_float }} Credits
+                                    </span>
+                                {% endif %}
+
+                                {% if unit.levels %}
+                                    <span class="badge badge-success h-fit p-1 flex-wrap justify-start">
+                                        {% for level in unit.levels %}
+                                            <span title="{{ level.description() }}">
+                                                {{ level }}
+                                                {% if not loop.last %}
+                                                    ,
+                                                {% endif %}
+                                            </span>
+                                        {% endfor %}
+                                    </span>
+                                {% endif %}
+
+                                {% if unit.departments %}
+                                    <span class="badge badge-neutral h-fit p-1 flex-wrap justify-start">
+                                        {% for dept in unit.departments %}
+                                            <span class="text-nowrap" title="{{ dept }}">{{ dept.short() }}
+                                                {% if not loop.last %}
+                                                    ,
+                                                {% endif %}
+                                            </span>
+                                        {% endfor %}
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <p class="text-sm text-base-content/80 leading-relaxed line-clamp-3 mt-1">
+                                {% if unit.abstract_english %}
+                                    {{ unit.abstract_english }}
+                                {% elif unit.abstract %}
+                                    {{ unit.abstract }}
+                                {% else %}
+                                    <span class="text-base-content/50 italic">No description available.</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    {% for semkez in grouped.semkezs %}
+                        {% if semkez != unit.semkez %}
+                            <a href="/unit/{{ grouped.with_semkez(semkez).id }}"
+                               class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow flex-row p-4 group-hover:w-fit group-hover:mb-2 group-hover:ml-2 group-hover:mr-2">
+                                <div class="flex flex-wrap gap-2 text-xs font-mono mt-1">
+                                    <span class="badge badge-ghost h-fit p-1">
+                                        {{ semkez }}
+                                    </span>
+                                </div>
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            {% if results.total > results.results|length %}
+                <Pagination query={{ query }} page={{ page }} limit={{ limit }} order_by={{ order_by }} order={{ order }} results={{ results }} />
+            {% endif %}
+
+        {% else %}
+            <div class="text-center text-gray-500 mt-10">
+                <p class="text-xs">
+                    No results found where
+                    <span class="bg-base-100 py-0.5 px-1 rounded">{{ results.parsed_query }}</span>
+                </p>
+            </div>
+        {% endif %}
+
+    </div>
+</main>
+
+</SearchLayout>

@@ -1,0 +1,35 @@
+name: Check Format
+
+on:
+  push:
+    paths:
+      - "**.py"
+      - "**.html"
+      - "**.jinja"
+      - "**.css"
+      - "**.yaml"
+
+jobs:
+  test:
+    name: Test types
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.9.28"
+
+      - run: uv sync --all-extras
+
+      - run: echo "$PWD/.venv/bin" >> $GITHUB_PATH
+
+      - name: Check Template Formats
+        run: |
+          uv run djlint api/templates/ --lint
+          uv run djlint api/templates/ --check
+
+      - name: Check Template Formats
+        run: uv run ruff format --check app/

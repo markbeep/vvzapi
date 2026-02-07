@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 from typing import Annotated, Awaitable, Callable
 
 import httpx
-from fastapi import Depends, FastAPI, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import (
@@ -14,10 +15,6 @@ from fastapi.responses import (
     RedirectResponse,
     StreamingResponse,
 )
-from fastapi.templating import Jinja2Templates
-from jinja2 import Environment, FileSystemLoader
-from jinja2_htmlmin import minify_loader
-from jinja2_pluralize import pluralize_dj
 from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -42,6 +39,7 @@ from api.util.db import get_session
 from api.util.parse_query import QueryKey
 from api.util.sections import get_parent_from_unit
 from api.util.sitemap import generate_sitemap
+from api.util.templates import catalog_response
 from api.util.version import get_api_version
 
 app = FastAPI(title="VVZ API", version=get_api_version())
@@ -59,29 +57,6 @@ app.add_middleware(
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # pyright: ignore[reportArgumentType]
-
-templates = Jinja2Templates(
-    env=Environment(
-        loader=minify_loader(
-            FileSystemLoader(str(Path(__file__).parent / "templates")),
-            remove_comments=True,
-            remove_empty_space=True,
-            remove_all_empty_space=True,
-            reduce_boolean_attributes=True,
-        )
-    )
-)
-
-
-def trim_float(value: float) -> int | float:
-    if value % 1 == 0:
-        return int(value)
-    return round(value, 3)
-
-
-templates.env.filters["pluralize"] = pluralize_dj  # pyright: ignore[reportUnknownMemberType]
-templates.env.filters["trim_float"] = trim_float  # pyright: ignore[reportUnknownMemberType]
-templates.env.globals["version"] = get_api_version()  # pyright: ignore[reportUnknownMemberType]
 
 
 def send_analytics_event(request: Request):
@@ -159,9 +134,7 @@ async def root(
     order: str = "asc",
 ):
     if not query:
-        return templates.TemplateResponse(
-            "root_search.html", {"request": {}, "version": get_api_version()}
-        )
+        return catalog_response("Index.Empty")
 
     results = await search_units(
         query,
@@ -179,17 +152,14 @@ async def root(
             if first:
                 return RedirectResponse(f"/unit/{first.id}", status_code=303)
 
-    return templates.TemplateResponse(
-        "results.html",
-        {
-            "request": {},
-            "query": query,
-            "page": page,
-            "limit": limit,
-            "order_by": order_by,
-            "order": order,
-            "results": results,
-        },
+    return catalog_response(
+        "Index.Results",
+        query=query,
+        page=page,
+        limit=limit,
+        order_by=order_by,
+        order=order,
+        results=results,
     )
 
 
@@ -203,6 +173,7 @@ async def unit_detail(
     request: Request,
     unit_id: int,
     session: Annotated[Session, Depends(get_session)],
+    query: Annotated[str | None, Query(alias="q"), str] = None,
 ):
     unit = await get_unit(unit_id, session)
     if not unit:  # TODO: redirect to 404 page once implemented
@@ -244,25 +215,30 @@ async def unit_detail(
         key=lambda x: x[1],
     )
 
-    return templates.TemplateResponse(
-        "unit_detail.html",
-        {
-            "request": request,
-            "unit": unit,
-            "sections": root_sections,
-            "courses": courses,
-            "lecturers": lecturers,
-            "examiners": examiners,
-            "semkezs": semkezs,
-            "is_outdated": newest_unit_id != unit.id,
-            "newest_unit_id": newest_unit_id,
-        },
+    links = {
+        "https://cr.vsos.ethz.ch": "preconnect",
+        str(request.url_for("unit_detail", unit_id=newest_unit_id)): "cannonical",
+    }
+
+    return catalog_response(
+        "Unit.Index",
+        request=request,
+        query=query or "",
+        unit=unit,
+        sections=root_sections,
+        courses=courses,
+        lecturers=lecturers,
+        examiners=examiners,
+        semkezs=semkezs,
+        is_outdated=newest_unit_id != unit.id,
+        newest_unit_id=newest_unit_id,
+        links=links,
     )
 
 
 @app.get("/guide", include_in_schema=False)
 async def guide():
-    return templates.TemplateResponse("guide.html", {"request": {}})
+    return catalog_response("Guide")
 
 
 @app.get("/{root}", include_in_schema=False)
@@ -307,28 +283,6 @@ async def root_static(root: str):
     return HTMLResponse(status_code=404)
 
 
-@app.get("/static/{file_path:path}", include_in_schema=False)
-async def static_files(file_path: str):
-    if file_path not in [
-        "globals.css",
-        "opensearch.xml",
-        "search_hints.js",
-    ]:
-        return HTMLResponse(status_code=404)
-    static_path = Path(__file__).parent / "static" / file_path
-    if static_path.exists():
-        match static_path.suffix:
-            case ".css":
-                return FileResponse(static_path, media_type="text/css")
-            case ".xml":
-                return FileResponse(static_path, media_type="application/xml")
-            case ".js":
-                return FileResponse(static_path, media_type="application/javascript")
-            case _:
-                return FileResponse(static_path)
-    return HTMLResponse(status_code=404)
-
-
 @app.get("/sitemap/{sitemap_file}", include_in_schema=False)
 async def sitemap_files(sitemap_file: str):
     if re.match(r"sitemap(-\w+?)?\.xml", sitemap_file) is None:
@@ -337,3 +291,62 @@ async def sitemap_files(sitemap_file: str):
     if sitemap_path.exists():
         return FileResponse(sitemap_path, media_type="application/xml")
     return HTMLResponse(status_code=404)
+
+
+@app.get("/static/{file_path:path}")
+async def astro_files(file_path: str):
+    if file_path.startswith("components"):
+        """
+        JS / CSS files can be requested in Jinjax templates by using
+        the relative path under the templates/ directory (i.e. {#js pages/Index/empty.js #}).
+        This will then automatically fetch /static/components/pages/Index/empty.js to add the
+        script into the header.
+        """
+        if not file_path.endswith(".js") and not file_path.endswith(".css"):
+            return HTMLResponse(status_code=404)
+        static_dir = Path("api/templates")
+        file_path = file_path.removeprefix("components/")
+    else:
+        static_dir = Path("api/static")
+
+    # ----------------------------------
+    # | Prevent directory traversal.   |
+    # | Ensures the real path if still |
+    # | within the static directory.   |
+    # ----------------------------------
+    static_dir = static_dir.absolute()
+    requested_path = static_dir / file_path.lstrip("/")
+    shared_path = os.path.commonprefix([static_dir, os.path.realpath(requested_path)])
+    if shared_path != str(static_dir):
+        print(f"Directory traversal attempt detected: {requested_path = }")
+        raise HTTPException(status_code=404, detail="Not found")
+    # ----------------------------------
+
+    requested_file = static_dir / requested_path
+    if not requested_file.exists() or not requested_file.is_file():
+        requested_file /= "index.html"
+        if not requested_file.exists() or not requested_file.is_file():
+            raise HTTPException(status_code=404, detail="Not Found")
+
+    # Determine media type based on file extension
+    extension = requested_file.suffix.lower()
+    media_types = {
+        ".html": "text/html",
+        ".css": "text/css",
+        ".js": "application/javascript",
+        ".json": "application/json",
+        ".xml": "application/xml",
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".gif": "image/gif",
+        ".svg": "image/svg+xml",
+        ".ico": "image/x-icon",
+        ".woff": "font/woff",
+        ".woff2": "font/woff2",
+        ".ttf": "font/ttf",
+        ".eot": "application/vnd.ms-fontobject",
+        ".otf": "font/otf",
+    }
+    media_type = media_types.get(extension, "application/octet-stream")
+    return StreamingResponse(requested_file.open("rb"), media_type=media_type)
