@@ -32,4 +32,4 @@ jobs:
           uv run djlint api/templates/ --check
 
       - name: Check Template Formats
-        run: uv run ruff format --check app/
+        run: uv run ruff format --check api/ scraper/
