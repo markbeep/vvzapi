@@ -1,8 +1,6 @@
-from typing import Generator
-from rapidfuzz import fuzz, process, utils
 from enum import Enum
+from typing import Generator, Sequence, cast, get_args, override
 from typing import Literal as TLiteral
-from typing import Sequence, cast, get_args, override
 
 from pydantic import BaseModel
 from pyparsing import (
@@ -17,6 +15,7 @@ from pyparsing import (
     opAssoc,
     printables,
 )
+from rapidfuzz import fuzz, process, utils
 
 ParsedType = Sequence["ParsedType | str"]
 
@@ -111,7 +110,7 @@ class LogicalOperator(BaseModel):
         result = ""
         for i, op in enumerate(self.ops):
             if i > 0:
-                result += f" {self.__class__.__name__} "  # AND / OR
+                result += f" {self.__class__.__name__.lower()} "  # AND / OR
             if isinstance(op, (AND, OR)):
                 result += f"({str(op)})"
             else:
@@ -124,7 +123,7 @@ class LogicalOperator(BaseModel):
             lines: list[str] = []
             for op in ops:
                 if isinstance(op, (AND, OR)):
-                    lines.append(" " * indent + f"{op.__class__.__name__}:")
+                    lines.append(" " * indent + f"{op.__class__.__name__.lower()}:")
                     lines.append(_format_ops(op.ops, indent + 2))
                 else:
                     lines.append(" " * indent + str(op))

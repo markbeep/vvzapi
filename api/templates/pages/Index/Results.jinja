@@ -139,7 +139,9 @@
                                     <a target="_blank"
                                        href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={{ unit.id }}&semkez={{ unit.semkez }}&lang=en&ansicht=ALLE"
                                        class="btn btn-sm btn-outline"
+                                       tabindex="-1"
                                        title="VVZ">
+
                                         VVZ
                                         <span class="[&>svg]:size-4">
                                             <icons.External />
@@ -148,6 +150,7 @@
                                     <a target="_blank"
                                        href="https://coursereview.ch/course/{{ unit.number }}"
                                        class="btn btn-sm btn-outline"
+                                       tabindex="-1"
                                        title="CourseReview">
                                         CR
                                         <span class="[&>svg]:size-4">
@@ -219,6 +222,7 @@
                     {% for semkez in grouped.semkezs %}
                         {% if semkez != unit.semkez %}
                             <a href="/unit/{{ grouped.with_semkez(semkez).id }}"
+                               tabindex="-1"
                                class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow flex-row p-4 group-hover:w-fit group-hover:mb-2 group-hover:ml-2 group-hover:mr-2">
                                 <div class="flex flex-wrap gap-2 text-xs font-mono mt-1">
                                     <span class="badge badge-ghost h-fit p-1">
