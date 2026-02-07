@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.9.0](https://github.com/markbeep/vvzapi/compare/v1.8.0...v1.9.0) (2026-02-07)
+
+
+### Features
+
+* **search:** add compact mode for viewing search results ([b87c342](https://github.com/markbeep/vvzapi/commit/b87c342d5dd734aee252c962c7904433290257e2))
+* **search:** prefetch script on mousedown for anchor tags ([a2112d5](https://github.com/markbeep/vvzapi/commit/a2112d502fedda8e93f5e6f358075412bd8b7321))
+
+
+### Bug Fixes
+
+* **scraper:** allow for lecturers to not have a title ([119fbba](https://github.com/markbeep/vvzapi/commit/119fbbadad55b519c668b71518d6b31100dca14d))
+* **search:** allow searches to be scraped according to robots.txt ([619df0d](https://github.com/markbeep/vvzapi/commit/619df0da0ee943e226548ae4d2828e9ce00a2013))
+* **search:** fix tabbing index to skip stacked results in search page ([29d1bc2](https://github.com/markbeep/vvzapi/commit/29d1bc20a752dd8b14752a7cb23529165331df67))
+
+
+### Miscellaneous Chores
+
+* **search:** adjust the title/description metadata tags to more updated keywords ([915c510](https://github.com/markbeep/vvzapi/commit/915c510a6ad96b4c2b3212dd889d900e7847d1d7))
+* **search:** make AND/OR operators lower-case in query information ([29d1bc2](https://github.com/markbeep/vvzapi/commit/29d1bc20a752dd8b14752a7cb23529165331df67))
+* **search:** update favicon to blue lines ([a4d4533](https://github.com/markbeep/vvzapi/commit/a4d4533d57cc300d3287ada22ed19857d0b01150))
+
+
+### Code Refactoring
+
+* **search:** switch to jinjax for templating and fix a few typing ([38395ff](https://github.com/markbeep/vvzapi/commit/38395ff98c85c8386445d8cc1e6fbb1cf3e5cbf5))
+
+
+### Continuous Integration
+
+* fix missing ruff formatter ([20194d3](https://github.com/markbeep/vvzapi/commit/20194d3ef9ffd830ca83fb30537fc5881738e6d4))
+
 ## [1.8.0](https://github.com/markbeep/vvzapi/compare/v1.7.0...v1.8.0) (2026-02-05)
 
 
