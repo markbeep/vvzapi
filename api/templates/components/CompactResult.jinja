@@ -1,0 +1,51 @@
+{#def
+    grouped: GroupedLearningUnits,
+#}
+
+{% set unit = grouped.latest_unit() %}
+
+<div class="card bg-base-100 shadow-sm group-hover:shadow-none not-hover:transition-shadow flex justify-center p-2 gap-1 relative group w-full">
+    <div class="flex flex-row gap-2">
+        <span class="badge badge-ghost h-fit p-0.5 text-xs m-0">
+            {{ unit.number }}
+        </span>
+
+        <h3 class="font-bold text-neutral leading-tight">
+            <a href="/unit/{{ unit.id }}"
+               class="after:absolute after:inset-0 line-clamp-1"
+               title="{{ unit.title_english if unit.title_english else unit.title }}">
+                {{ unit.title_english if unit.title_english else unit.title }}
+            </a>
+        </h3>
+    </div>
+
+    <div class="flex flex-row gap-2 items-center">
+        <p class="text-xs bg-base-300 p-0.5 rounded whitespace-nowrap">
+            {{ unit.credits|trim_float }} ECTS
+        </p>
+
+        <p class="text-xs whitespace-nowrap">
+            {{ grouped.semkezs|join(", ") }}
+        </p>
+
+        {% if unit.levels_as_str() %}
+            <p class="text-xs bg-base-300 p-0.5 rounded line-clamp-1 min-w-8"
+               title="{{ unit.levels_as_str() }}">
+                {{ unit.levels_as_str() }}
+            </p>
+        {% endif %}
+    </div>
+
+    {% if unit.departments_as_short_str() %}
+        <div class="flex flex-row gap-2 items-center">
+            {% if unit.departments_as_short_str() %}
+                <p class="text-xs bg-base-300 p-0.5 rounded line-clamp-1 min-w-8"
+                   title="{{ unit.departments_as_short_str() }}">
+                    {{ unit.departments_as_short_str() }}
+                </p>
+            {% endif %}
+
+        </div>
+    {% endif %}
+
+</div>

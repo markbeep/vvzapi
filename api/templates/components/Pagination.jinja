@@ -4,17 +4,20 @@
     limit: int,
     order_by: QueryKey,
     order: str,
+    view: Literal["big", "compact"],
     results: SearchResponse,
 #}
 
 <div class="flex flex-col items-center my-4">
     {% set q_order_by = '&order_by=' + order_by if order_by != 'year' else '' %}
-    {% set q_limit = '&limit=%d' % limit if limit != 20 else '' %}
+    {% set default_limit = 50 if view == 'big' else 20 %}
+    {% set q_limit = '&limit=%d' % limit if limit != default_limit else '' %}
     {% set q_order = '&order=' + order if order != 'desc' else '' %}
+    {% set q_view = '&view=' + view if view != 'big' else '' %}
 
     <div class="join grid grid-cols-2 w-full max-w-xs mx-auto">
         {% if page > 1 %}
-            <a href="/?q={{ query|e }}{% if page > 2 %}&page={{ page - 1 }}{% endif %}{{ q_order_by }}{{ q_limit }}{{ q_order }}"
+            <a href="/?q={{ query|e }}{% if page > 2 %}&page={{ page - 1 }}{% endif %}{{ q_order_by }}{{ q_limit }}{{ q_order }}{{ q_view }}"
                class="join-item btn btn-outline">
                 Previous
             </a>
@@ -25,7 +28,7 @@
         {% endif %}
 
         {% if page * limit < results.total %}
-            <a href="/?q={{ query|e }}&page={{ page + 1 }}{{ q_order_by }}{{ q_limit }}{{ q_order }}"
+            <a href="/?q={{ query|e }}&page={{ page + 1 }}{{ q_order_by }}{{ q_limit }}{{ q_order }}{{ q_view }}"
                class="join-item btn btn-outline">
                 Next
             </a>

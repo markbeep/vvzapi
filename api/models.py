@@ -361,6 +361,12 @@ class LearningUnit(BaseModel, Overwriteable, table=True):
     def departments_as_str(self) -> str:
         return ", ".join([str(dep) for dep in self.departments])
 
+    def departments_as_short_str(self) -> str:
+        return ", ".join([dep.short() for dep in self.departments])
+
+    def levels_as_str(self) -> str:
+        return ", ".join([str(level) for level in self.levels])
+
 
 """
 

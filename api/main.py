@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import re
 from pathlib import Path
-from typing import Annotated, Awaitable, Callable
+from typing import Annotated, Awaitable, Callable, Literal
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
@@ -129,12 +129,16 @@ async def root(
     session: Annotated[Session, Depends(get_session)],
     query: Annotated[str | None, Query(alias="q"), str] = None,
     page: Annotated[int, Query(ge=1)] = 1,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    limit: Annotated[int | None, Query(ge=1, le=100)] = None,
     order_by: QueryKey = "title_english",
     order: str = "asc",
+    view: Literal["big", "compact"] = "big",
 ):
     if not query:
         return catalog_response("Index.Empty")
+
+    if limit is None:
+        limit = 20 if view == "big" else 50
 
     results = await search_units(
         query,
@@ -160,6 +164,7 @@ async def root(
         order_by=order_by,
         order=order,
         results=results,
+        view=view,
     )
 
 
