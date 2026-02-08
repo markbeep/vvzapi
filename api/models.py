@@ -493,7 +493,12 @@ class Lecturer(BaseModel, Overwriteable, table=True):
 
     @override
     def __str__(self) -> str:
-        return f"{self.surname} {self.name}"
+        if self.title:
+            return f"{self.title} {self.name} {self.surname}"
+        return f"{self.name} {self.surname}"
+
+    def search_query(self) -> str:
+        return f"/?q=lecturer:&quot;{self.name} {self.surname}&quot;"
 
 
 """

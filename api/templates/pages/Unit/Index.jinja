@@ -69,7 +69,7 @@
 
                     {% if is_outdated %}
                         <div class="alert alert-warning p-2 text-sm max-w-md">
-                            <span>This unit is from a past semester. Please check the latest semester for more up-to-date information.</span>
+                            <span>This unit is not the newest version available on VVZ API. Please check the latest semester for more up-to-date information.</span>
                         </div>
                     {% endif %}
 
@@ -90,24 +90,24 @@
                                 <span class="font-bold">Lecturers: </span>
                             {% endif %}
                             {% for lecturer in lecturers %}
-                                <span class="mr-2">{{ lecturer.surname }}
-                                    {{ lecturer.name }}
-                                    {% if not loop.last %}
+                                <a href="{{ lecturer.search_query() }}" class="mr-2">
+                                    {{- lecturer -}}
+                                    {%- if not loop.last -%}
                                         ,
-                                    {% endif %}
-                                </span>
+                                    {%- endif -%}
+                                </a>
                             {% endfor %}
                         </div>
                         {% if examiners and examiners != lecturers %}
                             <div class="mt-4 text-sm text-base-content/80">
                                 <span class="font-bold">Examiners: </span>
                                 {% for lecturer in examiners %}
-                                    <span class="mr-2">{{ lecturer.surname }}
-                                        {{ lecturer.name }}
-                                        {% if not loop.last %}
+                                    <a href="{{ lecturer.search_query() }}" class="mr-2">
+                                        {{- lecturer -}}
+                                        {%- if not loop.last -%}
                                             ,
-                                        {% endif %}
-                                    </span>
+                                        {%- endif -%}
+                                    </a>
                                 {% endfor %}
                             </div>
                         {% endif %}
