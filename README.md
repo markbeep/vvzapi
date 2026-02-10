@@ -1,6 +1,8 @@
 # VVZ REST API
 
-Community-made simple search and REST API for [ETHZ's Vorlesungsverzeichnis](https://www.vvz.ethz.ch/Vorlesungsverzeichnis).
+![banner](./assets/banner.png)
+
+#### Community-made simple search and REST API for [ETHZ's Vorlesungsverzeichnis](https://www.vvz.ethz.ch/Vorlesungsverzeichnis)
 
 ## Quick Start
 
