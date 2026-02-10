@@ -3,7 +3,7 @@
 just = "latest"
 "npm:chromium" = "latest"
 "npm:lighthouse" = "latest"
-sqlite3def = "latest"
+sqlite = "3.51.2"
 uv = "latest"
 
 [env]

@@ -7,7 +7,9 @@
     links: dict[str, str] = {}, # href:rel mapping
 #}
 
-<BaseLayout title={{ title }} description={{ description }} og_description={{ og_description }} keywords={{ keywords }} links={{ links }}>
+{% set og_description = og_description or description %}
+
+<BaseLayout title={{ title|e }} description={{ description|e }} og_description={{ og_description|e }} keywords={{ keywords|e }} links={{ links }}>
 
 <body class="bg-base-200 min-h-screen flex flex-col min-w-[20rem]">
     <div id="navbar"
