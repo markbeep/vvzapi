@@ -1,10 +1,20 @@
 # VVZ REST API
 
-Community-made simple search and REST API for [VVZ](https://www.vvz.ethz.ch/Vorlesungsverzeichnis).
+Community-made simple search and REST API for [ETHZ's Vorlesungsverzeichnis](https://www.vvz.ethz.ch/Vorlesungsverzeichnis).
 
 ## Quick Start
 
 Head to https://vvzapi.ch and start playing around with the search or API!
+
+## Terms of Use
+
+> [!NOTE]  
+> This project is not affiliated with ETH Zurich in any way. It is a personal project that is not endorsed by ETH Zurich. The data is scraped from the public [VVZ](https://www.vvz.ethz.ch/Vorlesungsverzeichnis) website and is not used for any commercial purposes. The API is provided as-is and without any warranties. Use it at your own risk.
+>
+> This repository is licensed under the GPLv3 license. See [LICENSE](./LICENSE) for more information. Any forks must also be licensed under the GPLv3 license and made open-source if they are distributed.
+>
+> If you use the API or the downloadable database, I ask that you please credit the project and link back to the repository.
+> I'm happy to see any projects that use the API and would like to link them here.
 
 ## Schema
 
@@ -46,7 +56,7 @@ I'm grateful for any form of contribution, may it be adding documentation, imple
 
 Depending on what you intend to test locally, you can opt to download a dump of the database (head to the API docs to find the endpoint) to develop locally with the most up-to-date data.
 
-Additionally, for ease of development, there is both a devcontainer (`.devcontainer/devcontainer.json`) and a mise (`mise.toml`) config that can help with setting up the local development environment. The devcontainer setup will initialze the essentials in a docker/podman container without cluttering your system with dependencies, while [mise](https://mise.jdx.dev/) installs packages into your shell environment. 
+Additionally, for ease of development, there is both a devcontainer (`.devcontainer/devcontainer.json`) and a mise (`mise.toml`) config that can help with setting up the local development environment. The devcontainer setup will initialze the essentials in a docker/podman container without cluttering your system with dependencies, while [mise](https://mise.jdx.dev/) installs packages into your shell environment and might be easier.
 
 ### Alembic Migrations
 
