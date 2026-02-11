@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.10.0](https://github.com/markbeep/vvzapi/compare/v1.9.0...v1.10.0) (2026-02-11)
+
+
+### Features
+
+* **scraper:** scrape course review ratings ([16a66bf](https://github.com/markbeep/vvzapi/commit/16a66bf487cd31ac7ae0010e13c90b6cf854ae78))
+* **search:** add coursereview operator to query by average rating ([5151c8e](https://github.com/markbeep/vvzapi/commit/5151c8e62d16d2215c1c786e1627258a2f9043df))
+* **search:** allow querying by lecturer by clicking on name on unit page ([1ea359b](https://github.com/markbeep/vvzapi/commit/1ea359ba1d5540e1f27f94370f84cfb54bff4257))
+
+
+### Bug Fixes
+
+* **search:** escape title/description in header ([926800a](https://github.com/markbeep/vvzapi/commit/926800a2618c1e14173ca3e877abcc696eef86c2))
+
+
+### Documentation
+
+* add terms of use for clarity ([2f870f5](https://github.com/markbeep/vvzapi/commit/2f870f515805068e1252970f7e75d2c99eaceb0c))
+* added readme banner ([e3b9aab](https://github.com/markbeep/vvzapi/commit/e3b9aab7292bb3ef07ad57d1f825fb499c1754a5))
+
+
+### Miscellaneous Chores
+
+* add k6 for benchmarking the website ([aa4bafd](https://github.com/markbeep/vvzapi/commit/aa4bafd5ad27462d451fad54df720ca3d89ba924))
+* **search:** update index page description ([75e093b](https://github.com/markbeep/vvzapi/commit/75e093babc6d02d2038d52a45e21f124d7e457f5))
+
 ## [1.9.0](https://github.com/markbeep/vvzapi/compare/v1.8.0...v1.9.0) (2026-02-07)
 
 
