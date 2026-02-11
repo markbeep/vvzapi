@@ -263,119 +263,132 @@
                                 values.
                             </td>
                         </tr>
-                    </tbody>
-                </table>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                coursereview
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                cr
+                            </td>
+                            <td class="px-4 py-3">
+                                Filters by the combined average ratings on
+                                <a href="https://coursereview.ch/"
+                                   target="_blank"
+                                   class="link link-primary">CourseReview</a>.
+                                Ratings can be at minimum 0.0 and at most 5.0.
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="comparison-operators" class="card bg-base-100 shadow-sm">
+                    <div class="card-body">
+                        <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+                            <a href="#comparison-operators"
+                               class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+                                <icons.Link />
+                            </a>
+                            Comparison Operators
+                        </h2>
+                        <p class="text-sm text-base-content/80 mb-4">
+                            For numeric values like <strong>credits</strong>,
+                            <strong>year</strong>, or <strong>coursereview</strong> you can use comparison operators.
+                        </p>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 font-mono text-sm">
+                            <div class="bg-base-200 p-2 rounded text-center">
+                                <span class="font-bold text-accent">:</span> or
+                                <span class="font-bold text-accent">=</span>
+                                <div class="text-base-content/60 text-xs font-sans mt-1">
+                                    Equal
+                                </div>
+                            </div>
+                            <div class="bg-base-200 p-2 rounded text-center">
+                                <span class="font-bold text-accent">!=</span>
+                                <div class="text-base-content/60 text-xs font-sans mt-1">
+                                    Not Equal
+                                </div>
+                            </div>
+                            <div class="bg-base-200 p-2 rounded text-center">
+                                <span class="font-bold text-accent">&gt;</span> /
+                                <span class="font-bold text-accent">&lt;</span>
+                                <div class="text-base-content/60 text-xs font-sans mt-1">
+                                    Greater / Less
+                                </div>
+                            </div>
+                            <div class="bg-base-200 p-2 rounded text-center">
+                                <span class="font-bold text-accent">&gt;=</span> /
+                                <span class="font-bold text-accent">&lt;=</span>
+                                <div class="text-base-content/60 text-xs font-sans mt-1">
+                                    Greater/Less or Equal
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="examples">
+                    <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+                        <a href="#examples"
+                           class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+                            <icons.Link />
+                        </a>
+                        Examples
+                    </h2>
+                    <div class="space-y-3">
+                        <a href="/?q=y%3D2026+s%3Afs+o%3A%22computer+science+master%22+o%3Aminor+o%3A%22computer+vision%22"
+                           class="block group">
+                            <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                                <div class="card-body p-4">
+                                    <code class="text-accent font-bold block mb-1">y=2026 s:fs o:"computer science master" o:minor o:"computer vision"</code>
+                                    <span class="text-sm text-base-content/80">Find all courses taking place in FS 2026 that count as a minor
+                                    for the Computer Vision Major.</span>
+                                </div>
+                            </div>
+                        </a>
+
+                        <a href="/?q=s%3Afs+y%3A2026+((dept%3Acomputer+c<%3D4+o%3A&quot;data+management+systems&quot;)+or+(dept%3Aarchitecture+c>%3D10))"
+                           class="block group">
+                            <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                                <div class="card-body p-4">
+                                    <code class="text-accent font-bold block mb-1">s:fs y:2026 ((dept:computer c&gt;=4 o:"data management systems") or (dept:architecture c>=10))</code>
+                                    <span class="text-sm text-base-content/80">Find all courses in the Spring semester of 2026 that are either
+                                        offered by the Computer Science department
+                                        with at most 4 credits and are part of the "Data Management Systems" program, or are offered by the
+                                    Architecture department with at least 10 credits.</span>
+                                </div>
+                            </div>
+                        </a>
+
+                        <a href="/?q=credits%3E%3D10" class="block group">
+                            <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                                <div class="card-body p-4">
+                                    <code class="text-accent font-bold block mb-1">credits>=10</code>
+                                    <span class="text-sm text-base-content/80">Find all courses with 10 or more credits.</span>
+                                </div>
+                            </div>
+                        </a>
+
+                        <a href="/?q=lecturer%3AMüller+year%3A2024" class="block group">
+                            <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                                <div class="card-body p-4">
+                                    <code class="text-accent font-bold block mb-1">lecturer:Müller year:2024</code>
+                                    <span class="text-sm text-base-content/80">Find courses taught by Müller in 2024.</span>
+                                </div>
+                            </div>
+                        </a>
+
+                        <a href="/?q=physics+s%3AW+-d%3Aanalysis" class="block group">
+                            <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                                <div class="card-body p-4">
+                                    <code class="text-accent font-bold block mb-1">physics s:W -d:analysis</code>
+                                    <span class="text-sm text-base-content/80">Search for "physics" in the Winter semester without any mention
+                                    of "analyis" in the description.</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </section>
             </div>
-        </section>
+        </main>
 
-        <section id="comparison-operators" class="card bg-base-100 shadow-sm">
-            <div class="card-body">
-                <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
-                    <a href="#comparison-operators"
-                       class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
-                        <icons.Link />
-                    </a>
-                    Comparison Operators
-                </h2>
-                <p class="text-sm text-base-content/80 mb-4">
-                    For numeric values like <strong>credits</strong> or
-                    <strong>year</strong>, you can use comparison operators.
-                </p>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 font-mono text-sm">
-                    <div class="bg-base-200 p-2 rounded text-center">
-                        <span class="font-bold text-accent">:</span> or
-                        <span class="font-bold text-accent">=</span>
-                        <div class="text-base-content/60 text-xs font-sans mt-1">
-                            Equal
-                        </div>
-                    </div>
-                    <div class="bg-base-200 p-2 rounded text-center">
-                        <span class="font-bold text-accent">!=</span>
-                        <div class="text-base-content/60 text-xs font-sans mt-1">
-                            Not Equal
-                        </div>
-                    </div>
-                    <div class="bg-base-200 p-2 rounded text-center">
-                        <span class="font-bold text-accent">&gt;</span> /
-                        <span class="font-bold text-accent">&lt;</span>
-                        <div class="text-base-content/60 text-xs font-sans mt-1">
-                            Greater / Less
-                        </div>
-                    </div>
-                    <div class="bg-base-200 p-2 rounded text-center">
-                        <span class="font-bold text-accent">&gt;=</span> /
-                        <span class="font-bold text-accent">&lt;=</span>
-                        <div class="text-base-content/60 text-xs font-sans mt-1">
-                            Greater/Less or Equal
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="examples">
-            <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
-                <a href="#examples"
-                   class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
-                    <icons.Link />
-                </a>
-                Examples
-            </h2>
-            <div class="space-y-3">
-                <a href="/?q=y%3D2026+s%3Afs+o%3A%22computer+science+master%22+o%3Aminor+o%3A%22computer+vision%22"
-                   class="block group">
-                    <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="card-body p-4">
-                            <code class="text-accent font-bold block mb-1">y=2026 s:fs o:"computer science master" o:minor o:"computer vision"</code>
-                            <span class="text-sm text-base-content/80">Find all courses taking place in FS 2026 that count as a minor
-                            for the Computer Vision Major.</span>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="/?q=s%3Afs+y%3A2026+((dept%3Acomputer+c<%3D4+o%3A&quot;data+management+systems&quot;)+or+(dept%3Aarchitecture+c>%3D10))"
-                   class="block group">
-                    <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="card-body p-4">
-                            <code class="text-accent font-bold block mb-1">s:fs y:2026 ((dept:computer c&gt;=4 o:"data management systems") or (dept:architecture c>=10))</code>
-                            <span class="text-sm text-base-content/80">Find all courses in the Spring semester of 2026 that are either
-                                offered by the Computer Science department
-                                with at most 4 credits and are part of the "Data Management Systems" program, or are offered by the
-                            Architecture department with at least 10 credits.</span>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="/?q=credits%3E%3D10" class="block group">
-                    <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="card-body p-4">
-                            <code class="text-accent font-bold block mb-1">credits>=10</code>
-                            <span class="text-sm text-base-content/80">Find all courses with 10 or more credits.</span>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="/?q=lecturer%3AMüller+year%3A2024" class="block group">
-                    <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="card-body p-4">
-                            <code class="text-accent font-bold block mb-1">lecturer:Müller year:2024</code>
-                            <span class="text-sm text-base-content/80">Find courses taught by Müller in 2024.</span>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="/?q=physics+s%3AW+-d%3Aanalysis" class="block group">
-                    <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="card-body p-4">
-                            <code class="text-accent font-bold block mb-1">physics s:W -d:analysis</code>
-                            <span class="text-sm text-base-content/80">Search for "physics" in the Winter semester without any mention
-                            of "analyis" in the description.</span>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </section>
-    </div>
-</main>
-
-</SearchLayout>
+        </SearchLayout>

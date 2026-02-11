@@ -25,6 +25,7 @@ from api.models import (
     Department,
     LearningUnit,
     Lecturer,
+    Rating,
     Section,
     UnitExaminerLink,
     UnitLecturerLink,
@@ -367,6 +368,32 @@ def _build_boolean_clause(op: AND | OR):
                     clause = not_(clause)
                 booleans.append(clause)
                 filters_used.ops.append(filter_)
+            case "coursereview":
+                average_rating = (
+                    col(Rating.recommended)
+                    + col(Rating.engaging)
+                    + col(Rating.difficulty)
+                    + col(Rating.effort)
+                    + col(Rating.resources)
+                ) / 5
+                try:
+                    rating_value = float(filter_.value)
+                except ValueError:
+                    continue
+                match filter_.operator:
+                    case Operator.eq:
+                        booleans.append(average_rating == rating_value)
+                    case Operator.ne:
+                        booleans.append(average_rating != rating_value)
+                    case Operator.gt:
+                        booleans.append(average_rating > rating_value)
+                    case Operator.lt:
+                        booleans.append(average_rating < rating_value)
+                    case Operator.ge:
+                        booleans.append(average_rating >= rating_value)
+                    case Operator.le:
+                        booleans.append(average_rating <= rating_value)
+                filters_used.ops.append(filter_)
 
     # matches all filters
     if offered_in_names:
@@ -410,6 +437,7 @@ def match_filters(
     order_by: QueryKey = "year",
     descending: bool = True,
 ) -> tuple[int, dict[str, GroupedLearningUnits], AND | OR]:
+
     query = select(
         LearningUnit,
         year := sql_cast(func.substr(LearningUnit.semkez, 1, 4), Integer),
@@ -437,6 +465,18 @@ def match_filters(
         query = query.join(
             UnitSectionLink, onclause=col(LearningUnit.id) == UnitSectionLink.unit_id
         ).join(Section, onclause=col(UnitSectionLink.section_id) == Section.id)
+    average_rating = None
+    if any(f.key == "coursereview" for f in filters):
+        query = query.join(
+            Rating, onclause=col(LearningUnit.number) == Rating.course_number
+        )
+        average_rating = (
+            col(Rating.recommended)
+            + col(Rating.engaging)
+            + col(Rating.difficulty)
+            + col(Rating.effort)
+            + col(Rating.resources)
+        ) / 5
 
     clause, filters_used = _build_boolean_clause(filters)
 
@@ -475,6 +515,9 @@ def match_filters(
             order_by_clauses = [col(LearningUnit.levels)]
         case "language":
             order_by_clauses = [col(LearningUnit.language)]
+        case "coursereview":
+            if average_rating is not None:
+                order_by_clauses = [average_rating]
         case (
             "year"
             | "descriptions"

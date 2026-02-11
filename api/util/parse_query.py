@@ -37,6 +37,7 @@ QueryKey = TLiteral[
     "language",
     "offered",
     "examtype",
+    "coursereview",
 ]
 
 mapping: dict[str, QueryKey] = {
@@ -63,6 +64,7 @@ mapping: dict[str, QueryKey] = {
     "o": "offered",
     "off": "offered",
     "e": "examtype",
+    "cr": "coursereview",
 }
 
 
