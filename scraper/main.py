@@ -14,6 +14,7 @@ from api.env import Settings as APISettings
 from api.util.db import get_session
 from scraper.env import Settings as EnvSettings
 from scraper.spiders.lecturers import LecturersSpider
+from scraper.spiders.ratings import RatingsSpider
 from scraper.spiders.units import UnitsSpider
 from scraper.util.delete_cached import delete_cached
 
@@ -44,9 +45,11 @@ if EnvSettings().enable_rescrape:
     semkezs = delete_cached()
     process.crawl(UnitsSpider, semkezs=semkezs)
     process.crawl(LecturersSpider, semkezs=semkezs)
+    process.crawl(RatingsSpider)
 else:
     process.crawl(UnitsSpider)
     process.crawl(LecturersSpider)
+    process.crawl(RatingsSpider)
 process.start()
 
 # vacuum/zip db

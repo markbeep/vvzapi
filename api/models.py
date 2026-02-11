@@ -534,3 +534,28 @@ class LastCleanup(BaseModel, table=True):
         default_factory=lambda: int(time.time()),
         sa_column=Column(INTEGER, nullable=False),
     )
+
+
+class Rating(BaseModel, table=True):
+    """Course ratings scraped from the CourseReview site"""
+
+    course_number: str = Field(primary_key=True)
+    recommended: float
+    engaging: float
+    difficulty: float
+    effort: float
+    resources: float
+    scraped_at: int = Field(
+        default_factory=lambda: int(time.time()),
+        sa_column=Column(INTEGER, nullable=False),
+    )
+
+    def average(self):
+        avg = (
+            self.recommended
+            + self.engaging
+            + self.difficulty
+            + self.effort
+            + self.resources
+        ) / 5
+        return round(avg, 2)

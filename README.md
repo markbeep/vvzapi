@@ -97,6 +97,7 @@ Or for just one of the spiders:
 ```sh
 uv run scrapy crawl units
 uv run scrapy crawl lecturers
+uv run scrapy crawl ratings
 ```
 
 #### Run in shell (for debug)

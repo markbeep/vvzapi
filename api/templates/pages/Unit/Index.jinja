@@ -9,6 +9,7 @@
     is_outdated: bool,
     newest_unit_id: int,
     request: Request,
+    average_rating: float | str = "n/a",
     links: dict[str, str] = {}, # href:rel mapping
 #}
 
@@ -134,30 +135,10 @@
                        href="https://coursereview.ch/course/{{ unit.number }}"
                        class="btn btn-sm btn-outline"
                        title="CourseReview">
-                        <span id="coursereview">CR n/a</span>
+                        <span id="coursereview">CR {{ average_rating }}</span>
                         <span class="[&>svg]:size-4">
                             <icons.External />
                         </span>
-                        <script>
-                            window.addEventListener('DOMContentLoaded', function() {
-                                fetch("https://cr.vsos.ethz.ch/getRatings?course={{ unit.number }}")
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        if (!data || data.length === 0) {
-                                            return;
-                                        }
-                                        const mapper = rating => {
-                                            return (rating.Recommended + rating.Engaging + rating.Difficulty + rating.Effort + rating.Resources) / 5;
-                                        };
-                                        const average_rating = data.map(mapper).reduce((a, b) => a + b, 0) / data.length;
-                                        if (!isNaN(average_rating)) {
-                                            document.getElementById("coursereview").innerText = `CR ${average_rating.toFixed(2)}/5`;
-                                        }
-                                    }).catch(error => {
-                                        console.error("Error fetching CourseReview ratings:", error);
-                                    });
-                            });
-                        </script>
                     </a>
                 </div>
             </div>

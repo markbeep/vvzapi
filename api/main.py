@@ -27,6 +27,7 @@ from api.models import (
     Course,
     LearningUnit,
     Lecturer,
+    Rating,
     Section,
     UnitExaminerLink,
     UnitLecturerLink,
@@ -220,10 +221,10 @@ async def unit_detail(
         key=lambda x: x[1],
     )
 
-    links = {
-        "https://cr.vsos.ethz.ch": "preconnect",
-        str(request.url_for("unit_detail", unit_id=newest_unit_id)): "cannonical",
-    }
+    rating = session.get(Rating, unit.number)
+    average_rating = rating.average() if rating else "n/a"
+
+    links = {str(request.url_for("unit_detail", unit_id=newest_unit_id)): "cannonical"}
 
     return catalog_response(
         "Unit.Index",
@@ -237,6 +238,7 @@ async def unit_detail(
         semkezs=semkezs,
         is_outdated=newest_unit_id != unit.id,
         newest_unit_id=newest_unit_id,
+        average_rating=average_rating,
         links=links,
     )
 

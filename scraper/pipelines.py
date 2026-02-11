@@ -1,7 +1,7 @@
-from typing import cast
 import time
 import traceback
 from pathlib import Path
+from typing import cast
 
 from pydantic import BaseModel
 from scrapy import Spider
@@ -17,6 +17,7 @@ from api.models import (
     Lecturer,
     Level,
     Overwriteable,
+    Rating,
     Section,
     UnitChanges,
     UnitExaminerLink,
@@ -103,6 +104,23 @@ class DatabasePipeline:
                     CourseLecturerLink,
                     (item.course_number, item.course_semkez, item.lecturer_id),
                 )
+            elif isinstance(item, Rating):
+                old = self.session.get(
+                    Rating,
+                    item.course_number,
+                )
+                if old:
+                    old.recommended = item.recommended
+                    old.engaging = item.engaging
+                    old.difficulty = item.difficulty
+                    old.effort = item.effort
+                    old.resources = item.resources
+                    old.scraped_at = int(time.time())
+                else:
+                    old = item
+                self.session.add(old)
+                self.session.commit()
+                return item
             else:
                 self.logger.error("Unknown item type", extra={"item": item})
                 return item
