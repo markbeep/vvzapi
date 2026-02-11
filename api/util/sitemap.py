@@ -5,6 +5,7 @@ from pathlib import Path
 
 from sqlmodel import col, select
 
+from api.env import Settings
 from api.models import LearningUnit
 from api.util.db import get_session
 
@@ -35,7 +36,7 @@ def _parse_index(root: ET.Element) -> dict[str, datetime]:
 
 
 def generate_sitemap(expiry_seconds: int | None = None) -> None:
-    base_url = "https://vvzapi.ch"
+    base_url = Settings().base_url
     path = Path("api/static/sitemap")
     path.mkdir(parents=True, exist_ok=True)
 

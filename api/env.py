@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     sitemap_expiry: int = 86400  # in seconds
     plausible_url: str | None = None
     """API event endpoint"""
+    base_url: str = "https://vvzapi.ch"
 
     @property
     def zip_path(self) -> str:

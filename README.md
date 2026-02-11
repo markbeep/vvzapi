@@ -170,3 +170,25 @@ tailwindcss -i api/static/tw.css -o api/static/globals.css --watch
 ```sh
 uv run basedpyright
 ```
+
+---
+
+## Benchmarking
+
+Website can be benchmarked with lighthouse or k6 locally.
+
+### Lighthouse
+
+Can be used to test SEO and generally if the website form is correct.
+
+```sh
+just lighthouse /unit/193444
+```
+
+### K6
+
+Can be used to benchmark the website.
+
+```sh
+k6 run --vus 10 --duration 30s k6.js
+```
