@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.1](https://github.com/markbeep/vvzapi/compare/v1.10.0...v1.10.1) (2026-02-15)
+
+
+### Bug Fixes
+
+* **api:** remove static path from api docs ([9bd84f2](https://github.com/markbeep/vvzapi/commit/9bd84f25c8a756e6b66c3617210092168da885d2))
+
 ## [1.10.0](https://github.com/markbeep/vvzapi/compare/v1.9.0...v1.10.0) (2026-02-11)
 
 
