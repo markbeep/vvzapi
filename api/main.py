@@ -300,7 +300,7 @@ async def sitemap_files(sitemap_file: str):
     return HTMLResponse(status_code=404)
 
 
-@app.get("/static/{file_path:path}")
+@app.get("/static/{file_path:path}", include_in_schema=False)
 async def astro_files(file_path: str):
     if file_path.startswith("components"):
         """
