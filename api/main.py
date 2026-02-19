@@ -106,18 +106,12 @@ async def analytics_middleware(
                 f"Cache-Control: public, max-age={Settings().cache_expiry}"
             )
 
+    has_extension = re.search(r"\.\w+$", request.url.path) is not None
     if (
         response.status_code != 404
         and response.status_code != 307
         and Settings().plausible_url
-        and not request.url.path.startswith("/static")
-        and not request.url.path.endswith(".png")
-        and not request.url.path.endswith(".ico")
-        and not request.url.path.endswith(".css")
-        and not request.url.path.endswith(".xml")
-        and not request.url.path.endswith(".webmanifest")
-        and not request.url.path.endswith(".txt")
-        and not request.url.path.endswith(".json")
+        and not has_extension
     ):
         task = BackgroundTask(send_analytics_event, request)
         response.background = task
