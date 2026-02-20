@@ -2,7 +2,8 @@ from typing import Annotated, Sequence
 
 from fastapi import APIRouter, Depends, Query
 from opentelemetry import trace
-from sqlmodel import Session, col, select
+from sqlmodel import col, select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from api.models import (
     Department,
@@ -13,7 +14,7 @@ from api.models import (
     UnitExaminerLink,
     UnitLecturerLink,
 )
-from api.util.db import get_session
+from api.util.db import aget_session
 from api.util.sections import get_parent_from_unit
 from api.util.unit_filter import VVZFilters, build_vvz_filter
 
@@ -25,21 +26,21 @@ router = APIRouter(prefix="/unit", tags=["Learning Units"])
 @router.get("/{unit_id}/get", response_model=LearningUnit | None)
 async def get_unit(
     unit_id: int,
-    session: Annotated[Session, Depends(get_session)],
+    session: Annotated[AsyncSession, Depends(aget_session)],
 ) -> LearningUnit | None:
     with tracer.start_as_current_span("get_unit") as span:
         span.set_attribute("unit_id", unit_id)
-        return session.get(LearningUnit, unit_id)
+        return await session.get(LearningUnit, unit_id)
 
 
 @router.get("/{unit_id}/sections", response_model=Sequence[int])
 async def get_unit_sections(
     unit_id: int,
-    session: Annotated[Session, Depends(get_session)],
+    session: Annotated[AsyncSession, Depends(aget_session)],
 ) -> Sequence[int]:
     with tracer.start_as_current_span("get_unit_sections") as span:
         span.set_attribute("unit_id", unit_id)
-        results = session.exec(get_parent_from_unit(unit_id)).all()
+        results = (await session.exec(get_parent_from_unit(unit_id))).all()
         span.set_attribute("result_count", len(results))
         return [sec.id for sec in results]
 
@@ -47,7 +48,7 @@ async def get_unit_sections(
 @router.get("/{unit_id}/lecturers", response_model=Sequence[int])
 async def get_unit_lecturers(
     unit_id: int,
-    session: Annotated[Session, Depends(get_session)],
+    session: Annotated[AsyncSession, Depends(aget_session)],
     limit: Annotated[int, Query(gt=0, le=1000)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> Sequence[int]:
@@ -61,7 +62,7 @@ async def get_unit_lecturers(
             .offset(offset)
             .limit(limit)
         )
-        results = session.exec(query).all()
+        results = (await session.exec(query)).all()
         span.set_attribute("result_count", len(results))
         return results
 
@@ -75,7 +76,7 @@ async def get_unit_lecturers(
 )
 async def get_unit_changes(
     unit_id: int,
-    session: Annotated[Session, Depends(get_session)],
+    session: Annotated[AsyncSession, Depends(aget_session)],
     limit: Annotated[int, Query(gt=0, le=1000)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> Sequence[UnitChanges]:
@@ -90,7 +91,7 @@ async def get_unit_changes(
             .offset(offset)
             .limit(limit)
         )
-        results = session.exec(query).all()
+        results = (await session.exec(query)).all()
         span.set_attribute("result_count", len(results))
         return results
 
@@ -98,7 +99,7 @@ async def get_unit_changes(
 @router.get("/{unit_id}/examiners", response_model=Sequence[int])
 async def get_unit_examiners(
     unit_id: int,
-    session: Annotated[Session, Depends(get_session)],
+    session: Annotated[AsyncSession, Depends(aget_session)],
     limit: Annotated[int, Query(gt=0, le=1000)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> Sequence[int]:
@@ -112,7 +113,7 @@ async def get_unit_examiners(
             .offset(offset)
             .limit(limit)
         )
-        results = session.exec(query).all()
+        results = (await session.exec(query)).all()
         span.set_attribute("result_count", len(results))
         return results
 
@@ -123,7 +124,7 @@ async def get_unit_examiners(
     description="List learning unit IDs with optional VVZ-like filters",
 )
 async def list_units(
-    session: Annotated[Session, Depends(get_session)],
+    session: Annotated[AsyncSession, Depends(aget_session)],
     limit: Annotated[int, Query(gt=0, le=1000)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
     # VVZ filters: base
@@ -206,9 +207,11 @@ async def list_units(
             ects_max=ects_max,
             content_search=content_search,
         )
-        query = build_vvz_filter(session, select(LearningUnit.id), filters)
-        results = session.exec(
-            query.order_by(col(LearningUnit.id).asc()).offset(offset).limit(limit)
+        query = await build_vvz_filter(session, select(LearningUnit.id), filters)
+        results = (
+            await session.exec(
+                query.order_by(col(LearningUnit.id).asc()).offset(offset).limit(limit)
+            )
         ).all()
         span.set_attribute("result_count", len(results))
         return results

@@ -4,7 +4,8 @@ from opentelemetry import trace
 from pydantic import BaseModel
 from sqlalchemy import Label
 from sqlalchemy.orm import aliased
-from sqlmodel import Session, col, select
+from sqlmodel import col, select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from api.models import Section, UnitSectionLink
 
@@ -16,8 +17,8 @@ class SectionLevel(BaseModel):
     level: int
 
 
-def get_child_sections(
-    session: Session,
+async def get_child_sections(
+    session: AsyncSession,
     parent_section_id: int,
 ):
     with tracer.start_as_current_span("get_child_sections") as span:
@@ -33,7 +34,7 @@ def get_child_sections(
         )
         cte = cte.union_all(recursive)
 
-        results = session.exec(
+        results = await session.exec(
             select(Section.id, Section.level).join(cte, col(Section.id) == cte.c.id)
         )
 
@@ -45,7 +46,7 @@ def get_child_sections(
         return child_sections
 
 
-def get_parent_sections(session: Session, child_section_id: int):
+async def get_parent_sections(session: AsyncSession, child_section_id: int):
     with tracer.start_as_current_span("get_parent_sections") as span:
         span.set_attribute("child_section_id", child_section_id)
         base_stmt = select(Section.id, Section.parent_id, Section.level).where(
@@ -57,7 +58,7 @@ def get_parent_sections(session: Session, child_section_id: int):
             cte, col(Parent.id) == cte.c.parent_id
         )
         cte = cte.union_all(recursive)
-        results = session.exec(
+        results = await session.exec(
             select(Section.id, Section.level)
             .join(cte, col(Section.id) == cte.c.id)
             .where(Section.id != child_section_id)

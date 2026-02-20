@@ -190,7 +190,7 @@ just lighthouse /unit/193444
 Can be used to benchmark the website.
 
 ```sh
-k6 run --vus 10 --duration 30s k6.js
+k6 run --vus 50 --duration 5m k6.js
 ```
 
 ### JaegerUI
