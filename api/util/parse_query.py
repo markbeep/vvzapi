@@ -15,7 +15,6 @@ from pyparsing import (
     identbodychars,
     infixNotation,
     opAssoc,
-    printables,
 )
 from rapidfuzz import fuzz, process, utils
 

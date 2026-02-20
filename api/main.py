@@ -25,7 +25,8 @@ from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from sqlmodel import Session, col, select
+from sqlmodel import col, select
+from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette.background import BackgroundTask
 
 from api.env import Settings
@@ -42,7 +43,7 @@ from api.routers.v1.units import get_unit
 from api.routers.v1_router import router as v1_router
 from api.routers.v2.search import search_units
 from api.routers.v2_router import router as v2_router
-from api.util.db import get_session
+from api.util.db import aget_session
 from api.util.parse_query import QueryKey
 from api.util.sections import get_parent_from_unit
 from api.util.sitemap import generate_sitemap
@@ -199,7 +200,7 @@ class RecursiveSection(BaseModel):
 async def unit_detail(
     request: Request,
     unit_id: int,
-    session: Annotated[Session, Depends(get_session)],
+    session: Annotated[AsyncSession, Depends(aget_session)],
     query: Annotated[str | None, Query(alias="q"), str] = None,
 ):
     with tracer.start_as_current_span("unit_detail") as span:
@@ -212,30 +213,42 @@ async def unit_detail(
         span.set_attribute("unit_number", unit.number or "")
         span.set_attribute("unit_title", unit.title_english or "")
 
-        lecturers = session.exec(
-            select(Lecturer)
-            .join(UnitLecturerLink, col(UnitLecturerLink.lecturer_id) == Lecturer.id)
-            .where(UnitLecturerLink.unit_id == unit_id)
+        lecturers = (
+            await session.exec(
+                select(Lecturer)
+                .join(
+                    UnitLecturerLink, col(UnitLecturerLink.lecturer_id) == Lecturer.id
+                )
+                .where(UnitLecturerLink.unit_id == unit_id)
+            )
         ).all()
         span.set_attribute("lecturer_count", len(lecturers))
 
-        examiners = session.exec(
-            select(Lecturer)
-            .join(UnitExaminerLink, col(UnitExaminerLink.lecturer_id) == Lecturer.id)
-            .where(UnitExaminerLink.unit_id == unit_id)
+        examiners = (
+            await session.exec(
+                select(Lecturer)
+                .join(
+                    UnitExaminerLink, col(UnitExaminerLink.lecturer_id) == Lecturer.id
+                )
+                .where(UnitExaminerLink.unit_id == unit_id)
+            )
         ).all()
         span.set_attribute("examiner_count", len(examiners))
 
-        courses = session.exec(select(Course).where(Course.unit_id == unit_id)).all()
+        courses = (
+            await session.exec(select(Course).where(Course.unit_id == unit_id))
+        ).all()
         span.set_attribute("course_count", len(courses))
 
-        sections = session.exec(get_parent_from_unit(unit_id)).all()
+        sections = (await session.exec(get_parent_from_unit(unit_id))).all()
         span.set_attribute("section_count", len(sections))
 
-        semkezs = session.exec(
-            select(LearningUnit.id, LearningUnit.semkez)
-            .where(LearningUnit.number == unit.number)
-            .distinct()
+        semkezs = (
+            await session.exec(
+                select(LearningUnit.id, LearningUnit.semkez)
+                .where(LearningUnit.number == unit.number)
+                .distinct()
+            )
         ).all()
         span.set_attribute("semkez_count", len(semkezs))
 
@@ -260,7 +273,7 @@ async def unit_detail(
         rating = None
         average_rating = "n/a"
         if unit.number:
-            rating = session.get(Rating, unit.number)
+            rating = await session.get(Rating, unit.number)
             average_rating = rating.average() if rating else "n/a"
 
         links = {

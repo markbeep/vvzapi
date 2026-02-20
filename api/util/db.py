@@ -11,7 +11,10 @@ engine = create_engine(
 )
 
 aengine = create_async_engine(
-    f"sqlite+aiosqlite:///{Settings().db_path}", json_serializer=json_serializer
+    f"sqlite+aiosqlite:///{Settings().db_path}",
+    json_serializer=json_serializer,
+    pool_size=20,
+    max_overflow=30,
 )
 
 

@@ -640,8 +640,8 @@ async def match_filters(
                 *(x for x in default_order_clauses),
             )
 
+        # total unique numbered units with the filters
         async with AsyncSession(aengine) as session:
-            # total unique numbered units with the filters
             subquery = query.subquery()
             count = (
                 await session.exec(
@@ -650,7 +650,6 @@ async def match_filters(
                     )
                 )
             ).one()
-
             results = (await session.exec(final_query)).all()
 
             session.expunge_all()
