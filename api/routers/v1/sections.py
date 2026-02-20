@@ -64,14 +64,14 @@ async def list_sections(
                 Section.semkez == semkez if semkez is not None else True,
                 Section.level == level if level is not None else True,
                 or_(
-                    col(Section.name).ilike(f"%{name_search}%"),
-                    col(Section.name_english).ilike(f"%{name_search}%"),
+                    col(Section.name).like(f"%{name_search}%"),
+                    col(Section.name_english).like(f"%{name_search}%"),
                 )
                 if name_search is not None
                 else True,
                 or_(
-                    col(Section.comment).ilike(f"%{comment_search}%"),
-                    col(Section.comment_english).ilike(f"%{comment_search}%"),
+                    col(Section.comment).like(f"%{comment_search}%"),
+                    col(Section.comment_english).like(f"%{comment_search}%"),
                 )
                 if comment_search is not None
                 else True,

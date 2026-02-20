@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import time
 from enum import Enum
-from typing import override
+from typing import final, override
 
 from pydantic import BaseModel as PydanticBaseModel
 from rapidfuzz import fuzz, process, utils
+from sqlalchemy import Index
 from sqlmodel import INTEGER, JSON, Column, Field, SQLModel
 
 from api.util.pydantic_type import EnumList, PydanticType
@@ -68,7 +69,7 @@ class CourseLecturerLink(BaseModel, table=True):
 class UnitSectionLink(BaseModel, table=True):
     unit_id: int = Field(primary_key=True)
     section_id: int = Field(primary_key=True)
-    type: str | None = Field(default=None)
+    type: str | None = Field(default=None, index=True)
     type_id: int | None = Field(default=None)
 
 
@@ -273,19 +274,19 @@ class LearningUnit(BaseModel, Overwriteable, table=True):
     """
 
     id: int = Field(primary_key=True)
-    semkez: str
+    semkez: str = Field(index=True)
     """Semester in the format JJJJS, where JJJJ is the year and either S or W indicates the semester."""
-    number: str | None = Field(default=None)
+    number: str | None = Field(default=None, index=True)
     """263-3010-00L type code. Check the `RE_CODE` to more details on the format."""
-    title: str | None = Field(default=None)
-    title_english: str | None = Field(default=None)
+    title: str | None = Field(default=None, index=True)
+    title_english: str | None = Field(default=None, index=True)
     levels: list[Level] = Field(default_factory=list, sa_column=Column(EnumList(Level)))
     """Levels of the learning unit, e.g., BSC, MSC, etc."""
     departments: list[Department] = Field(
         default_factory=list, sa_column=Column(EnumList(Department))
     )
     """Department offering this learning unit."""
-    credits: float | None = Field(default=None)
+    credits: float | None = Field(default=None, index=True)
     two_semester_credits: float | None = Field(default=None)
     literature: str | None = Field(default=None)
     literature_english: str | None = Field(default=None)
@@ -480,10 +481,13 @@ LECTURERS
 """
 
 
+@final
 class Lecturer(BaseModel, Overwriteable, table=True):
+    __table_args__ = (Index("idx_lecturer_name_surname", "name", "surname"),)
+
     id: int = Field(primary_key=True)
-    surname: str
-    name: str
+    surname: str = Field(index=True)
+    name: str = Field(index=True)
     title: str | None
     department: str
     scraped_at: int = Field(

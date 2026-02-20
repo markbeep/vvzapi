@@ -259,8 +259,11 @@ async def unit_detail(
             key=lambda x: x[1],
         )
 
-        rating = session.get(Rating, unit.number)
-        average_rating = rating.average() if rating else "n/a"
+        rating = None
+        average_rating = "n/a"
+        if unit.number:
+            rating = session.get(Rating, unit.number)
+            average_rating = rating.average() if rating else "n/a"
 
         links = {
             str(request.url_for("unit_detail", unit_id=newest_unit_id)): "cannonical"

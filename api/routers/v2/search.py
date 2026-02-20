@@ -97,23 +97,23 @@ def _build_boolean_clause(op: AND | OR):
                 continue
             match filter_.key:
                 case "title_german":
-                    clause = col(LearningUnit.title).ilike(f"%{filter_.value}%")
+                    clause = col(LearningUnit.title).like(f"%{filter_.value}%")
                     if filter_.operator == Operator.ne:
                         clause = not_(clause)
                     booleans.append(clause)
                     filters_used.ops.append(filter_)
                 case "title_english":
-                    clause = col(LearningUnit.title_english).ilike(f"%{filter_.value}%")
+                    clause = col(LearningUnit.title_english).like(f"%{filter_.value}%")
                     if filter_.operator == Operator.ne:
                         clause = not_(clause)
                     booleans.append(clause)
                     filters_used.ops.append(filter_)
                 case "title":
                     clause = or_(
-                        func.coalesce(LearningUnit.title, "").ilike(
+                        func.coalesce(LearningUnit.title, "").like(
                             f"%{filter_.value}%"
                         ),
-                        func.coalesce(LearningUnit.title_english, "").ilike(
+                        func.coalesce(LearningUnit.title_english, "").like(
                             f"%{filter_.value}%"
                         ),
                     )
@@ -122,7 +122,7 @@ def _build_boolean_clause(op: AND | OR):
                     booleans.append(clause)
                     filters_used.ops.append(filter_)
                 case "number":
-                    clause = col(LearningUnit.number).ilike(f"%{filter_.value}%")
+                    clause = col(LearningUnit.number).like(f"%{filter_.value}%")
                     booleans.append(clause)
                     filters_used.ops.append(filter_)
                 case "credits":
@@ -208,10 +208,10 @@ def _build_boolean_clause(op: AND | OR):
                     )
                 case "lecturer":
                     clause = or_(
-                        func.concat(Lecturer.name, " ", Lecturer.surname).ilike(
+                        func.concat(Lecturer.name, " ", Lecturer.surname).like(
                             f"%{filter_.value}%"
                         ),
-                        func.concat(Lecturer.surname, " ", Lecturer.name).ilike(
+                        func.concat(Lecturer.surname, " ", Lecturer.name).like(
                             f"%{filter_.value}%"
                         ),
                     )
@@ -222,17 +222,17 @@ def _build_boolean_clause(op: AND | OR):
                 case "descriptions_german":
                     search_term = f"%{filter_.value}%"
                     clause = or_(
-                        (func.coalesce(LearningUnit.content, "").ilike(search_term)),
-                        (func.coalesce(LearningUnit.literature, "").ilike(search_term)),
-                        (func.coalesce(LearningUnit.objective, "").ilike(search_term)),
+                        (func.coalesce(LearningUnit.content, "").like(search_term)),
+                        (func.coalesce(LearningUnit.literature, "").like(search_term)),
+                        (func.coalesce(LearningUnit.objective, "").like(search_term)),
                         (
-                            func.coalesce(LearningUnit.lecture_notes, "").ilike(
+                            func.coalesce(LearningUnit.lecture_notes, "").like(
                                 search_term
                             )
                         ),
-                        (func.coalesce(LearningUnit.additional, "").ilike(search_term)),
-                        (func.coalesce(LearningUnit.comment, "").ilike(search_term)),
-                        (func.coalesce(LearningUnit.abstract, "").ilike(search_term)),
+                        (func.coalesce(LearningUnit.additional, "").like(search_term)),
+                        (func.coalesce(LearningUnit.comment, "").like(search_term)),
+                        (func.coalesce(LearningUnit.abstract, "").like(search_term)),
                     )
                     if filter_.operator == Operator.ne:
                         clause = not_(clause)
@@ -242,37 +242,37 @@ def _build_boolean_clause(op: AND | OR):
                     search_term = f"%{filter_.value}%"
                     clause = or_(
                         (
-                            func.coalesce(LearningUnit.content_english, "").ilike(
+                            func.coalesce(LearningUnit.content_english, "").like(
                                 search_term
                             )
                         ),
                         (
-                            func.coalesce(LearningUnit.literature_english, "").ilike(
+                            func.coalesce(LearningUnit.literature_english, "").like(
                                 search_term
                             )
                         ),
                         (
-                            func.coalesce(LearningUnit.objective_english, "").ilike(
+                            func.coalesce(LearningUnit.objective_english, "").like(
                                 search_term
                             )
                         ),
                         (
-                            func.coalesce(LearningUnit.lecture_notes_english, "").ilike(
+                            func.coalesce(LearningUnit.lecture_notes_english, "").like(
                                 search_term
                             )
                         ),
                         (
-                            func.coalesce(LearningUnit.additional_english, "").ilike(
+                            func.coalesce(LearningUnit.additional_english, "").like(
                                 search_term
                             )
                         ),
                         (
-                            func.coalesce(LearningUnit.comment_english, "").ilike(
+                            func.coalesce(LearningUnit.comment_english, "").like(
                                 search_term
                             )
                         ),
                         (
-                            func.coalesce(LearningUnit.abstract_english, "").ilike(
+                            func.coalesce(LearningUnit.abstract_english, "").like(
                                 search_term
                             )
                         ),
@@ -284,49 +284,49 @@ def _build_boolean_clause(op: AND | OR):
                 case "descriptions":
                     search_term = f"%{filter_.value}%"
                     clause = or_(
-                        (func.coalesce(LearningUnit.content, "").ilike(search_term)),
+                        (func.coalesce(LearningUnit.content, "").like(search_term)),
                         (
-                            func.coalesce(LearningUnit.content_english, "").ilike(
+                            func.coalesce(LearningUnit.content_english, "").like(
                                 search_term
                             )
                         ),
-                        (func.coalesce(LearningUnit.literature, "").ilike(search_term)),
+                        (func.coalesce(LearningUnit.literature, "").like(search_term)),
                         (
-                            func.coalesce(LearningUnit.literature_english, "").ilike(
+                            func.coalesce(LearningUnit.literature_english, "").like(
                                 search_term
                             )
                         ),
-                        (func.coalesce(LearningUnit.objective, "").ilike(search_term)),
+                        (func.coalesce(LearningUnit.objective, "").like(search_term)),
                         (
-                            func.coalesce(LearningUnit.objective_english, "").ilike(
-                                search_term
-                            )
-                        ),
-                        (
-                            func.coalesce(LearningUnit.lecture_notes, "").ilike(
+                            func.coalesce(LearningUnit.objective_english, "").like(
                                 search_term
                             )
                         ),
                         (
-                            func.coalesce(LearningUnit.lecture_notes_english, "").ilike(
+                            func.coalesce(LearningUnit.lecture_notes, "").like(
                                 search_term
                             )
                         ),
-                        (func.coalesce(LearningUnit.additional, "").ilike(search_term)),
                         (
-                            func.coalesce(LearningUnit.additional_english, "").ilike(
+                            func.coalesce(LearningUnit.lecture_notes_english, "").like(
                                 search_term
                             )
                         ),
-                        (func.coalesce(LearningUnit.comment, "").ilike(search_term)),
+                        (func.coalesce(LearningUnit.additional, "").like(search_term)),
                         (
-                            func.coalesce(LearningUnit.comment_english, "").ilike(
+                            func.coalesce(LearningUnit.additional_english, "").like(
                                 search_term
                             )
                         ),
-                        (func.coalesce(LearningUnit.abstract, "").ilike(search_term)),
+                        (func.coalesce(LearningUnit.comment, "").like(search_term)),
                         (
-                            func.coalesce(LearningUnit.abstract_english, "").ilike(
+                            func.coalesce(LearningUnit.comment_english, "").like(
+                                search_term
+                            )
+                        ),
+                        (func.coalesce(LearningUnit.abstract, "").like(search_term)),
+                        (
+                            func.coalesce(LearningUnit.abstract_english, "").like(
                                 search_term
                             )
                         ),
@@ -357,7 +357,7 @@ def _build_boolean_clause(op: AND | OR):
                         )
                     )
                 case "level":
-                    clause = col(LearningUnit.levels).icontains(filter_.value)
+                    clause = col(LearningUnit.levels).contains(filter_.value)
                     if filter_.operator == Operator.ne:
                         clause = not_(clause)
                     booleans.append(clause)
@@ -369,7 +369,7 @@ def _build_boolean_clause(op: AND | OR):
                         )
                     )
                 case "language":
-                    clause = col(LearningUnit.language).icontains(filter_.value)
+                    clause = col(LearningUnit.language).contains(filter_.value)
                     if filter_.operator == Operator.ne:
                         clause = not_(clause)
                     booleans.append(clause)
@@ -381,7 +381,7 @@ def _build_boolean_clause(op: AND | OR):
                         offered_in_names.add(filter_.value)
                     filters_used.ops.append(filter_)
                 case "examtype":
-                    clause = col(LearningUnit.exam_type).icontains(filter_.value)
+                    clause = col(LearningUnit.exam_type).contains(filter_.value)
                     if filter_.operator == Operator.ne:
                         clause = not_(clause)
                     booleans.append(clause)
@@ -416,8 +416,8 @@ def _build_boolean_clause(op: AND | OR):
         # matches all filters
         if offered_in_names:
             clauses = (
-                SectionCTE.c.path_en.icontains(name)
-                | SectionCTE.c.path_de.icontains(name)
+                SectionCTE.c.path_en.contains(name)
+                | SectionCTE.c.path_de.contains(name)
                 for name in offered_in_names
             )
             if isinstance(op, OR):
@@ -428,8 +428,8 @@ def _build_boolean_clause(op: AND | OR):
             booleans.append(col(Section.id).in_(offered_ids))
         if not_offered_in_names:
             clauses = (
-                SectionCTE.c.path_en.icontains(name)
-                | SectionCTE.c.path_de.icontains(name)
+                SectionCTE.c.path_en.contains(name)
+                | SectionCTE.c.path_de.contains(name)
                 for name in not_offered_in_names
             )
             if isinstance(op, OR):

@@ -103,7 +103,7 @@ def build_vvz_filter[T: Select[Any] | SelectOfScalar[Any]](
         if filters.number is not None:
             query_filters.append(LearningUnit.number == filters.number)
         if filters.title is not None:
-            query_filters.append(col(LearningUnit.title).ilike(f"%{filters.title}%"))
+            query_filters.append(col(LearningUnit.title).like(f"%{filters.title}%"))
         if filters.lecturer_id is not None:
             query_filters.append(
                 or_(
@@ -113,18 +113,18 @@ def build_vvz_filter[T: Select[Any] | SelectOfScalar[Any]](
             )
         if filters.lecturer_name is not None:
             query_filters.append(
-                col(Lecturer.name).ilike(f"%{filters.lecturer_surname}%")
+                col(Lecturer.name).like(f"%{filters.lecturer_surname}%")
             )
             query = query.where()
         if filters.lecturer_surname is not None:
             query_filters.append(
-                col(Lecturer.surname).ilike(f"%{filters.lecturer_surname}%")
+                col(Lecturer.surname).like(f"%{filters.lecturer_surname}%")
             )
         if filters.type is not None:
             query_filters.append(UnitSectionLink.type == filters.type)
         if filters.language is not None:
             query_filters.append(
-                col(LearningUnit.language).ilike(f"%{filters.language}%")
+                col(LearningUnit.language).like(f"%{filters.language}%")
             )
         if filters.periodicity is not None:
             query_filters.append(LearningUnit.course_frequency == filters.periodicity)
@@ -146,20 +146,20 @@ def build_vvz_filter[T: Select[Any] | SelectOfScalar[Any]](
             search_term = f"%{filters.content_search}%"
             query_filters.append(
                 or_(
-                    (col(LearningUnit.content).ilike(search_term)),
-                    (col(LearningUnit.content_english).ilike(search_term)),
-                    (col(LearningUnit.literature).ilike(search_term)),
-                    (col(LearningUnit.literature_english).ilike(search_term)),
-                    (col(LearningUnit.objective).ilike(search_term)),
-                    (col(LearningUnit.objective_english).ilike(search_term)),
-                    (col(LearningUnit.lecture_notes).ilike(search_term)),
-                    (col(LearningUnit.lecture_notes_english).ilike(search_term)),
-                    (col(LearningUnit.additional).ilike(search_term)),
-                    (col(LearningUnit.additional_english).ilike(search_term)),
-                    (col(LearningUnit.comment).ilike(search_term)),
-                    (col(LearningUnit.comment_english).ilike(search_term)),
-                    (col(LearningUnit.abstract).ilike(search_term)),
-                    (col(LearningUnit.abstract_english).ilike(search_term)),
+                    (col(LearningUnit.content).like(search_term)),
+                    (col(LearningUnit.content_english).like(search_term)),
+                    (col(LearningUnit.literature).like(search_term)),
+                    (col(LearningUnit.literature_english).like(search_term)),
+                    (col(LearningUnit.objective).like(search_term)),
+                    (col(LearningUnit.objective_english).like(search_term)),
+                    (col(LearningUnit.lecture_notes).like(search_term)),
+                    (col(LearningUnit.lecture_notes_english).like(search_term)),
+                    (col(LearningUnit.additional).like(search_term)),
+                    (col(LearningUnit.additional_english).like(search_term)),
+                    (col(LearningUnit.comment).like(search_term)),
+                    (col(LearningUnit.comment_english).like(search_term)),
+                    (col(LearningUnit.abstract).like(search_term)),
+                    (col(LearningUnit.abstract_english).like(search_term)),
                 )
             )
 

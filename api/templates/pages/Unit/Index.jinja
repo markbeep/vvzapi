@@ -13,7 +13,11 @@
     links: dict[str, str] = {}, # href:rel mapping
 #}
 
-<SearchLayout query={{ query }} title={{ unit.title_english + " - VVZ API" }} description={{ unit.abstract }} links={{ links }}>
+{% set main_title = unit.title_english if unit.title_english else unit.title %}
+{% set secondary_title = unit.title if unit.title_english and unit.title and unit.title != unit.title_english else None %}
+{% set main_abstract = unit.abstract_english if unit.abstract_english else unit.abstract %}
+
+<SearchLayout query={{ query }} title={{ (main_title or "Unknown") + " - VVZ API" }} description={{ main_abstract }} links={{ links }}>
 
 <main class="grow p-4 sm:p-8">
     <div class="max-w-7xl mx-auto space-y-8">
@@ -75,11 +79,11 @@
                     {% endif %}
 
                     <h1 class="text-3xl font-bold text-base-content">
-                        {{ unit.title_english if unit.title_english else unit.title }}
+                        {{ main_title }}
                     </h1>
-                    {% if unit.title_english and unit.title and unit.title != unit.title_english %}
+                    {% if secondary_title %}
                         <h2 class="text-xl text-base-content/70 font-medium">
-                            {{ unit.title }}
+                            {{ secondary_title }}
                         </h2>
                     {% endif %}
 
@@ -148,14 +152,14 @@
 
             <div class="lg:col-span-2 space-y-6 [&>section>*>p]:whitespace-pre-wrap font-sans">
 
-                {% if unit.abstract or unit.abstract_english %}
+                {% if main_abstract %}
                     <section class="card bg-base-100 shadow-sm">
                         <div class="card-body">
                             <h3 class="card-title text-lg font-bold border-b border-base-200 pb-2 mb-4">
                                 Abstract
                             </h3>
                             <p class="max-w-none text-base-content/80 font-sans">
-                                {{- unit.abstract_english if unit.abstract_english else unit.abstract -}}
+                                {{- main_abstract -}}
                             </p>
                         </div>
                     </section>
