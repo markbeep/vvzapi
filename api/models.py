@@ -563,3 +563,26 @@ class Rating(BaseModel, table=True):
             + self.resources
         ) / 5
         return round(avg, 2)
+
+
+"""
+
+
+"MATERIALIZED" VIEWS/TABLES
+
+
+
+"""
+
+
+class SectionPathView(BaseModel, table=True):
+    """Materialized view that concatenates section names from root to leaf."""
+
+    id: int = Field(primary_key=True)
+    path_en: str | None = Field(default=None, index=True)
+    path_de: str | None = Field(default=None, index=True)
+
+
+class UnitDepartmentView(BaseModel, table=True):
+    unit_id: int = Field(primary_key=True)
+    department_id: int = Field(primary_key=True, index=True)

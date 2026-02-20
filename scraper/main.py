@@ -12,6 +12,7 @@ from sqlmodel import text
 
 from api.env import Settings as APISettings
 from api.util.db import get_session
+from api.util.materialize import update_materialized_views
 from scraper.env import Settings as EnvSettings
 from scraper.spiders.lecturers import LecturersSpider
 from scraper.spiders.ratings import RatingsSpider
@@ -52,9 +53,13 @@ else:
     process.crawl(RatingsSpider)
 process.start()
 
-# vacuum/zip db
 logger = logging.getLogger(__name__)
 
+logger.info("Finished scraping data, updating materialized tables")
+with next(get_session()) as session:
+    update_materialized_views(session)
+
+# vacuum/zip db
 logger.info(f"Vacuuming database into {APISettings().vacuum_path}")
 if Path(APISettings().vacuum_path).exists():  # required for VACUUM INTO to work
     Path(APISettings().vacuum_path).unlink()

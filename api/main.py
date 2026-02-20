@@ -140,7 +140,6 @@ async def analytics_middleware(
 
 @app.get("/", include_in_schema=False)
 async def root(
-    session: Annotated[Session, Depends(get_session)],
     query: Annotated[str | None, Query(alias="q"), str] = None,
     page: Annotated[int, Query(ge=1)] = 1,
     limit: Annotated[int | None, Query(ge=1, le=100)] = None,
@@ -164,7 +163,6 @@ async def root(
 
         results = await search_units(
             query,
-            session,
             offset=(page - 1) * limit,
             limit=limit,
             order_by=order_by,

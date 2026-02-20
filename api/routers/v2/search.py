@@ -2,14 +2,13 @@ from collections import defaultdict
 from timeit import default_timer
 from typing import Annotated, override
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Query
 from opentelemetry import trace
 from pydantic import BaseModel
-from sqlalchemy import exists, literal_column, not_
+from sqlalchemy import not_
 from sqlalchemy.sql.elements import BinaryExpression, ColumnElement
 from sqlmodel import (
     Integer,
-    Session,
     String,
     and_,
     col,
@@ -21,18 +20,20 @@ from sqlmodel import (
 from sqlmodel import (
     cast as sql_cast,
 )
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from api.models import (
     Department,
     LearningUnit,
     Lecturer,
     Rating,
-    Section,
+    SectionPathView,
+    UnitDepartmentView,
     UnitExaminerLink,
     UnitLecturerLink,
     UnitSectionLink,
 )
-from api.util.db import get_session
+from api.util.db import aengine
 from api.util.parse_query import (
     AND,
     OR,
@@ -41,7 +42,6 @@ from api.util.parse_query import (
     QueryKey,
     build_search_operators,
 )
-from api.util.sections import concatenate_section_names
 
 router = APIRouter(prefix="/search", tags=["Search"])
 
@@ -79,9 +79,6 @@ class GroupedLearningUnits(BaseModel):
             yield unit.semkez, unit
 
 
-SectionCTE = concatenate_section_names()
-
-
 def _build_boolean_clause(op: AND | OR):
     with tracer.start_as_current_span("build_boolean_clause") as span:
         booleans: list[BinaryExpression[bool] | ColumnElement[bool]] = []
@@ -97,24 +94,22 @@ def _build_boolean_clause(op: AND | OR):
                 continue
             match filter_.key:
                 case "title_german":
-                    clause = col(LearningUnit.title).like(f"%{filter_.value}%")
+                    clause = col(LearningUnit.title).contains(filter_.value)
                     if filter_.operator == Operator.ne:
                         clause = not_(clause)
                     booleans.append(clause)
                     filters_used.ops.append(filter_)
                 case "title_english":
-                    clause = col(LearningUnit.title_english).like(f"%{filter_.value}%")
+                    clause = col(LearningUnit.title_english).contains(filter_.value)
                     if filter_.operator == Operator.ne:
                         clause = not_(clause)
                     booleans.append(clause)
                     filters_used.ops.append(filter_)
                 case "title":
                     clause = or_(
-                        func.coalesce(LearningUnit.title, "").like(
-                            f"%{filter_.value}%"
-                        ),
-                        func.coalesce(LearningUnit.title_english, "").like(
-                            f"%{filter_.value}%"
+                        func.coalesce(LearningUnit.title, "").contains(filter_.value),
+                        func.coalesce(LearningUnit.title_english, "").contains(
+                            filter_.value
                         ),
                     )
                     if filter_.operator == Operator.ne:
@@ -122,7 +117,7 @@ def _build_boolean_clause(op: AND | OR):
                     booleans.append(clause)
                     filters_used.ops.append(filter_)
                 case "number":
-                    clause = col(LearningUnit.number).like(f"%{filter_.value}%")
+                    clause = col(LearningUnit.number).contains(filter_.value)
                     booleans.append(clause)
                     filters_used.ops.append(filter_)
                 case "credits":
@@ -220,60 +215,82 @@ def _build_boolean_clause(op: AND | OR):
                     booleans.append(clause)
                     filters_used.ops.append(filter_)
                 case "descriptions_german":
-                    search_term = f"%{filter_.value}%"
                     clause = or_(
-                        (func.coalesce(LearningUnit.content, "").like(search_term)),
-                        (func.coalesce(LearningUnit.literature, "").like(search_term)),
-                        (func.coalesce(LearningUnit.objective, "").like(search_term)),
                         (
-                            func.coalesce(LearningUnit.lecture_notes, "").like(
-                                search_term
+                            func.coalesce(LearningUnit.content, "").contains(
+                                filter_.value
                             )
                         ),
-                        (func.coalesce(LearningUnit.additional, "").like(search_term)),
-                        (func.coalesce(LearningUnit.comment, "").like(search_term)),
-                        (func.coalesce(LearningUnit.abstract, "").like(search_term)),
+                        (
+                            func.coalesce(LearningUnit.literature, "").contains(
+                                filter_.value
+                            )
+                        ),
+                        (
+                            func.coalesce(LearningUnit.objective, "").contains(
+                                filter_.value
+                            )
+                        ),
+                        (
+                            func.coalesce(LearningUnit.lecture_notes, "").contains(
+                                filter_.value
+                            )
+                        ),
+                        (
+                            func.coalesce(LearningUnit.additional, "").contains(
+                                filter_.value
+                            )
+                        ),
+                        (
+                            func.coalesce(LearningUnit.comment, "").contains(
+                                filter_.value
+                            )
+                        ),
+                        (
+                            func.coalesce(LearningUnit.abstract, "").contains(
+                                filter_.value
+                            )
+                        ),
                     )
                     if filter_.operator == Operator.ne:
                         clause = not_(clause)
                     booleans.append(clause)
                     filters_used.ops.append(filter_)
                 case "descriptions_english":
-                    search_term = f"%{filter_.value}%"
                     clause = or_(
                         (
-                            func.coalesce(LearningUnit.content_english, "").like(
-                                search_term
+                            func.coalesce(LearningUnit.content_english, "").contains(
+                                filter_.value
                             )
                         ),
                         (
-                            func.coalesce(LearningUnit.literature_english, "").like(
-                                search_term
+                            func.coalesce(LearningUnit.literature_english, "").contains(
+                                filter_.value
                             )
                         ),
                         (
-                            func.coalesce(LearningUnit.objective_english, "").like(
-                                search_term
+                            func.coalesce(LearningUnit.objective_english, "").contains(
+                                filter_.value
                             )
                         ),
                         (
-                            func.coalesce(LearningUnit.lecture_notes_english, "").like(
-                                search_term
+                            func.coalesce(
+                                LearningUnit.lecture_notes_english, ""
+                            ).contains(filter_.value)
+                        ),
+                        (
+                            func.coalesce(LearningUnit.additional_english, "").contains(
+                                filter_.value
                             )
                         ),
                         (
-                            func.coalesce(LearningUnit.additional_english, "").like(
-                                search_term
+                            func.coalesce(LearningUnit.comment_english, "").contains(
+                                filter_.value
                             )
                         ),
                         (
-                            func.coalesce(LearningUnit.comment_english, "").like(
-                                search_term
-                            )
-                        ),
-                        (
-                            func.coalesce(LearningUnit.abstract_english, "").like(
-                                search_term
+                            func.coalesce(LearningUnit.abstract_english, "").contains(
+                                filter_.value
                             )
                         ),
                     )
@@ -282,52 +299,75 @@ def _build_boolean_clause(op: AND | OR):
                     booleans.append(clause)
                     filters_used.ops.append(filter_)
                 case "descriptions":
-                    search_term = f"%{filter_.value}%"
                     clause = or_(
-                        (func.coalesce(LearningUnit.content, "").like(search_term)),
                         (
-                            func.coalesce(LearningUnit.content_english, "").like(
-                                search_term
-                            )
-                        ),
-                        (func.coalesce(LearningUnit.literature, "").like(search_term)),
-                        (
-                            func.coalesce(LearningUnit.literature_english, "").like(
-                                search_term
-                            )
-                        ),
-                        (func.coalesce(LearningUnit.objective, "").like(search_term)),
-                        (
-                            func.coalesce(LearningUnit.objective_english, "").like(
-                                search_term
+                            func.coalesce(LearningUnit.content, "").contains(
+                                filter_.value
                             )
                         ),
                         (
-                            func.coalesce(LearningUnit.lecture_notes, "").like(
-                                search_term
+                            func.coalesce(LearningUnit.content_english, "").contains(
+                                filter_.value
                             )
                         ),
                         (
-                            func.coalesce(LearningUnit.lecture_notes_english, "").like(
-                                search_term
+                            func.coalesce(LearningUnit.literature, "").contains(
+                                filter_.value
                             )
                         ),
-                        (func.coalesce(LearningUnit.additional, "").like(search_term)),
                         (
-                            func.coalesce(LearningUnit.additional_english, "").like(
-                                search_term
+                            func.coalesce(LearningUnit.literature_english, "").contains(
+                                filter_.value
                             )
                         ),
-                        (func.coalesce(LearningUnit.comment, "").like(search_term)),
                         (
-                            func.coalesce(LearningUnit.comment_english, "").like(
-                                search_term
+                            func.coalesce(LearningUnit.objective, "").contains(
+                                filter_.value
                             )
                         ),
-                        (func.coalesce(LearningUnit.abstract, "").like(search_term)),
                         (
-                            func.coalesce(LearningUnit.abstract_english, "").like(
-                                search_term
+                            func.coalesce(LearningUnit.objective_english, "").contains(
+                                filter_.value
+                            )
+                        ),
+                        (
+                            func.coalesce(LearningUnit.lecture_notes, "").contains(
+                                filter_.value
+                            )
+                        ),
+                        (
+                            func.coalesce(
+                                LearningUnit.lecture_notes_english, ""
+                            ).contains(filter_.value)
+                        ),
+                        (
+                            func.coalesce(LearningUnit.additional, "").contains(
+                                filter_.value
+                            )
+                        ),
+                        (
+                            func.coalesce(LearningUnit.additional_english, "").contains(
+                                filter_.value
+                            )
+                        ),
+                        (
+                            func.coalesce(LearningUnit.comment, "").contains(
+                                filter_.value
+                            )
+                        ),
+                        (
+                            func.coalesce(LearningUnit.comment_english, "").contains(
+                                filter_.value
+                            )
+                        ),
+                        (
+                            func.coalesce(LearningUnit.abstract, "").contains(
+                                filter_.value
+                            )
+                        ),
+                        (
+                            func.coalesce(LearningUnit.abstract_english, "").contains(
+                                filter_.value
                             )
                         ),
                     )
@@ -339,13 +379,10 @@ def _build_boolean_clause(op: AND | OR):
                     closest_dept = Department.closest_match(filter_.value)
                     if not closest_dept:
                         continue
-                    clause = exists(
-                        (
-                            select(1)
-                            .select_from(func.json_each(LearningUnit.departments))
-                            .where(literal_column("value") == closest_dept.value)
-                        )
+                    subquery = select(UnitDepartmentView.unit_id).where(
+                        UnitDepartmentView.department_id == closest_dept.value
                     )
+                    clause = col(LearningUnit.id).in_(subquery)
                     if filter_.operator == Operator.ne:
                         clause = not_(clause)
                     booleans.append(clause)
@@ -416,30 +453,29 @@ def _build_boolean_clause(op: AND | OR):
         # matches all filters
         if offered_in_names:
             clauses = (
-                SectionCTE.c.path_en.contains(name)
-                | SectionCTE.c.path_de.contains(name)
+                col(SectionPathView.path_en).contains(name)
+                | col(SectionPathView.path_de).contains(name)
                 for name in offered_in_names
             )
             if isinstance(op, OR):
                 clauses = or_(*clauses)
             else:
                 clauses = and_(*clauses)
-            offered_ids = SectionCTE.where(clauses).with_only_columns(SectionCTE.c.id)
-            booleans.append(col(Section.id).in_(offered_ids))
+            # offered_ids = select(SectionPathView.id).where(clauses)
+            booleans.append(clauses)
         if not_offered_in_names:
             clauses = (
-                SectionCTE.c.path_en.contains(name)
-                | SectionCTE.c.path_de.contains(name)
+                col(SectionPathView.path_en).contains(name)
+                | col(SectionPathView.path_de).contains(name)
                 for name in not_offered_in_names
             )
             if isinstance(op, OR):
                 clauses = or_(*clauses)
             else:
                 clauses = and_(*clauses)
-            not_offered_ids = SectionCTE.where(clauses).with_only_columns(
-                SectionCTE.c.id
-            )
-            booleans.append(not_(col(Section.id).in_(not_offered_ids)))
+            # not_offered_ids = select(SectionPathView.id).where(clauses)
+            booleans.append(not_(clauses))
+            # booleans.append(not_(col(UnitSectionLink.section_id).in_(not_offered_ids)))
 
         span.set_attribute("num_filters", len(filters_used.ops))
         span.set_attribute("num_db_filters", len(booleans))
@@ -454,8 +490,7 @@ def _build_boolean_clause(op: AND | OR):
             return or_(*booleans), filters_used
 
 
-def match_filters(
-    session: Session,
+async def match_filters(
     filters: AND | OR,
     *,
     offset: int = 0,
@@ -474,6 +509,10 @@ def match_filters(
             year := sql_cast(func.substr(LearningUnit.semkez, 1, 4), Integer),
             semester := sql_cast(func.substr(LearningUnit.semkez, 5, 1), String),
         )
+
+        #########
+        # Joins #
+        #########
         if any(f.key == "lecturer" for f in filters) or order_by == "lecturer":
             query = (
                 query.join(
@@ -492,11 +531,16 @@ def match_filters(
                     ),
                 )
             )
+
         if any(f.key == "offered" for f in filters):
             query = query.join(
                 UnitSectionLink,
                 onclause=col(LearningUnit.id) == UnitSectionLink.unit_id,
-            ).join(Section, onclause=col(UnitSectionLink.section_id) == Section.id)
+            ).join(
+                SectionPathView,
+                onclause=col(UnitSectionLink.section_id) == SectionPathView.id,
+            )
+
         average_rating = None
         if any(f.key == "coursereview" for f in filters):
             query = query.join(
@@ -510,19 +554,17 @@ def match_filters(
                 + col(Rating.resources)
             ) / 5
 
+        ###################
+        # Build the query #
+        ###################
         clause, filters_used = _build_boolean_clause(filters)
 
         # we consider units with missing numbers a fluke anyway
         query = query.where(clause, col(LearningUnit.number).is_not(None))
 
-        # total unique numbered units with the filters
-        subquery = query.subquery()
-        count = session.exec(
-            select(func.count(distinct(subquery.c.number))).select_from(subquery)
-        ).one()
-        span.set_attribute("total_count", count)
-
-        # ordering
+        #########
+        # Order #
+        #########
         order_by_clauses = []
         default_order_clauses = [
             col(LearningUnit.title_english).asc(),
@@ -571,9 +613,7 @@ def match_filters(
                 *(x for x in default_order_clauses),
             )
 
-        # We first filter by numbers that are shown on the page (with sorting + page limits)
-        # for the results we also apply all filters again, since it is possible for a number to match,
-        # but all the information having been changed.
+        # We filter for all unit numbers that can be shown as results (with sorting + page limits)
         # For example: https://vvzapi.ch/unit/199098 got renamed from "Geo.BigData(Science)" to "Geospatial data processing with AI tools – an overview".
         # Searching for "big data" would match the old one, but the new one would show if we didn't re-apply filters.
         valid_numbers = (
@@ -582,15 +622,45 @@ def match_filters(
             .offset(offset)
             .limit(limit)
         )
-        results = session.exec(
-            query.where(col(LearningUnit.number).in_(valid_numbers))
-        ).all()
+
+        final_query = (
+            select(LearningUnit)
+            .where(col(LearningUnit.number).in_(valid_numbers))
+            .distinct()
+        )
+
+        if descending:
+            final_query = final_query.order_by(
+                *(x.desc() for x in order_by_clauses),
+                *(x for x in default_order_clauses),
+            )
+        else:
+            final_query = final_query.order_by(
+                *(x.asc() for x in order_by_clauses),
+                *(x for x in default_order_clauses),
+            )
+
+        async with AsyncSession(aengine) as session:
+            # total unique numbered units with the filters
+            subquery = query.subquery()
+            count = (
+                await session.exec(
+                    select(func.count(distinct(subquery.c.number))).select_from(
+                        subquery
+                    )
+                )
+            ).one()
+
+            results = (await session.exec(final_query)).all()
+
+            session.expunge_all()
 
         numbered_units: dict[str, list[LearningUnit]] = defaultdict(list)
-        for unit, _, _ in results:
+        for unit in results:
             if unit.number:
                 numbered_units[unit.number].append(unit)
 
+        span.set_attribute("total_count", count)
         span.set_attribute("result_count", len(numbered_units))
 
         return (
@@ -618,7 +688,6 @@ class SearchResponse(BaseModel):
 @router.get("", response_model=SearchResponse)
 async def search_units(
     query: Annotated[str, Query(alias="q")],
-    session: Annotated[Session, Depends(get_session)],
     offset: int = 0,
     limit: int = 20,
     order_by: QueryKey = "year",
@@ -638,8 +707,7 @@ async def search_units(
 
         try:
             start = default_timer()
-            count, results, filters_used = match_filters(
-                session,
+            count, results, filters_used = await match_filters(
                 search_operators,
                 offset=offset,
                 limit=limit,
