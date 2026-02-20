@@ -213,56 +213,64 @@ async def unit_detail(
         span.set_attribute("unit_number", unit.number or "")
         span.set_attribute("unit_title", unit.title_english or "")
 
-        lecturers = (
-            await session.exec(
-                select(Lecturer)
-                .join(
-                    UnitLecturerLink, col(UnitLecturerLink.lecturer_id) == Lecturer.id
+        with tracer.start_as_current_span("lecturer"):
+            lecturers = (
+                await session.exec(
+                    select(Lecturer)
+                    .join(
+                        UnitLecturerLink,
+                        col(UnitLecturerLink.lecturer_id) == Lecturer.id,
+                    )
+                    .where(UnitLecturerLink.unit_id == unit_id)
                 )
-                .where(UnitLecturerLink.unit_id == unit_id)
-            )
-        ).all()
-        span.set_attribute("lecturer_count", len(lecturers))
+            ).all()
+            span.set_attribute("lecturer_count", len(lecturers))
 
-        examiners = (
-            await session.exec(
-                select(Lecturer)
-                .join(
-                    UnitExaminerLink, col(UnitExaminerLink.lecturer_id) == Lecturer.id
+        with tracer.start_as_current_span("examiner"):
+            examiners = (
+                await session.exec(
+                    select(Lecturer)
+                    .join(
+                        UnitExaminerLink,
+                        col(UnitExaminerLink.lecturer_id) == Lecturer.id,
+                    )
+                    .where(UnitExaminerLink.unit_id == unit_id)
                 )
-                .where(UnitExaminerLink.unit_id == unit_id)
-            )
-        ).all()
-        span.set_attribute("examiner_count", len(examiners))
+            ).all()
+            span.set_attribute("examiner_count", len(examiners))
 
-        courses = (
-            await session.exec(select(Course).where(Course.unit_id == unit_id))
-        ).all()
-        span.set_attribute("course_count", len(courses))
+        with tracer.start_as_current_span("courses"):
+            courses = (
+                await session.exec(select(Course).where(Course.unit_id == unit_id))
+            ).all()
+            span.set_attribute("course_count", len(courses))
 
-        sections = (await session.exec(get_parent_from_unit(unit_id))).all()
-        span.set_attribute("section_count", len(sections))
+        with tracer.start_as_current_span("sections"):
+            sections = (await session.exec(get_parent_from_unit(unit_id))).all()
+            span.set_attribute("section_count", len(sections))
 
-        semkezs = (
-            await session.exec(
-                select(LearningUnit.id, LearningUnit.semkez)
-                .where(LearningUnit.number == unit.number)
-                .distinct()
-            )
-        ).all()
-        span.set_attribute("semkez_count", len(semkezs))
+        with tracer.start_as_current_span("semkezs"):
+            semkezs = (
+                await session.exec(
+                    select(LearningUnit.id, LearningUnit.semkez)
+                    .where(LearningUnit.number == unit.number)
+                    .distinct()
+                )
+            ).all()
+            span.set_attribute("semkez_count", len(semkezs))
 
-        # create tree structure of offered in sections
-        section_ids = {
-            section.id: RecursiveSection(section=section) for section in sections
-        }
-        root_sections: list[RecursiveSection] = []
-        for section in sections:
-            if section.parent_id and section.parent_id in section_ids:
-                parent_section = section_ids[section.parent_id]
-                parent_section.sub_sections.append(section_ids[section.id])
-            else:
-                root_sections.append(section_ids[section.id])
+        with tracer.start_as_current_span("section_tree"):
+            # create tree structure of offered in sections
+            section_ids = {
+                section.id: RecursiveSection(section=section) for section in sections
+            }
+            root_sections: list[RecursiveSection] = []
+            for section in sections:
+                if section.parent_id and section.parent_id in section_ids:
+                    parent_section = section_ids[section.parent_id]
+                    parent_section.sub_sections.append(section_ids[section.id])
+                else:
+                    root_sections.append(section_ids[section.id])
 
         # allows us to add canonical links to the newest unit
         newest_unit_id, _ = max(
@@ -270,11 +278,12 @@ async def unit_detail(
             key=lambda x: x[1],
         )
 
-        rating = None
-        average_rating = "n/a"
-        if unit.number:
-            rating = await session.get(Rating, unit.number)
-            average_rating = rating.average() if rating else "n/a"
+        with tracer.start_as_current_span("rating"):
+            rating = None
+            average_rating = "n/a"
+            if unit.number:
+                rating = await session.get(Rating, unit.number)
+                average_rating = rating.average() if rating else "n/a"
 
         links = {
             str(request.url_for("unit_detail", unit_id=newest_unit_id)): "cannonical"

@@ -1,11 +1,11 @@
+import asyncio
 from collections import defaultdict
 from timeit import default_timer
-from typing import Annotated, override
+from typing import Annotated, cast, override
 
 from fastapi import APIRouter, Query
 from opentelemetry import trace
 from pydantic import BaseModel
-from sqlalchemy import not_
 from sqlalchemy.sql.elements import BinaryExpression, ColumnElement
 from sqlmodel import (
     Integer,
@@ -14,6 +14,7 @@ from sqlmodel import (
     col,
     distinct,
     func,
+    not_,
     or_,
     select,
 )
@@ -461,7 +462,6 @@ def _build_boolean_clause(op: AND | OR):
                 clauses = or_(*clauses)
             else:
                 clauses = and_(*clauses)
-            # offered_ids = select(SectionPathView.id).where(clauses)
             booleans.append(clauses)
         if not_offered_in_names:
             clauses = (
@@ -473,9 +473,7 @@ def _build_boolean_clause(op: AND | OR):
                 clauses = or_(*clauses)
             else:
                 clauses = and_(*clauses)
-            # not_offered_ids = select(SectionPathView.id).where(clauses)
             booleans.append(not_(clauses))
-            # booleans.append(not_(col(UnitSectionLink.section_id).in_(not_offered_ids)))
 
         span.set_attribute("num_filters", len(filters_used.ops))
         span.set_attribute("num_db_filters", len(booleans))
@@ -640,19 +638,24 @@ async def match_filters(
                 *(x for x in default_order_clauses),
             )
 
-        # total unique numbered units with the filters
-        async with AsyncSession(aengine) as session:
-            subquery = query.subquery()
-            count = (
-                await session.exec(
-                    select(func.count(distinct(subquery.c.number))).select_from(
-                        subquery
-                    )
-                )
-            ).one()
-            results = (await session.exec(final_query)).all()
+        async def _count():
+            async with AsyncSession(aengine) as session:
+                with tracer.start_as_current_span("execute_count_query"):
+                    count_query = query.with_only_columns(
+                        func.count(distinct(LearningUnit.number))
+                    ).order_by(None)
+                    (count,) = (await session.execute(count_query)).one()  # pyright: ignore[reportAny]
+                    count = cast(int, count)
+            return count
 
-            session.expunge_all()
+        async def _results():
+            async with AsyncSession(aengine) as session:
+                with tracer.start_as_current_span("execute_final_query"):
+                    results = (await session.exec(final_query)).all()
+                session.expunge_all()
+            return results
+
+        count, results = await asyncio.gather(_count(), _results())
 
         numbered_units: dict[str, list[LearningUnit]] = defaultdict(list)
         for unit in results:

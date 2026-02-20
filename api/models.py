@@ -51,13 +51,13 @@ By not using foreign keys, we can also store links out of order.
 
 
 class UnitExaminerLink(BaseModel, table=True):
-    unit_id: int = Field(primary_key=True)
-    lecturer_id: int = Field(primary_key=True)
+    unit_id: int = Field(primary_key=True, index=True)
+    lecturer_id: int = Field(primary_key=True, index=True)
 
 
 class UnitLecturerLink(BaseModel, table=True):
-    unit_id: int = Field(primary_key=True)
-    lecturer_id: int = Field(primary_key=True)
+    unit_id: int = Field(primary_key=True, index=True)
+    lecturer_id: int = Field(primary_key=True, index=True)
 
 
 class CourseLecturerLink(BaseModel, table=True):
@@ -67,8 +67,8 @@ class CourseLecturerLink(BaseModel, table=True):
 
 
 class UnitSectionLink(BaseModel, table=True):
-    unit_id: int = Field(primary_key=True)
-    section_id: int = Field(primary_key=True)
+    unit_id: int = Field(primary_key=True, index=True)
+    section_id: int = Field(primary_key=True, index=True)
     type: str | None = Field(default=None, index=True)
     type_id: int | None = Field(default=None)
 
@@ -448,7 +448,7 @@ class Course(BaseModel, Overwriteable, table=True):
     semkez: str = Field(primary_key=True)
     """Semester in the format JJJJS, where JJJJ is the year and either S or W indicates the semester."""
     # TODO: add foreign key back to unit_id if we need it = Field(foreign_key="learningunit.id", ondelete="CASCADE")
-    unit_id: int = Field(primary_key=True)
+    unit_id: int = Field(primary_key=True, index=True)
     """Parent learning unit ID."""
     title: str | None = Field(default=None)
     """Designation of the course. No english translation available."""

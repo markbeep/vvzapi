@@ -26,4 +26,5 @@ def get_session():
 
 async def aget_session():
     async with AsyncSession(aengine) as session:
+        await session.execute(text("pragma mmap_size=30000000000"))
         yield session
