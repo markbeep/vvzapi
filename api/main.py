@@ -21,6 +21,7 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -45,6 +46,10 @@ from api.routers.v2.search import search_units
 from api.routers.v2_router import router as v2_router
 from api.util.db import aget_session
 from api.util.parse_query import QueryKey
+from api.util.prometheus import (
+    SEARCH_QUERY_COUNTER,
+    SEARCH_QUERY_DURATION,
+)
 from api.util.sections import get_parent_from_unit
 from api.util.sitemap import generate_sitemap
 from api.util.templates import catalog_response
@@ -63,6 +68,7 @@ tracer = trace.get_tracer(__name__)
 
 app = FastAPI(title="VVZ API", version=get_api_version())
 FastAPIInstrumentor.instrument_app(app, excluded_urls="/static/*")
+Instrumentator().instrument(app).expose(app, include_in_schema=False, should_gzip=True)
 
 app.include_router(v1_router)
 app.include_router(v2_router)
@@ -132,6 +138,7 @@ async def analytics_middleware(
         and response.status_code != 307
         and Settings().plausible_url
         and not has_extension
+        and not request.url.path.startswith("/metrics")
     ):
         task = BackgroundTask(send_analytics_event, request)
         response.background = task
@@ -148,6 +155,7 @@ async def root(
     order: str = "asc",
     view: Literal["big", "compact"] = "big",
 ):
+    SEARCH_QUERY_COUNTER.labels(query=query or "").inc()
     with tracer.start_as_current_span("root_search") as span:
         span.set_attribute("query", query or "")
         span.set_attribute("page", page)
@@ -162,15 +170,23 @@ async def root(
         if limit is None:
             limit = 20 if view == "big" else 50
 
-        results = await search_units(
-            query,
-            offset=(page - 1) * limit,
-            limit=limit,
+        # Track search query execution time with reduced cardinality
+        with SEARCH_QUERY_DURATION.labels(
+            query=query or "",
             order_by=order_by,
             order=order,
-        )
+            view=view,
+        ).time():
+            results = await search_units(
+                query,
+                offset=(page - 1) * limit,
+                limit=limit,
+                order_by=order_by,
+                order=order,
+            )
 
         span.set_attribute("result_count", results.total)
+        span.set_attribute("exec_time_ms", results.exec_time_ms)
 
         if results.total == 1:
             values = list(results.results.values())

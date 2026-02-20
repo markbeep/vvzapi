@@ -23,6 +23,7 @@ dependencies = [
     "sqlmodel>=0.0.31",
     "toml>=0.10.2",
     "aiosqlite>=0.22.1",
+    "prometheus-fastapi-instrumentator>=7.1.0",
 ]
 
 [dependency-groups]
