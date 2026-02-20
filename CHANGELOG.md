@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.10.1](https://github.com/markbeep/vvzapi/compare/v1.10.0...v1.10.1) (2026-02-20)
+
+
+### Features
+
+* **api:** add OpenTelemetry for more detailed traces ([ab5d27e](https://github.com/markbeep/vvzapi/commit/ab5d27e0c31951abd92d75edb4b59c8e32b9f367))
+
+
+### Bug Fixes
+
+* **api:** remove static path from api docs ([9bd84f2](https://github.com/markbeep/vvzapi/commit/9bd84f25c8a756e6b66c3617210092168da885d2))
+* **search:** allow for utf8 letters in queries ([de17fb3](https://github.com/markbeep/vvzapi/commit/de17fb3d6cef4a5f480d11df8ce588f72c945b29))
+
+
+### Performance Improvements
+
+* **api:** replace database acceses with async connections ([99d59bc](https://github.com/markbeep/vvzapi/commit/99d59bc4ce03f7add53db14207767ad1f2405835))
+* **search:** add async db access, resulting in over 4x req/s under heavy load ([05eeee4](https://github.com/markbeep/vvzapi/commit/05eeee41cf51a89d312816540be4f8e920ceb8a4))
+* **search:** add db indices to improve performance on title/credits queries ([9d404d6](https://github.com/markbeep/vvzapi/commit/9d404d6205a8f9783f016df2b9f3dde077f67187))
+* **search:** add materialized tables for section paths and departments ([05eeee4](https://github.com/markbeep/vvzapi/commit/05eeee41cf51a89d312816540be4f8e920ceb8a4))
+
+
+### Miscellaneous Chores
+
+* **search:** simplify plausible condition for analytics ([c39b422](https://github.com/markbeep/vvzapi/commit/c39b42255b7871785548738888df312a3af505df))
+
+
+### Tests
+
+* **search:** benchmark search queries with k6s ([2535276](https://github.com/markbeep/vvzapi/commit/253527625b707bc8ae93c775b462ebf6fdaa5b92))
+
 ## [1.10.0](https://github.com/markbeep/vvzapi/compare/v1.9.0...v1.10.0) (2026-02-11)
 
 
