@@ -1,6 +1,7 @@
 from typing import Annotated, Sequence
 
 from fastapi import APIRouter, Depends, Query
+from opentelemetry import trace
 from sqlmodel import Session, col, select
 
 from api.models import (
@@ -16,6 +17,8 @@ from api.util.db import get_session
 from api.util.sections import get_parent_from_unit
 from api.util.unit_filter import VVZFilters, build_vvz_filter
 
+tracer = trace.get_tracer(__name__)
+
 router = APIRouter(prefix="/unit", tags=["Learning Units"])
 
 
@@ -24,7 +27,9 @@ async def get_unit(
     unit_id: int,
     session: Annotated[Session, Depends(get_session)],
 ) -> LearningUnit | None:
-    return session.get(LearningUnit, unit_id)
+    with tracer.start_as_current_span("get_unit") as span:
+        span.set_attribute("unit_id", unit_id)
+        return session.get(LearningUnit, unit_id)
 
 
 @router.get("/{unit_id}/sections", response_model=Sequence[int])
@@ -32,8 +37,11 @@ async def get_unit_sections(
     unit_id: int,
     session: Annotated[Session, Depends(get_session)],
 ) -> Sequence[int]:
-    results = session.exec(get_parent_from_unit(unit_id)).all()
-    return [sec.id for sec in results]
+    with tracer.start_as_current_span("get_unit_sections") as span:
+        span.set_attribute("unit_id", unit_id)
+        results = session.exec(get_parent_from_unit(unit_id)).all()
+        span.set_attribute("result_count", len(results))
+        return [sec.id for sec in results]
 
 
 @router.get("/{unit_id}/lecturers", response_model=Sequence[int])
@@ -43,14 +51,19 @@ async def get_unit_lecturers(
     limit: Annotated[int, Query(gt=0, le=1000)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> Sequence[int]:
-    query = (
-        select(UnitLecturerLink.lecturer_id)
-        .where(UnitLecturerLink.unit_id == unit_id)
-        .offset(offset)
-        .limit(limit)
-    )
-    results = session.exec(query).all()
-    return results
+    with tracer.start_as_current_span("get_unit_lecturers") as span:
+        span.set_attribute("unit_id", unit_id)
+        span.set_attribute("limit", limit)
+        span.set_attribute("offset", offset)
+        query = (
+            select(UnitLecturerLink.lecturer_id)
+            .where(UnitLecturerLink.unit_id == unit_id)
+            .offset(offset)
+            .limit(limit)
+        )
+        results = session.exec(query).all()
+        span.set_attribute("result_count", len(results))
+        return results
 
 
 @router.get(
@@ -66,15 +79,20 @@ async def get_unit_changes(
     limit: Annotated[int, Query(gt=0, le=1000)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> Sequence[UnitChanges]:
-    query = (
-        select(UnitChanges)
-        .where(UnitChanges.unit_id == unit_id)
-        .order_by(col(UnitChanges.scraped_at).desc())
-        .offset(offset)
-        .limit(limit)
-    )
-    results = session.exec(query).all()
-    return results
+    with tracer.start_as_current_span("get_unit_changes") as span:
+        span.set_attribute("unit_id", unit_id)
+        span.set_attribute("limit", limit)
+        span.set_attribute("offset", offset)
+        query = (
+            select(UnitChanges)
+            .where(UnitChanges.unit_id == unit_id)
+            .order_by(col(UnitChanges.scraped_at).desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        results = session.exec(query).all()
+        span.set_attribute("result_count", len(results))
+        return results
 
 
 @router.get("/{unit_id}/examiners", response_model=Sequence[int])
@@ -84,14 +102,19 @@ async def get_unit_examiners(
     limit: Annotated[int, Query(gt=0, le=1000)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> Sequence[int]:
-    query = (
-        select(UnitExaminerLink.lecturer_id)
-        .where(UnitExaminerLink.unit_id == unit_id)
-        .offset(offset)
-        .limit(limit)
-    )
-    results = session.exec(query).all()
-    return results
+    with tracer.start_as_current_span("get_unit_examiners") as span:
+        span.set_attribute("unit_id", unit_id)
+        span.set_attribute("limit", limit)
+        span.set_attribute("offset", offset)
+        query = (
+            select(UnitExaminerLink.lecturer_id)
+            .where(UnitExaminerLink.unit_id == unit_id)
+            .offset(offset)
+            .limit(limit)
+        )
+        results = session.exec(query).all()
+        span.set_attribute("result_count", len(results))
+        return results
 
 
 @router.get(
@@ -159,24 +182,33 @@ async def list_units(
         str | None, Query(description="Search within 'Catalogue data' on VVZ")
     ] = None,
 ) -> Sequence[int]:
-    filters = VVZFilters(
-        semkez=semkez,
-        level=level,
-        department=department,
-        section=section,
-        number=number,
-        title=title,
-        lecturer_id=lecturer_id,
-        lecturer_name=lecturer_name,
-        lecturer_surname=lecturer_surname,
-        type=type,
-        language=language,
-        periodicity=periodicity,
-        ects_min=ects_min,
-        ects_max=ects_max,
-        content_search=content_search,
-    )
-    query = build_vvz_filter(session, select(LearningUnit.id), filters)
-    return session.exec(
-        query.order_by(col(LearningUnit.id).asc()).offset(offset).limit(limit)
-    ).all()
+    with tracer.start_as_current_span("list_units") as span:
+        span.set_attribute("limit", limit)
+        span.set_attribute("offset", offset)
+        if semkez:
+            span.set_attribute("semkez", semkez)
+        if section:
+            span.set_attribute("section", section)
+        filters = VVZFilters(
+            semkez=semkez,
+            level=level,
+            department=department,
+            section=section,
+            number=number,
+            title=title,
+            lecturer_id=lecturer_id,
+            lecturer_name=lecturer_name,
+            lecturer_surname=lecturer_surname,
+            type=type,
+            language=language,
+            periodicity=periodicity,
+            ects_min=ects_min,
+            ects_max=ects_max,
+            content_search=content_search,
+        )
+        query = build_vvz_filter(session, select(LearningUnit.id), filters)
+        results = session.exec(
+            query.order_by(col(LearningUnit.id).asc()).offset(offset).limit(limit)
+        ).all()
+        span.set_attribute("result_count", len(results))
+        return results

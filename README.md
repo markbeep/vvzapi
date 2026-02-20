@@ -192,3 +192,23 @@ Can be used to benchmark the website.
 ```sh
 k6 run --vus 10 --duration 30s k6.js
 ```
+
+### JaegerUI
+
+OpenTelemetry can be used for more performance details and what slows down certain things.
+
+JaegerUI can be started up with the following command (runs a docker container):
+
+```sh
+just jaeger
+```
+
+In your local `.env` file you want to add the following line:
+
+```sh
+JAEGER_ENDPOINT=http://localhost:4317
+```
+
+The jaeger UI can be viewed under http://localhost:16686
+
+NOTE: This works well in combination with K6 to stress test the endpoints.

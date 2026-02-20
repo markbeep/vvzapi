@@ -15,6 +15,12 @@ from fastapi.responses import (
     RedirectResponse,
     StreamingResponse,
 )
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -43,7 +49,20 @@ from api.util.sitemap import generate_sitemap
 from api.util.templates import catalog_response
 from api.util.version import get_api_version
 
+# Configure OpenTelemetry tracing
+settings = Settings()
+if settings.jaeger_endpoint:
+    resource = Resource.create({"service.name": settings.otel_service_name})
+    tracer_provider = TracerProvider(resource=resource)
+    otlp_exporter = OTLPSpanExporter(endpoint=settings.jaeger_endpoint, insecure=True)
+    tracer_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
+    trace.set_tracer_provider(tracer_provider)
+
+tracer = trace.get_tracer(__name__)
+
 app = FastAPI(title="VVZ API", version=get_api_version())
+FastAPIInstrumentor.instrument_app(app, excluded_urls="/static/*")
+
 app.include_router(v1_router)
 app.include_router(v2_router)
 app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
@@ -129,38 +148,48 @@ async def root(
     order: str = "asc",
     view: Literal["big", "compact"] = "big",
 ):
-    if not query:
-        return catalog_response("Index.Empty")
+    with tracer.start_as_current_span("root_search") as span:
+        span.set_attribute("query", query or "")
+        span.set_attribute("page", page)
+        span.set_attribute("limit", limit or "default")
+        span.set_attribute("order_by", order_by)
+        span.set_attribute("order", order)
+        span.set_attribute("view", view)
 
-    if limit is None:
-        limit = 20 if view == "big" else 50
+        if not query:
+            return catalog_response("Index.Empty")
 
-    results = await search_units(
-        query,
-        session,
-        offset=(page - 1) * limit,
-        limit=limit,
-        order_by=order_by,
-        order=order,
-    )
+        if limit is None:
+            limit = 20 if view == "big" else 50
 
-    if results.total == 1:
-        values = list(results.results.values())
-        if len(values) == 1:
-            first = values[0].latest_unit()
-            if first:
-                return RedirectResponse(f"/unit/{first.id}", status_code=303)
+        results = await search_units(
+            query,
+            session,
+            offset=(page - 1) * limit,
+            limit=limit,
+            order_by=order_by,
+            order=order,
+        )
 
-    return catalog_response(
-        "Index.Results",
-        query=query,
-        page=page,
-        limit=limit,
-        order_by=order_by,
-        order=order,
-        results=results,
-        view=view,
-    )
+        span.set_attribute("result_count", results.total)
+
+        if results.total == 1:
+            values = list(results.results.values())
+            if len(values) == 1:
+                first = values[0].latest_unit()
+                if first:
+                    return RedirectResponse(f"/unit/{first.id}", status_code=303)
+
+        return catalog_response(
+            "Index.Results",
+            query=query,
+            page=page,
+            limit=limit,
+            order_by=order_by,
+            order=order,
+            results=results,
+            view=view,
+        )
 
 
 class RecursiveSection(BaseModel):
@@ -175,66 +204,89 @@ async def unit_detail(
     session: Annotated[Session, Depends(get_session)],
     query: Annotated[str | None, Query(alias="q"), str] = None,
 ):
-    unit = await get_unit(unit_id, session)
-    if not unit:  # TODO: redirect to 404 page once implemented
-        return HTMLResponse(status_code=404)
+    with tracer.start_as_current_span("unit_detail") as span:
+        span.set_attribute("unit_id", unit_id)
 
-    lecturers = session.exec(
-        select(Lecturer)
-        .join(UnitLecturerLink, col(UnitLecturerLink.lecturer_id) == Lecturer.id)
-        .where(UnitLecturerLink.unit_id == unit_id)
-    ).all()
-    examiners = session.exec(
-        select(Lecturer)
-        .join(UnitExaminerLink, col(UnitExaminerLink.lecturer_id) == Lecturer.id)
-        .where(UnitExaminerLink.unit_id == unit_id)
-    ).all()
-    courses = session.exec(select(Course).where(Course.unit_id == unit_id)).all()
-    sections = session.exec(get_parent_from_unit(unit_id)).all()
-    semkezs = session.exec(
-        select(LearningUnit.id, LearningUnit.semkez)
-        .where(LearningUnit.number == unit.number)
-        .distinct()
-    ).all()
+        unit = await get_unit(unit_id, session)
+        if not unit:  # TODO: redirect to 404 page once implemented
+            return HTMLResponse(status_code=404)
 
-    # create tree structure of offered in sections
-    section_ids = {
-        section.id: RecursiveSection(section=section) for section in sections
-    }
-    root_sections: list[RecursiveSection] = []
-    for section in sections:
-        if section.parent_id and section.parent_id in section_ids:
-            parent_section = section_ids[section.parent_id]
-            parent_section.sub_sections.append(section_ids[section.id])
-        else:
-            root_sections.append(section_ids[section.id])
+        span.set_attribute("unit_number", unit.number or "")
+        span.set_attribute("unit_title", unit.title_english or "")
 
-    # allows us to add canonical links to the newest unit
-    newest_unit_id, _ = max(
-        [(id, sk.replace("W", "0").replace("S", "1")) for id, sk in semkezs],
-        key=lambda x: x[1],
-    )
+        lecturers = session.exec(
+            select(Lecturer)
+            .join(UnitLecturerLink, col(UnitLecturerLink.lecturer_id) == Lecturer.id)
+            .where(UnitLecturerLink.unit_id == unit_id)
+        ).all()
+        span.set_attribute("lecturer_count", len(lecturers))
 
-    rating = session.get(Rating, unit.number)
-    average_rating = rating.average() if rating else "n/a"
+        examiners = session.exec(
+            select(Lecturer)
+            .join(UnitExaminerLink, col(UnitExaminerLink.lecturer_id) == Lecturer.id)
+            .where(UnitExaminerLink.unit_id == unit_id)
+        ).all()
+        span.set_attribute("examiner_count", len(examiners))
 
-    links = {str(request.url_for("unit_detail", unit_id=newest_unit_id)): "cannonical"}
+        courses = session.exec(select(Course).where(Course.unit_id == unit_id)).all()
+        span.set_attribute("course_count", len(courses))
 
-    return catalog_response(
-        "Unit.Index",
-        request=request,
-        query=query or "",
-        unit=unit,
-        sections=root_sections,
-        courses=courses,
-        lecturers=lecturers,
-        examiners=examiners,
-        semkezs=semkezs,
-        is_outdated=newest_unit_id != unit.id,
-        newest_unit_id=newest_unit_id,
-        average_rating=average_rating,
-        links=links,
-    )
+        sections = session.exec(get_parent_from_unit(unit_id)).all()
+        span.set_attribute("section_count", len(sections))
+
+        semkezs = session.exec(
+            select(LearningUnit.id, LearningUnit.semkez)
+            .where(LearningUnit.number == unit.number)
+            .distinct()
+        ).all()
+        span.set_attribute("semkez_count", len(semkezs))
+
+        # create tree structure of offered in sections
+        section_ids = {
+            section.id: RecursiveSection(section=section) for section in sections
+        }
+        root_sections: list[RecursiveSection] = []
+        for section in sections:
+            if section.parent_id and section.parent_id in section_ids:
+                parent_section = section_ids[section.parent_id]
+                parent_section.sub_sections.append(section_ids[section.id])
+            else:
+                root_sections.append(section_ids[section.id])
+
+        # allows us to add canonical links to the newest unit
+        newest_unit_id, _ = max(
+            [(id, sk.replace("W", "0").replace("S", "1")) for id, sk in semkezs],
+            key=lambda x: x[1],
+        )
+
+        rating = session.get(Rating, unit.number)
+        average_rating = rating.average() if rating else "n/a"
+
+        links = {
+            str(request.url_for("unit_detail", unit_id=newest_unit_id)): "cannonical"
+        }
+
+        span.set_attribute("newest_unit_id", newest_unit_id)
+        span.set_attribute(
+            "average_rating",
+            average_rating if isinstance(average_rating, (int, float)) else -1,
+        )
+
+        return catalog_response(
+            "Unit.Index",
+            request=request,
+            query=query or "",
+            unit=unit,
+            sections=root_sections,
+            courses=courses,
+            lecturers=lecturers,
+            examiners=examiners,
+            semkezs=semkezs,
+            is_outdated=newest_unit_id != unit.id,
+            newest_unit_id=newest_unit_id,
+            average_rating=average_rating,
+            links=links,
+        )
 
 
 @app.get("/guide", include_in_schema=False)
@@ -312,7 +364,7 @@ async def astro_files(file_path: str):
 
     # ----------------------------------
     # | Prevent directory traversal.   |
-    # | Ensures the real path if still |
+    # | Ensures the real path is still |
     # | within the static directory.   |
     # ----------------------------------
     static_dir = static_dir.absolute()

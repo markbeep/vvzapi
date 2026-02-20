@@ -4,7 +4,6 @@ from sqlmodel import Session, text
 from api.env import Settings
 from api.util.pydantic_type import json_serializer
 
-
 engine = create_engine(
     f"sqlite+pysqlite:///{Settings().db_path}", json_serializer=json_serializer
 )

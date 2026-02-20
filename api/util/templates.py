@@ -8,9 +8,12 @@ from jinja2_htmlmin import minify_loader
 from jinja2_pluralize import pluralize_dj
 from jinjax import Catalog
 from jinjax.jinjax import JinjaX
+from opentelemetry import trace
 from starlette.background import BackgroundTask
 
 from api.util.version import get_api_version
+
+tracer = trace.get_tracer(__name__)
 
 templates_dir = Path("api") / "templates"
 
@@ -52,10 +55,13 @@ def catalog_response(
     background: BackgroundTask | None = None,
     **kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
 ):
-    return HTMLResponse(
-        catalog.render(name, **kwargs),  # pyright: ignore[reportAny]
-        status_code=status_code,
-        headers=headers,
-        media_type=media_type,
-        background=background,
-    )
+    with tracer.start_as_current_span("catalog_response") as span:
+        span.set_attribute("template_name", name)
+        span.set_attribute("status_code", status_code)
+        return HTMLResponse(
+            catalog.render(name, **kwargs),  # pyright: ignore[reportAny]
+            status_code=status_code,
+            headers=headers,
+            media_type=media_type,
+            background=background,
+        )

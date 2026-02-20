@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     plausible_url: str | None = None
     """API event endpoint"""
     base_url: str = "https://vvzapi.ch"
+    jaeger_endpoint: str | None = None
+    """Jaeger OTLP endpoint (e.g., http://localhost:4317)"""
+    otel_service_name: str = "vvzapi"
+    """OpenTelemetry service name"""
 
     @property
     def zip_path(self) -> str:

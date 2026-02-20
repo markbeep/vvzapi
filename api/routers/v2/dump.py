@@ -4,11 +4,14 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
+from opentelemetry import trace
 from pydantic import BaseModel
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from api.env import Settings
+
+tracer = trace.get_tracer(__name__)
 
 router = APIRouter(prefix="/dump", tags=["Data Dump"])
 
@@ -29,18 +32,19 @@ def get_data_dump(request: Request):  # limiter requires request parameter
 
     **Rate Limiting:** This endpoint is rate-limited to 2 requests per minute.
     """
-    _ = request
-    if not Path(Settings().zip_path).exists():
-        raise HTTPException(status_code=404, detail="Data dump not found")
-    return FileResponse(
-        Settings().zip_path,
-        media_type="application/zip",
-        filename="database.zip",
-        headers={
-            "Cache-Control": f"public, max-age={Settings().sitemap_expiry}",
-            "Etag": str(Path(Settings().zip_path).stat().st_mtime_ns),
-        },
-    )
+    with tracer.start_as_current_span("get_data_dump"):
+        _ = request
+        if not Path(Settings().zip_path).exists():
+            raise HTTPException(status_code=404, detail="Data dump not found")
+        return FileResponse(
+            Settings().zip_path,
+            media_type="application/zip",
+            filename="database.zip",
+            headers={
+                "Cache-Control": f"public, max-age={Settings().sitemap_expiry}",
+                "Etag": str(Path(Settings().zip_path).stat().st_mtime_ns),
+            },
+        )
 
 
 class DatabaseMetadata(BaseModel):
@@ -50,12 +54,14 @@ class DatabaseMetadata(BaseModel):
 
 @router.get("/metadata", response_model=DatabaseMetadata)
 def get_data_dump_size() -> DatabaseMetadata:
-    path = Path(Settings().zip_path)
-    if not path.exists():
-        raise HTTPException(status_code=404, detail="Data dump not found")
-    size_in_bytes = path.stat().st_size
-    last_modified = path.stat().st_mtime_ns / 1e6  # ms
-    return DatabaseMetadata(
-        size_in_bytes=size_in_bytes,
-        last_modified_ms=int(last_modified),
-    )
+    with tracer.start_as_current_span("get_data_dump_size") as span:
+        path = Path(Settings().zip_path)
+        if not path.exists():
+            raise HTTPException(status_code=404, detail="Data dump not found")
+        size_in_bytes = path.stat().st_size
+        last_modified = path.stat().st_mtime_ns / 1e6  # ms
+        span.set_attribute("size_in_bytes", size_in_bytes)
+        return DatabaseMetadata(
+            size_in_bytes=size_in_bytes,
+            last_modified_ms=int(last_modified),
+        )

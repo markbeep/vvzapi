@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Generator, Sequence, cast, get_args, override
 from typing import Literal as TLiteral
 
+from opentelemetry import trace
 from pydantic import BaseModel
 from pyparsing import (
     Group,
@@ -16,6 +17,8 @@ from pyparsing import (
     printables,
 )
 from rapidfuzz import fuzz, process, utils
+
+tracer = trace.get_tracer(__name__)
 
 ParsedType = Sequence["ParsedType | str"]
 
@@ -144,31 +147,41 @@ class AND(LogicalOperator):
 
 def _find_closest_operators(key: str) -> QueryKey | None:
     """Best effort to try to figure out what key a user meant"""
-    key = key.lower()
-    if key in mapping:
-        return mapping[key]
+    with tracer.start_as_current_span("find_closest_operators") as span:
+        span.set_attribute("key", key)
+        key = key.lower()
+        if key in mapping:
+            result = mapping[key]
+            span.set_attribute("matched", str(result))
+            return result
 
-    args = cast(Sequence[QueryKey], get_args(QueryKey))
+        args = cast(Sequence[QueryKey], get_args(QueryKey))
 
-    if key in args:
-        return cast(QueryKey, key)
+        if key in args:
+            result = cast(QueryKey, key)
+            span.set_attribute("matched", str(result))
+            return result
 
-    # first see if there's a key that starts the same
-    for query_key in args:
-        if query_key.startswith(key):
-            return query_key
+        # first see if there's a key that starts the same
+        for query_key in args:
+            if query_key.startswith(key):
+                span.set_attribute("matched", str(query_key))
+                return query_key
 
-    # try to figure out the closest match
-    if result := process.extractOne(
-        key,
-        args,
-        scorer=fuzz.partial_ratio,
-        processor=utils.default_process,
-    ):
-        matched_name, score, _ = result
-        if score >= 60:
-            return matched_name
-    return None
+        # try to figure out the closest match
+        if result := process.extractOne(
+            key,
+            args,
+            scorer=fuzz.partial_ratio,
+            processor=utils.default_process,
+        ):
+            matched_name, score, _ = result
+            if score >= 60:
+                span.set_attribute("matched", str(matched_name))
+                span.set_attribute("match_score", score)
+                return matched_name
+        span.set_attribute("matched", "None")
+        return None
 
 
 def _negated_operator(op: Operator) -> Operator:
@@ -249,55 +262,65 @@ def _parse_operator(item: ParsedType) -> FilterOperator | None:
 
 
 def _build_ops(parsed: ParsedType) -> AND | OR:
-    ops: list[FilterOperator | AND | OR] = []
-    ored = "OR" in parsed or "or" in parsed
-    for item in parsed:
-        if isinstance(item, str) and (item.lower() == "or" or item.lower() == "and"):
-            continue
-        unparsed = _parse_operator(item)
-        if unparsed:
-            ops.append(unparsed)
-        else:
-            ops.append(_build_ops(item))
-    return OR(ops=ops) if ored else AND(ops=ops)
+    with tracer.start_as_current_span("build_ops"):
+        ops: list[FilterOperator | AND | OR] = []
+        ored = "OR" in parsed or "or" in parsed
+        for item in parsed:
+            if isinstance(item, str) and (
+                item.lower() == "or" or item.lower() == "and"
+            ):
+                continue
+            unparsed = _parse_operator(item)
+            if unparsed:
+                ops.append(unparsed)
+            else:
+                ops.append(_build_ops(item))
+        return OR(ops=ops) if ored else AND(ops=ops)
 
 
 def _parse_query(query: str) -> ParsedType:
-    key = Word(alphas, alphas + "_")
-    unquoted = Word(printables, excludeChars="()")
-    quoted = QuotedString('"') | QuotedString("'")
-    operand = quoted | unquoted
-    # NOTE: ensure order of operators from longest to shortest to prevent parsing issues
-    operator = (
-        Literal("!=")
-        | Literal(">=")
-        | Literal("<=")
-        | Literal(":")
-        | Literal("=")
-        | Literal(">")
-        | Literal("<")
-    )
-    operator_term = Group(Optional(Literal("-")) + key + operator + operand)
-    plain_term = Group(Optional(Literal("-")) + operand)
+    with tracer.start_as_current_span("parse_query") as span:
+        span.set_attribute("query", query)
+        key = Word(alphas, alphas + "_")
+        unquoted = Word(printables, excludeChars="()")
+        quoted = QuotedString('"') | QuotedString("'")
+        operand = quoted | unquoted
+        # NOTE: ensure order of operators from longest to shortest to prevent parsing issues
+        operator = (
+            Literal("!=")
+            | Literal(">=")
+            | Literal("<=")
+            | Literal(":")
+            | Literal("=")
+            | Literal(">")
+            | Literal("<")
+        )
+        operator_term = Group(Optional(Literal("-")) + key + operator + operand)
+        plain_term = Group(Optional(Literal("-")) + operand)
 
-    or_literal = Literal("OR") | Literal("or")
-    and_literal = Literal("AND") | Literal("and")
+        or_literal = Literal("OR") | Literal("or")
+        and_literal = Literal("AND") | Literal("and")
 
-    implicit_and = Optional(and_literal) + NotAny(or_literal)
+        implicit_and = Optional(and_literal) + NotAny(or_literal)
 
-    term = operator_term | plain_term
-    parser = infixNotation(
-        term,
-        [
-            (implicit_and, 2, opAssoc.LEFT),
-            (or_literal, 2, opAssoc.LEFT),
-        ],
-    )
-    return (
-        parser.parseString(query).asList()  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
-    )
+        term = operator_term | plain_term
+        parser = infixNotation(
+            term,
+            [
+                (implicit_and, 2, opAssoc.LEFT),
+                (or_literal, 2, opAssoc.LEFT),
+            ],
+        )
+        return (
+            parser.parseString(query).asList()  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+        )
 
 
 def build_search_operators(query: str) -> AND | OR:
-    parsed = _parse_query(query)
-    return _build_ops(parsed)
+    with tracer.start_as_current_span("build_search_operators") as span:
+        span.set_attribute("query", query)
+        parsed = _parse_query(query)
+        result = _build_ops(parsed)
+        span.set_attribute("operator_type", result.__class__.__name__)
+        span.set_attribute("operator_count", len(result.ops))
+        return result
