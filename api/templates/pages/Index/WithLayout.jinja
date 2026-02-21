@@ -1,0 +1,22 @@
+{#def
+    query: str,
+    page: int,
+    limit: int,
+    order_by: QueryKey,
+    order: str,
+    results: SearchResponse,
+    view: Literal["big", "compact"],
+#}
+
+<SearchLayout query={{ query }} title={{ query + " - VVZ API" }} description={{ "Search results for " + query }}>
+
+<main class="grow p-4 sm:p-8">
+    <div id="results"
+         class="flex flex-col max-w-5xl mx-auto {% if view == "compact" %}space-y-2{% else %}space-y-4{% endif %}">
+
+        <Index.Results query={{ query }} page={{ page }} limit={{ limit }} order_by={{ order_by }} order={{ order }} results={{ results }} view={{ view }} />
+
+    </div>
+</main>
+
+</SearchLayout>

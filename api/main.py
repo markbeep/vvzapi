@@ -151,7 +151,7 @@ async def analytics_middleware(
     if 200 <= response.status_code < 300:
         if "Cache-Control" not in response.headers:
             response.headers["Cache-Control"] = (
-                f"Cache-Control: public, max-age={Settings().cache_expiry}"
+                f"public, max-age={Settings().cache_expiry}"
             )
 
     has_extension = re.search(r"\.\w+$", request.url.path) is not None
@@ -171,6 +171,7 @@ async def analytics_middleware(
 
 @app.get("/", include_in_schema=False)
 async def root(
+    request: Request,
     background_tasks: BackgroundTasks,
     query: Annotated[str | None, Query(alias="q"), str] = None,
     page: Annotated[int, Query(ge=1)] = 1,
@@ -189,7 +190,10 @@ async def root(
         span.set_attribute("view", view)
 
         if not query:
-            return catalog_response("Index.Empty")
+            return catalog_response(
+                "Index.Empty",
+                headers={"Vary": "FX-Request"},
+            )
 
         if limit is None:
             limit = 20 if view == "big" else 50
@@ -234,10 +238,21 @@ async def root(
             if len(values) == 1:
                 first = values[0].latest_unit()
                 if first:
-                    return RedirectResponse(f"/unit/{first.id}", status_code=303)
+                    return RedirectResponse(
+                        f"/unit/{first.id}",
+                        status_code=303,
+                        headers={"Vary": "FX-Request"},
+                    )
+
+        # swap out results with fixijs if available, else handle request as normal
+        layout_name = "Index.WithLayout"
+        fx_response = "false"
+        if request.headers.get("fx-request") == "true":
+            layout_name = "Index.Results"
+            fx_response = "true"
 
         return catalog_response(
-            "Index.Results",
+            layout_name,
             query=query,
             page=page,
             limit=limit,
@@ -245,6 +260,16 @@ async def root(
             order=order,
             results=results,
             view=view,
+            headers={
+                # NOTE: FX-Response is for backwards compatibility and can be removed after
+                # around 30 days when all caches should fall off (including the relevant logic in ext-fixi.js)
+                # It can happen that fixi tries to get the partial page, but the browser has the full page cached
+                # before the 'Vary' header was added. This can then result in the whole page being swapped instead
+                # in instead of only a part of it. ext-fixi.js currently checks for the FX-Response header to
+                # ensure a correctly updated/uncached response.
+                "FX-Response": fx_response,
+                "Vary": "FX-Request",
+            },
         )
 
 

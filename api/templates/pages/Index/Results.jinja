@@ -8,152 +8,142 @@
     view: Literal["big", "compact"],
 #}
 
-<SearchLayout query={{ query }} title={{ query + " - VVZ API" }} description={{ "Search results for " + query }}>
+{% if results.total %}
+    <div class="text-gray-600">
+        <p class="text-xs pb-2">
+            Found {{ results.total }} relevant result{{ results.total|pluralize }}
+            in {{ '%0.2f' % (results.exec_time_ms/1000) }}s where
+            <span class="bg-base-100 py-0.5 px-1 rounded">{{ results.parsed_query }}</span>
+        </p>
 
-<main class="grow p-4 sm:p-8">
-    <div class="flex flex-col max-w-5xl mx-auto {% if view == "compact" %}space-y-2{% else %}space-y-4{% endif %}">
-
-        {% if results.total %}
-            <div class="text-gray-600">
-                <p class="text-xs pb-2">
-                    Found {{ results.total }} relevant result{{ results.total|pluralize }}
-                    in {{ '%0.2f' % (results.exec_time_ms/1000) }}s where
-                    <span class="bg-base-100 py-0.5 px-1 rounded">{{ results.parsed_query }}</span>
-                </p>
-
-                <div class="collapse bg-base-100 border-base-300 border"
-                     aria-label="Search options">
-                    <input type="checkbox" />
-                    <div class="collapse-title">
-                        Search options
-                    </div>
-                    <div class="collapse-content text-sm">
-                        <div>
-                            Showing
-                            <select name="limit"
-                                    class="select select-ghost select-sm max-w-fit"
-                                    aria-label="Number of results to show">
-                                <option value="20">
-                                    20
-                                </option>
-                                <option value="40">
-                                    40
-                                </option>
-                                <option value="60">
-                                    60
-                                </option>
-                                <option value="80">
-                                    80
-                                </option>
-                                <option value="100">
-                                    100
-                                </option>
-                            </select>
-                            results ordered by
-                            <select name="order_by"
-                                    class="select select-ghost select-sm max-w-fit"
-                                    aria-label="Order results by">
-                                <option selected value="title">
-                                    English title
-                                </option>
-                                <option value="title_german">
-                                    German title
-                                </option>
-                                <option value="number">
-                                    number
-                                </option>
-                                <option value="semester">
-                                    semester
-                                </option>
-                                <option value="lecturer">
-                                    lecturer name
-                                </option>
-                                <option value="department">
-                                    department
-                                </option>
-                                <option value="level">
-                                    level
-                                </option>
-                                <option value="language">
-                                    language
-                                </option>
-                            </select>
-                            <select name="order"
-                                    class="select select-ghost select-sm max-w-fit"
-                                    aria-label="Order direction">
-                                <option selected value="asc">
-                                    ascending
-                                </option>
-                                <option value="desc">
-                                    descending
-                                </option>
-                            </select>
-                        </div>
-
-                        <div>
-                            Results view
-                            <select name="view"
-                                    class="select select-ghost select-sm max-w-fit"
-                                    aria-label="Result view">
-                                <option value="big" {% if view == "big" %}selected{% endif %}>
-                                    big
-                                </option>
-                                <option value="compact" {% if view == "compact" %}selected{% endif %}>
-                                    compact
-                                </option>
-                            </select>
-                        </div>
-
-                        <script>
-                            document.addEventListener('DOMContentLoaded', () => {
-                                const inputs = document.querySelectorAll('select[name="limit"], select[name="order_by"], select[name="order"], select[name="view"]');
-                                const currentUrl = new URL(window.location);
-                                const params = currentUrl.searchParams;
-                                inputs.forEach(input => {
-                                    const paramValue = params.get(input.name);
-                                    if (paramValue) {
-                                        input.value = paramValue;
-                                    }
-                                    input.addEventListener('change', (event) => {
-                                        const url = new URL(window.location);
-                                        url.searchParams.set(event.target.name, event.target.value);
-                                        url.searchParams.set('page', '1');
-                                        window.location.href = url.toString();
-                                    });
-
-                                });
-                            });
-                        </script>
-                    </div>
+        <div class="collapse bg-base-100 border-base-300 border"
+             aria-label="Search options">
+            <input type="checkbox" />
+            <div class="collapse-title">
+                Search options
+            </div>
+            <div class="collapse-content text-sm">
+                <div>
+                    Showing
+                    <select name="limit"
+                            class="select select-ghost select-sm max-w-fit"
+                            aria-label="Number of results to show">
+                        <option value="20">
+                            20
+                        </option>
+                        <option value="40">
+                            40
+                        </option>
+                        <option value="60">
+                            60
+                        </option>
+                        <option value="80">
+                            80
+                        </option>
+                        <option value="100">
+                            100
+                        </option>
+                    </select>
+                    results ordered by
+                    <select name="order_by"
+                            class="select select-ghost select-sm max-w-fit"
+                            aria-label="Order results by">
+                        <option selected value="title">
+                            English title
+                        </option>
+                        <option value="title_german">
+                            German title
+                        </option>
+                        <option value="number">
+                            number
+                        </option>
+                        <option value="semester">
+                            semester
+                        </option>
+                        <option value="lecturer">
+                            lecturer name
+                        </option>
+                        <option value="department">
+                            department
+                        </option>
+                        <option value="level">
+                            level
+                        </option>
+                        <option value="language">
+                            language
+                        </option>
+                    </select>
+                    <select name="order"
+                            class="select select-ghost select-sm max-w-fit"
+                            aria-label="Order direction">
+                        <option selected value="asc">
+                            ascending
+                        </option>
+                        <option value="desc">
+                            descending
+                        </option>
+                    </select>
                 </div>
+
+                <div>
+                    Results view
+                    <select name="view"
+                            class="select select-ghost select-sm max-w-fit"
+                            aria-label="Result view">
+                        <option value="big" {% if view == "big" %}selected{% endif %}>
+                            big
+                        </option>
+                        <option value="compact" {% if view == "compact" %}selected{% endif %}>
+                            compact
+                        </option>
+                    </select>
+                </div>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const inputs = document.querySelectorAll('select[name="limit"], select[name="order_by"], select[name="order"], select[name="view"]');
+                        const currentUrl = new URL(window.location);
+                        const params = currentUrl.searchParams;
+                        inputs.forEach(input => {
+                            const paramValue = params.get(input.name);
+                            if (paramValue) {
+                                input.value = paramValue;
+                            }
+                            input.addEventListener('change', (event) => {
+                                const url = new URL(window.location);
+                                url.searchParams.set(event.target.name, event.target.value);
+                                url.searchParams.set('page', '1');
+                                window.location.href = url.toString();
+                            });
+
+                        });
+                    });
+                </script>
             </div>
-
-            {% if results.total > results.results|length %}
-                <Pagination query={{ query }} page={{ page }} limit={{ limit }} order_by={{ order_by }} order={{ order }} results={{ results }} view={{ view }} />
-            {% endif %}
-
-            {% for _, grouped in results %}
-                {% if view == "compact" %}
-                    <CompactResult grouped={{ grouped }} />
-                {% else %}
-                    <BigResult grouped={{ grouped }} />
-                {% endif %}
-            {% endfor %}
-
-            {% if results.total > results.results|length %}
-                <Pagination query={{ query }} page={{ page }} limit={{ limit }} order_by={{ order_by }} order={{ order }} results={{ results }}  view={{ view }} />
-            {% endif %}
-
-        {% else %}
-            <div class="text-center text-gray-500 mt-10">
-                <p class="text-xs">
-                    No results found where
-                    <span class="bg-base-100 py-0.5 px-1 rounded">{{ results.parsed_query }}</span>
-                </p>
-            </div>
-        {% endif %}
-
+        </div>
     </div>
-</main>
 
-</SearchLayout>
+    {% if results.total > results.results|length %}
+        <Pagination query={{ query }} page={{ page }} limit={{ limit }} order_by={{ order_by }} order={{ order }} results={{ results }} view={{ view }} prefetch_next_page={{ True }} />
+    {% endif %}
+
+    {% for _, grouped in results %}
+        {% if view == "compact" %}
+            <CompactResult grouped={{ grouped }} />
+        {% else %}
+            <BigResult grouped={{ grouped }} />
+        {% endif %}
+    {% endfor %}
+
+    {% if results.total > results.results|length %}
+        <Pagination query={{ query }} page={{ page }} limit={{ limit }} order_by={{ order_by }} order={{ order }} results={{ results }}  view={{ view }} />
+    {% endif %}
+
+{% else %}
+    <div class="text-center text-gray-500 mt-10">
+        <p class="text-xs">
+            No results found where
+            <span class="bg-base-100 py-0.5 px-1 rounded">{{ results.parsed_query }}</span>
+        </p>
+    </div>
+{% endif %}

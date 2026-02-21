@@ -6,19 +6,26 @@
     order: str,
     view: Literal["big", "compact"],
     results: SearchResponse,
+    prefetch_next_page: bool = False,
 #}
 
 <div class="flex flex-col items-center my-4">
-    {% set q_order_by = '&order_by=' + order_by if order_by != 'year' else '' %}
-    {% set default_limit = 50 if view == 'big' else 20 %}
+    {% set q_order_by = '&order_by=' + order_by if order_by != 'title_english' else '' %}
+    {% set default_limit = 50 if view == 'compact' else 20 %}
     {% set q_limit = '&limit=%d' % limit if limit != default_limit else '' %}
-    {% set q_order = '&order=' + order if order != 'desc' else '' %}
+    {% set q_order = '&order=' + order if order != 'asc' else '' %}
     {% set q_view = '&view=' + view if view != 'big' else '' %}
 
     <div class="join grid grid-cols-2 w-full max-w-xs mx-auto">
         {% if page > 1 %}
             <a href="/?q={{ query|e }}{% if page > 2 %}&page={{ page - 1 }}{% endif %}{{ q_order_by }}{{ q_limit }}{{ q_order }}{{ q_view }}"
-               class="join-item btn btn-outline">
+               class="join-item btn btn-outline"
+               fx-action="/?q={{ query|e }}{% if page > 2 %}&page={{ page - 1 }}{% endif %}{{ q_order_by }}{{ q_limit }}{{ q_order }}{{ q_view }}"
+               fx-trigger="click"
+               fx-target="#results"
+               fx-swap="innerHTML"
+               no-preload
+               ext-fx-push>
                 Previous
             </a>
         {% else %}
@@ -29,9 +36,31 @@
 
         {% if page * limit < results.total %}
             <a href="/?q={{ query|e }}&page={{ page + 1 }}{{ q_order_by }}{{ q_limit }}{{ q_order }}{{ q_view }}"
-               class="join-item btn btn-outline">
+               class="join-item btn btn-outline next-page-button"
+               fx-action="/?q={{ query|e }}&page={{ page + 1 }}{{ q_order_by }}{{ q_limit }}{{ q_order }}{{ q_view }}"
+               fx-trigger="click"
+               fx-target="#results"
+               fx-swap="innerHTML"
+               no-preload
+               ext-fx-push>
                 Next
             </a>
+            {% if prefetch_next_page %}
+                <script>
+                    const pref = () => {
+                        const nextPageLink = document.querySelector('.next-page-button');
+                        if (nextPageLink) {
+                            fetch(nextPageLink.getAttribute('fx-action'), {
+                                headers: {
+                                    "FX-Request": "true"
+                                },
+                            });
+                        }
+                    }
+                    document.addEventListener("DOMContentLoaded", pref);
+                    document.addEventListener("fx:swapped", pref);
+                </script>
+            {% endif %}
         {% else %}
             <button class="join-item btn btn-outline btn-disabled" disabled>
                 Next
