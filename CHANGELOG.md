@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.10.2](https://github.com/markbeep/vvzapi/compare/v1.10.1...v1.10.2) (2026-02-21)
+
+
+### Bug Fixes
+
+* **search:** fix search query not transferring over when visiting a unit ([a568734](https://github.com/markbeep/vvzapi/commit/a5687345be07fc295a73d00261c2ec242a66b89e))
+
+
+### Performance Improvements
+
+* **search:** add fixi.js for lightweight DOM replacement when changing pages ([b960a1d](https://github.com/markbeep/vvzapi/commit/b960a1dde98745a48cce0ac6666c7d51aec68087))
+* **search:** aggressively preload next page and search queries ([b960a1d](https://github.com/markbeep/vvzapi/commit/b960a1dde98745a48cce0ac6666c7d51aec68087))
+* **search:** improve search query performance by splitting it into two concurrent queries ([aaa40e0](https://github.com/markbeep/vvzapi/commit/aaa40e07e48678beb084e1af45aa8ee2474cfc4c))
+
+
+### Miscellaneous Chores
+
+* **api:** add influxdb support for more detailed analytics ([99417b9](https://github.com/markbeep/vvzapi/commit/99417b95189c0fa1486cbb7a8fb72fe336e2a024))
+* **api:** prometheus endpoint for gathering metrics ([2b0543d](https://github.com/markbeep/vvzapi/commit/2b0543d3967bcd29cbb9b66084c913eed52c4569))
+
 ## [1.10.1](https://github.com/markbeep/vvzapi/compare/v1.10.0...v1.10.1) (2026-02-20)
 
 
