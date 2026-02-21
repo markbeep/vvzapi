@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     otel_service_name: str = "vvzapi"
     """OpenTelemetry service name"""
 
+    influxdb_url: str | None = None
+    """Full influxdb url, i.e. http://influxdb.example.com/write?db=vvzapi"""
+    influxdb_token: str | None = None
+
     @property
     def zip_path(self) -> str:
         return self.db_path + ".zip"

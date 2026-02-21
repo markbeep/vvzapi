@@ -55,3 +55,11 @@ jaeger:
       -p 5778:5778 \
       -p 9411:9411 \
       cr.jaegertracing.io/jaegertracing/jaeger:2.15.0
+
+influxdb:
+    docker run --rm -p 8181:8181 \
+      influxdb:3-core influxdb3 serve \
+        --node-id=my-node-0 \
+        --object-store=file \
+        --data-dir=/var/lib/influxdb3/data \
+        --plugin-dir=/var/lib/influxdb3/plugins

@@ -3,7 +3,7 @@ from prometheus_client import Counter, Histogram
 SEARCH_QUERY_COUNTER = Counter(
     "vvzapi_search_query_total",
     "Total number of search queries",
-    ["query"],
+    ["has_query"],
 )
 
 
@@ -11,7 +11,7 @@ SEARCH_QUERY_DURATION = Histogram(
     "vvzapi_search_query_duration_seconds",
     "Search query execution duration in seconds",
     [
-        "query",
+        "has_query",
         "order_by",
         "order",
         "view",
