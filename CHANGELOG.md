@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.3](https://github.com/markbeep/vvzapi/compare/v1.10.2...v1.10.3) (2026-02-21)
+
+
+### Bug Fixes
+
+* **search:** fix browser history not working with fixi ([af91496](https://github.com/markbeep/vvzapi/commit/af914960330dbf0083f258850ec1c825ea4e5791))
+
 ## [1.10.2](https://github.com/markbeep/vvzapi/compare/v1.10.1...v1.10.2) (2026-02-21)
 
 
