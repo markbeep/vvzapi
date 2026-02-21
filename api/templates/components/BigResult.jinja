@@ -1,5 +1,6 @@
 {#def
     grouped: GroupedLearningUnits,
+    query: str,
 #}
 
 {% set unit = grouped.latest_unit() %}
@@ -11,7 +12,8 @@
             <div class="flex justify-between">
                 <div>
                     <h3 class="text-lg font-bold text-neutral leading-tight">
-                        <a href="/unit/{{ unit.id }}" class="after:absolute after:inset-0">
+                        <a href="/unit/{{ unit.id }}?q={{ query }}"
+                           class="after:absolute after:inset-0">
                             {{ unit.title_english if unit.title_english else unit.title }}
                         </a>
                     </h3>
