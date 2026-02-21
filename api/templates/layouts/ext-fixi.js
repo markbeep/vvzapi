@@ -25,3 +25,11 @@ document.addEventListener("fx:after", (evt) => {
     );
   }
 });
+window.addEventListener("popstate", async (evt) => {
+  if (evt.state.fixi) {
+    let historyResp = await fetch(evt.state.url);
+    document.documentElement.innerHTML = await historyResp.text();
+    document.dispatchEvent(new CustomEvent("fx:process"));
+    initJS();
+  }
+});
