@@ -100,7 +100,7 @@
                 </div>
 
                 <script>
-                    document.addEventListener('DOMContentLoaded', () => {
+                    const setOpts = () => {
                         const inputs = document.querySelectorAll('select[name="limit"], select[name="order_by"], select[name="order"], select[name="view"]');
                         const currentUrl = new URL(window.location);
                         const params = currentUrl.searchParams;
@@ -117,7 +117,9 @@
                             });
 
                         });
-                    });
+                    }
+                    document.addEventListener('DOMContentLoaded', setOpts);
+                    document.addEventListener('fx:swapped', setOpts);
                 </script>
             </div>
         </div>
@@ -129,9 +131,9 @@
 
     {% for _, grouped in results %}
         {% if view == "compact" %}
-            <CompactResult grouped={{ grouped }} />
+            <CompactResult grouped={{ grouped }} query={{ query }} />
         {% else %}
-            <BigResult grouped={{ grouped }} />
+            <BigResult grouped={{ grouped }}  query={{ query }} />
         {% endif %}
     {% endfor %}
 
