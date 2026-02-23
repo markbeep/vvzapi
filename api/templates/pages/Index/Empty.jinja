@@ -3,7 +3,7 @@
 <BaseLayout title="VVZ API">
 <body class="bg-base-200 flex flex-col justify-center">
     <div class="hero bg-base-200 min-h-dvh">
-        <div class="hero-content text-center">
+        <div class="hero-content text-center flex flex-col">
             <main class="max-w-md">
                 <div class="flex justify-center items-start gap-2 mb-4">
                     <h1 class="text-5xl font-bold">
@@ -12,7 +12,8 @@
                     <span class="badge badge-neutral">{{ version }}</span>
                 </div>
                 <p class="py-6">
-                    A <span class="rainbow-text">fast</span> and lightweight community-made search for
+                    A <span class="rainbow-text">fast</span> and lightweight
+                    <span class="font-bold">community-made</span> search for
                     <a href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis"
                        target="_blank"
                        class="link link-neutral">VVZ</a>, the
@@ -49,8 +50,15 @@
                     </div>
                 </form>
             </main>
-        </div>
-    </div>
-</body>
 
-</BaseLayout>
+            <footer class="mt-8 text-sm text-base-content/70 max-w-md">
+                VVZ API is <span class="font-bold">not</span> affiliated with ETH Zurich.
+                Data might be outdated or incorrect. Please view the offical <a href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis"
+    target="_blank"
+    class="link link-neutral">ETHZ Vorlesungsverzeichnis</a> for binding information.
+                <br class="mb-2" />
+                Contact: <a href="mailto:contact@vvzapi.ch" class="link link-neutral">contact@vvzapi.ch</a>
+            </footer>
+        </body>
+
+        </BaseLayout>

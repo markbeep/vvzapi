@@ -21,6 +21,19 @@
 
 <main class="grow p-4 sm:p-8">
     <div class="max-w-7xl mx-auto space-y-8">
+        <div class="card bg-base-100/70 shadow-sm p-3 text-sm text-base-content/70">
+            <p>
+                VVZ API is <span class="font-bold">not</span> affiliated with ETH Zurich. Data might be outdated or incorrect.
+                Please view the official
+                <a target="_blank"
+                   href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={{ unit.id }}&semkez={{ unit.semkez }}&lang=en&ansicht=ALLE"
+                   class="link link-neutral"
+                   title="VVZ">
+                    ETHZ Vorlesungsverzeichnis
+                </a> for binding information.
+            </p>
+        </div>
+
         <header class="card bg-base-100 shadow-sm">
             <div class="card-body flex-row gap-4 justify-between">
                 <div class="flex flex-col gap-2">
@@ -149,9 +162,7 @@
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
             <div class="lg:col-span-2 space-y-6 [&>section>*>p]:whitespace-pre-wrap font-sans">
-
                 {% if main_abstract %}
                     <section class="card bg-base-100 shadow-sm">
                         <div class="card-body">
@@ -409,7 +420,6 @@
                         </div>
                     </section>
                 {% endif %}
-
             </div>
         </div>
 
@@ -523,6 +533,7 @@
                 </ul>
             </section>
         {% endif %}
-    </main>
+    </div>
+</main>
 
-    </SearchLayout>
+</SearchLayout>
