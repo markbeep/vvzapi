@@ -12,9 +12,9 @@
         </span>
 
         <h3 class="font-bold text-neutral leading-tight">
-            <a href="/unit/{{ unit.id }}?q={{ query }}"
+            <a href="/unit/{{ unit.id }}?q={{ query|e }}"
                class="after:absolute after:inset-0 line-clamp-1"
-               title="{{ unit.title_english if unit.title_english else unit.title }}">
+               title="{{ unit.title_english|e if unit.title_english else unit.title|e }}">
                 {{ unit.title_english if unit.title_english else unit.title }}
             </a>
         </h3>
@@ -31,7 +31,7 @@
 
         {% if unit.levels_as_str() %}
             <p class="text-xs bg-base-300 p-0.5 rounded line-clamp-1 min-w-8"
-               title="{{ unit.levels_as_str() }}">
+               title="{{ unit.levels_as_str()|e }}">
                 {{ unit.levels_as_str() }}
             </p>
         {% endif %}

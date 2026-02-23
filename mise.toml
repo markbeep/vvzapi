@@ -7,5 +7,5 @@ k6 = "1.6.0"
 sqlite = "3.51.2"
 uv = "latest"
 
-[env]
-CHROME_PATH = { value = "{{ exec(command='mise where npm:chromium') }}/lib/node_modules/chromium/lib/chromium/chrome-linux/chrome", tools = true }
+# [env]
+# CHROME_PATH = { value = "{{ exec(command='mise where npm:chromium') }}/lib/node_modules/chromium/lib/chromium/chrome-linux/chrome", tools = true }
