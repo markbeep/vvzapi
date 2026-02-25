@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.10.3](https://github.com/markbeep/vvzapi/compare/v1.10.2...v1.10.3) (2026-02-23)
+
+
+### Bug Fixes
+
+* **search:** fix browser history not working with fixi ([af91496](https://github.com/markbeep/vvzapi/commit/af914960330dbf0083f258850ec1c825ea4e5791))
+* **search:** fix html not being correctly escaped for query on results ([c48f033](https://github.com/markbeep/vvzapi/commit/c48f0338b79659b0d7a10a856c4c9221dff6e30e))
+
+
+### Miscellaneous Chores
+
+* **search:** add contact email and notice about not being affiliated with eth ([d3660ea](https://github.com/markbeep/vvzapi/commit/d3660eaf6cfc910d19a640b160dd90c0cd4c7ed7))
+
 ## [1.10.2](https://github.com/markbeep/vvzapi/compare/v1.10.1...v1.10.2) (2026-02-21)
 
 
