@@ -4,6 +4,7 @@ import os
 import re
 from pathlib import Path
 from typing import Annotated, Awaitable, Callable, Literal
+from urllib.parse import quote_plus
 
 import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request
@@ -239,7 +240,7 @@ async def root(
                 first = values[0].latest_unit()
                 if first:
                     return RedirectResponse(
-                        f"/unit/{first.id}",
+                        f"/unit/{first.id}?q={quote_plus(query)}",
                         status_code=303,
                         headers={"Vary": "FX-Request"},
                     )
@@ -264,8 +265,8 @@ async def root(
                 # NOTE: FX-Response is for backwards compatibility and can be removed after
                 # around 30 days when all caches should fall off (including the relevant logic in ext-fixi.js)
                 # It can happen that fixi tries to get the partial page, but the browser has the full page cached
-                # before the 'Vary' header was added. This can then result in the whole page being swapped instead
-                # in instead of only a part of it. ext-fixi.js currently checks for the FX-Response header to
+                # before the 'Vary' header was added. This can then result in the whole page being swapped in instead
+                # of only a part of it. ext-fixi.js currently checks for the FX-Response header to
                 # ensure a correctly updated/uncached response.
                 "FX-Response": fx_response,
                 "Vary": "FX-Request",

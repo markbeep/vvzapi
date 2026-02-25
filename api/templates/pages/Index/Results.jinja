@@ -13,7 +13,7 @@
         <p class="text-xs pb-2">
             Found {{ results.total }} relevant result{{ results.total|pluralize }}
             in {{ '%0.2f' % (results.exec_time_ms/1000) }}s where
-            <span class="bg-base-100 py-0.5 px-1 rounded">{{ results.parsed_query }}</span>
+            <span class="bg-base-100 py-0.5 px-1 rounded">{{ results.parsed_query|e }}</span>
         </p>
 
         <div class="collapse bg-base-100 border-base-300 border"

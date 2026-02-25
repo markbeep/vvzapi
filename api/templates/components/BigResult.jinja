@@ -74,7 +74,7 @@
                 {% if unit.levels %}
                     <span class="badge badge-success h-fit p-1 flex-wrap justify-start">
                         {% for level in unit.levels %}
-                            <span title="{{ level.description()|e }}">
+                            <span title="{{ level.description() |e }}">
                                 {{ level }}
                                 {% if not loop.last %}
                                     ,
@@ -110,7 +110,7 @@
     </div>
     {% for semkez in grouped.semkezs %}
         {% if semkez != unit.semkez %}
-            <a href="/unit/{{ grouped.with_semkez(semkez).id }}"
+            <a href="/unit/{{ grouped.with_semkez(semkez).id }}?q={{ query|e }}"
                tabindex="-1"
                class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow flex-row p-4 group-hover:w-fit group-hover:mb-2 group-hover:ml-2 group-hover:mr-2">
                 <div class="flex flex-wrap gap-2 text-xs font-mono mt-1">

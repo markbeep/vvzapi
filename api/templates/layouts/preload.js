@@ -43,7 +43,7 @@ function preloadInput(ev) {
     fetch(url.toString(), { method: "GET", mode: "no-cors" });
 
     preloadTimers.delete(input);
-  }, 500);
+  }, 400);
 
   preloadTimers.set(input, timer);
 }
