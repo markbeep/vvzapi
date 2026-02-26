@@ -369,7 +369,7 @@ async def unit_detail(
                 average_rating = rating.average() if rating else "n/a"
 
         links = {
-            str(request.url_for("unit_detail", unit_id=newest_unit_id)): "cannonical"
+            str(request.url_for("unit_detail", unit_id=newest_unit_id)): "canonical"
         }
 
         span.set_attribute("newest_unit_id", newest_unit_id)

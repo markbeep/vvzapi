@@ -134,7 +134,7 @@
 ### Bug Fixes
 
 * fix ints being read out as strings from json array ([ddfcacb](https://github.com/markbeep/vvzapi/commit/ddfcacb7d04bf88677fef456a96e12c095b968e1))
-* **search:** add cannonical link to unit pages leading to newest page ([9491f1a](https://github.com/markbeep/vvzapi/commit/9491f1a1102c6468948b60d99240ccaadbeba83b))
+* **search:** add canonical link to unit pages leading to newest page ([9491f1a](https://github.com/markbeep/vvzapi/commit/9491f1a1102c6468948b60d99240ccaadbeba83b))
 
 
 ### Performance Improvements
