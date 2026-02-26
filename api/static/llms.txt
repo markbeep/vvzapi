@@ -1,0 +1,187 @@
+# VVZ API – Search Syntax Guide
+
+> Base URL: https://vvzapi.ch
+> Search endpoint: GET /api/v2/search?q={query}
+> Interactive search: https://vvzapi.ch/?q={query}
+> Full syntax guide (for humans): https://vvzapi.ch/guide
+
+VVZ API is a search engine for ETH Zurich course catalogue (Vorlesungsverzeichnis) data. It supports a rich query language with typed filter operators, comparison operators, negation, grouping with parentheses, and OR logic.
+
+## How Search Works
+
+- By default, any plain text is matched against **course titles** (both English and German).
+- To filter on a specific field, use `key:value` syntax.
+- Multiple filters are combined with **logical AND** by default.
+- Use `OR` (case-insensitive) between terms for logical OR.
+- Use parentheses `()` to group sub-expressions.
+- Prefix a term or key with `-` to **negate** it.
+- If a value contains spaces, wrap it in double or single quotes: `key:"multi word value"`.
+
+## API Endpoint
+
+```
+GET /api/v2/search?q={query}&offset=0&limit=20&order_by=year&order=desc
+```
+
+Parameters:
+- `q` (required): the search query string using the syntax described below
+- `offset`: pagination offset (default 0)
+- `limit`: number of results per page (default 20)
+- `order_by`: field to sort by — one of: title, title_german, title_english, number, credits, year, semester, lecturer, department, level, language, coursereview, descriptions, offered, examtype
+- `order`: "desc" (default) or "asc"
+
+The response JSON contains:
+- `total`: total number of matching course numbers
+- `results`: a dict mapping course numbers to grouped learning units (across semesters)
+- `parsed_query`: how the system interpreted your query
+- `exec_time_ms`: execution time in milliseconds
+
+## Filter Keys
+
+Each key also has short aliases for convenience.
+
+| Key                  | Aliases                  | Description |
+|----------------------|--------------------------|-------------|
+| title                | t                        | Matches course title (English or German). This is the default when no key is specified. |
+| title_english        | te                       | Matches English course title only. |
+| title_german         | tg                       | Matches German course title only. |
+| number               | n                        | Matches (part of) the course number, e.g. "252-0027". |
+| lecturer             | l, i, instructor         | Matches lecturer name or surname. |
+| credits              | c, ects, mv              | Number of ECTS credits. Supports comparison operators. |
+| year                 | y                        | Academic year, e.g. 2024. Supports comparison operators. |
+| semester             | s                        | Semester type: S or FS for Spring/Summer, W or HS for Autumn/Winter. |
+| examtype             | e                        | Type of examination, e.g. "Session Examination", "Graded Semester Performance". |
+| descriptions         | d                        | Searches all description fields (abstract, objectives, content, literature, comments, etc.) in both languages. |
+| descriptions_english | de                       | Searches description fields in English only. |
+| descriptions_german  | dg                       | Searches description fields in German only. |
+| department           | dep                      | Filters by ETH department, e.g. "Computer Science", "Architecture", "Management Technology and Economics". Uses fuzzy matching to find the closest department. |
+| level                | lvl, lev                 | Course level: BSC, MSC, DZ, DS, DR, SHE, GS, WBZ, or NDS. |
+| language             | lang                     | The language the course is taught in. |
+| offered              | off, o                   | Matches against the section path the course is offered in. See detailed explanation below. |
+| coursereview         | cr                       | Filters by combined average rating on CourseReview (0.0–5.0). Supports comparison operators. |
+
+## Semesters at ETH
+
+ETH Zurich operates on a two-semester academic year:
+
+- **HS / W** (Herbstsemester / Winter) — Autumn semester, running from **September to end of January**.
+- **FS / S** (Frühlingssemester / Spring) — Spring semester, running from **February to end of August**.
+
+When filtering by semester, all four abbreviations are accepted: `s:HS`, `s:W`, `s:FS`, `s:S`. The aliases `H` and `F` also work (`s:H` for Herbstsemester, `s:F` for Frühlingssemester).
+
+When combined with a year filter, note that the year refers to the academic year as catalogued by ETH — e.g., `y:2025 s:HS` means the Autumn semester starting in September 2025, and `y:2026 s:FS` means the Spring semester starting in February 2026.
+
+## Comparison Operators
+
+For numeric keys (`credits`, `year`, `coursereview`), you can use these operators instead of `:`:
+
+| Operator | Meaning              | Example       |
+|----------|----------------------|---------------|
+| : or =   | Equal                | credits:8     |
+| !=       | Not equal            | year!=2023    |
+| >        | Greater than         | c>6           |
+| <        | Less than            | credits<4     |
+| >=       | Greater or equal     | cr>=4.0       |
+| <=       | Less or equal        | c<=4          |
+
+## Negation
+
+Prefix any term or filter with `-` to negate it:
+
+- `-math` → exclude courses with "math" in the title
+- `-d:analysis` → exclude courses mentioning "analysis" in descriptions
+- `-dept:architecture` → exclude courses from the Architecture department
+
+## The "offered" Operator – Finding Courses for Your Program
+
+The `offered` (alias: `o`, `off`) operator is the most powerful way to find courses that are relevant and legal for a specific student's program. It works by matching against **section paths** in the course catalogue tree.
+
+### How section paths work
+
+ETH's course catalogue is organized as a tree. Each course is placed under one or more leaf sections, and each leaf has a full path from root to leaf. For example, a course might sit under:
+
+```
+Computer Science Master > Major in Theoretical Computer Science > Core Courses
+```
+
+When you write `o:"computer science master"`, it matches any course whose section path **contains** "computer science master" (in either English or German).
+
+### Combining multiple offered values
+
+When you use multiple `o:` filters, they are combined with AND — meaning the system finds courses that have a **single section path** containing **all** of the given terms. This is extremely useful for drilling into a specific program's structure.
+
+For example:
+- `o:"computer science" o:"core course"` → finds courses whose section path includes both "computer science" AND "core course", matching paths like "Computer Science Bachelor > Core Courses" or "Computer Science Master > Core Courses".
+- `o:"computer science master" o:minor` → courses in a minor track within the CS Master program.
+- `o:"computer science master" o:minor o:"computer vision"` → courses in the Computer Vision minor track of the CS Master.
+
+### Department vs. Offered — what's the difference?
+
+Both `department` and `offered` can help filter courses for a student, but they work differently:
+
+- **department** (`dep:`) filters by which ETH department *administers* the course. For example, `dep:computer` finds all courses run by D-INFK (the CS department), regardless of which programs they appear in.
+- **offered** (`o:`) filters by which *program sections* list the course. A single course can appear in many programs (e.g., a math course might be offered in both the CS Bachelor and the Physics Bachelor).
+
+**Use `department` when** you want courses run by a specific department.
+**Use `offered` when** you want courses that count toward a specific study program, major, or track.
+
+**Tip for LLM agents:** If a user asks for "core courses in the CS Master", the best approach is to use `o:"computer science master" o:"core course"`. If they ask for "electives in Data Science", try `o:"data science" o:elective`. If they just want "all computer science courses" without program specificity, `dep:computer` is appropriate.
+
+## Practical Examples
+
+### Find core courses in the Computer Science Master (Spring 2026)
+```
+y=2026 s:fs o:"computer science master" o:"core course"
+```
+
+### Find courses in the Computer Vision minor of the CS Master (Spring 2026)
+```
+y=2026 s:fs o:"computer science master" o:minor o:"computer vision"
+```
+
+### Find courses with 10 or more credits
+```
+credits>=10
+```
+
+### Find courses taught by a specific lecturer in 2024
+```
+lecturer:Müller year:2024
+```
+
+### Find physics courses in winter semester, excluding those about analysis
+```
+physics s:W -d:analysis
+```
+
+### Complex query with OR and grouping
+```
+s:fs y:2026 ((dept:computer c<=4 o:"data management systems") or (dept:architecture c>=10))
+```
+This finds courses in Spring 2026 that are either: CS department courses with ≤4 credits in the "Data Management Systems" program, OR Architecture department courses with ≥10 credits.
+
+### Find highly rated courses in a program
+```
+o:"mechanical engineering master" cr>=4.0
+```
+
+### Find German-language courses in a department
+```
+dep:architecture lang:deutsch
+```
+
+## Tips for LLM Agents
+
+1. **Ask about the user's program.** The most useful searches combine `o:` filters with the user's specific degree program. If someone asks for "core courses in CS", ask whether they mean Bachelor or Master — the results differ significantly.
+
+2. **Use multiple `o:` values to drill down.** ETH program trees are deep. Combining `o:"program name" o:"sub-category"` is the standard way to narrow results.
+
+3. **Semester and year matter.** Course offerings change between semesters. Always include `y:` and `s:` if the user cares about current availability.
+
+4. **Negation is powerful.** Use `-o:` to exclude certain program tracks, `-dept:` to exclude departments, or `-d:` to exclude courses mentioning specific topics.
+
+5. **Department uses fuzzy matching.** You don't need the exact department name — "computer" matches "Computer Science", "arch" matches "Architecture", etc.
+
+6. **The `offered` filter matches in both English and German.** You can use either language for the section path terms.
+
+7. **Default search is title-only.** If a user's freeform query returns too few results, try switching to `d:` (descriptions) for a broader search.

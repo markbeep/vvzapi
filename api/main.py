@@ -412,6 +412,7 @@ async def root_static(root: str):
         "site.webmanifest",
         "sitemap.xml",
         "robots.txt",
+        "llms.txt",
     ]:
         return HTMLResponse(status_code=404)
 
