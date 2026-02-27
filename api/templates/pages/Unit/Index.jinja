@@ -11,6 +11,7 @@
     request: Request,
     average_rating: float | str = "n/a",
     links: dict[str, str] = {}, # href:rel mapping
+    flagged: bool = False,
 #}
 
 {% set main_title = unit.title_english if unit.title_english else unit.title %}
@@ -157,9 +158,28 @@
                             <icons.External />
                         </span>
                     </a>
+                    <form method="post"
+                          action="/unit/{{ unit.id }}/flag?q={{ query }}"
+                          onsubmit="return confirm('Flag this unit as having incorrect data? It will be prioritized for re-fetching.');">
+                        {% if flagged %}
+                            <button type="submit"
+                                    class="btn btn-sm btn-warning"
+                                    title="This unit is flagged as having incorrect data."
+                                    disabled>
+                                Flagged
+                            </button>
+                        {% else %}
+                            <button type="submit"
+                                    class="btn btn-sm btn-outline btn-warning"
+                                    title="Flag this unit's cached data as incorrect so it gets re-fetched">
+                                Flag incorrect
+                            </button>
+                        {% endif %}
+                    </form>
 
                 </div>
-                <p class="absolute bottom-2 right-4 text-xs text-base-content/50">
+                <p class="absolute bottom-2 right-4 text-xs text-base-content/50"
+                   title="When this unit was last scraped from VVZ.">
                     Last Updated: {{ unit.last_updated() }}
                 </p>
             </div>

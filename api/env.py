@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     """Full influxdb url, i.e. http://influxdb.example.com/write?db=vvzapi"""
     influxdb_token: str | None = None
 
+    flag_webhook: str | None = None
+    """Endpoint to send webhooks to if a unit is flagged"""
+
     @property
     def zip_path(self) -> str:
         return self.db_path + ".zip"

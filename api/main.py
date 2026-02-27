@@ -34,6 +34,7 @@ from starlette.background import BackgroundTask
 from api.env import Settings
 from api.models import (
     Course,
+    HTTPCache,
     LearningUnit,
     Lecturer,
     Rating,
@@ -45,7 +46,7 @@ from api.routers.v1.units import get_unit
 from api.routers.v1_router import router as v1_router
 from api.routers.v2.search import search_units
 from api.routers.v2_router import router as v2_router
-from api.util.db import aget_session
+from api.util.db import aget_meta_session, aget_session
 from api.util.influxdb import hasher, send_to_influxdb
 from api.util.parse_query import QueryKey
 from api.util.prometheus import (
@@ -56,6 +57,7 @@ from api.util.sections import get_parent_from_unit
 from api.util.sitemap import generate_sitemap
 from api.util.templates import catalog_response
 from api.util.version import get_api_version
+from api.util.webhook import send_flagged_webhook
 
 # Configure OpenTelemetry tracing
 settings = Settings()
@@ -284,6 +286,7 @@ async def unit_detail(
     request: Request,
     unit_id: int,
     session: Annotated[AsyncSession, Depends(aget_session)],
+    meta_session: Annotated[AsyncSession, Depends(aget_meta_session)],
     query: Annotated[str | None, Query(alias="q"), str] = None,
 ):
     with tracer.start_as_current_span("unit_detail") as span:
@@ -355,6 +358,18 @@ async def unit_detail(
                 else:
                     root_sections.append(section_ids[section.id])
 
+        with tracer.start_as_current_span("flagged") as span:
+            flagged = (
+                await meta_session.exec(
+                    select(HTTPCache).where(
+                        col(HTTPCache.url).contains(f"semkez={unit.semkez}"),
+                        col(HTTPCache.url).contains(f"lerneinheitId={unit.id}"),
+                        col(HTTPCache.flagged).is_(True),
+                    )
+                )
+            ).first()
+            span.set_attribute("is_flagged", flagged is not None)
+
         # allows us to add canonical links to the newest unit
         newest_unit_id, _ = max(
             [(id, sk.replace("W", "0").replace("S", "1")) for id, sk in semkezs],
@@ -392,7 +407,51 @@ async def unit_detail(
             newest_unit_id=newest_unit_id,
             average_rating=average_rating,
             links=links,
+            flagged=flagged is not None,
         )
+
+
+@app.post("/unit/{unit_id}/flag", include_in_schema=False)
+async def flag_unit(
+    request: Request,
+    unit_id: int,
+    background_task: BackgroundTasks,
+    session: Annotated[AsyncSession, Depends(aget_session)],
+    meta_session: Annotated[AsyncSession, Depends(aget_meta_session)],
+    query: Annotated[str | None, Query(alias="q"), str] = None,
+):
+    unit = await get_unit(unit_id, session)
+    if not unit:
+        return HTMLResponse(status_code=404)
+
+    results = (
+        await meta_session.exec(
+            select(HTTPCache).where(
+                col(HTTPCache.url).contains(f"semkez={unit.semkez}"),
+                col(HTTPCache.url).contains(f"lerneinheitId={unit.id}"),
+            )
+        )
+    ).all()
+
+    for entry in results:
+        entry.flagged = True
+        meta_session.add(entry)
+
+    await meta_session.commit()
+
+    if Settings().flag_webhook:
+        background_task.add_task(
+            send_flagged_webhook,
+            unit_id=unit_id,
+        )
+
+    base_url = str(request.url_for("unit_detail", unit_id=unit_id))
+    if query:
+        base_url += f"?q={quote_plus(query)}"
+    return RedirectResponse(
+        url=base_url,
+        status_code=303,
+    )
 
 
 @app.get("/guide", include_in_schema=False)
