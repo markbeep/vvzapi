@@ -91,7 +91,7 @@ AUTOTHROTTLE_ENABLED = True
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
 HTTPCACHE_ENABLED = True
 HTTPCACHE_IGNORE_HTTP_CODES = []
-HTTPCACHE_STORAGE = "scraper.util.db_httpcache.DBHTTPCache"
+HTTPCACHE_STORAGE = "scraper.util.caching.db_httpcache.DBHTTPCache"
 
 # Set settings whose default value is deprecated to a future-proof value
 FEED_EXPORT_ENCODING = "utf-8"

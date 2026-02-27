@@ -13,6 +13,7 @@ from sqlmodel import Session
 
 from api.models import HTTPCache
 from api.util.db import meta_engine
+from scraper.util.caching.rescrape import should_rescrape
 from scraper.util.url import normalized_url
 
 
@@ -33,9 +34,19 @@ class DBHTTPCache(httpcache.FilesystemCacheStorage):
     @override
     def retrieve_response(self, spider: Spider, request: Request) -> Response | None:
         url = self._normalize_url(request.url)
+
+        if should_rescrape(url):
+            self.logger.info(
+                "URL marked for rescraping, skipping cache",
+                extra={"url": url},
+            )
+            return None
+
         with Session(meta_engine.connect()) as session:
             entry = session.get(HTTPCache, url)
         if not entry:
+            return None
+        if entry.flagged:
             return None
 
         headers = (

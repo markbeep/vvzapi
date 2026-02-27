@@ -18,6 +18,7 @@ from scraper.env import Settings as EnvSettings
 from scraper.spiders.lecturers import LecturersSpider
 from scraper.spiders.ratings import RatingsSpider
 from scraper.spiders.units import UnitsSpider
+from scraper.util.caching.rescrape import get_last_semesters
 
 logger = logging.getLogger(__name__)
 
@@ -41,27 +42,10 @@ def add_stdout_logging(settings: Settings):
 def crawl():
     settings = get_project_settings()
     add_stdout_logging(settings)
-
     process = CrawlerProcess(settings)
-
-    # cleanup cache if required
-    if EnvSettings().enable_rescrape:
-        with next(get_session()) as session:
-            semkezs = session.exec(
-                select(distinct(LearningUnit.semkez))
-                .order_by(col(LearningUnit.semkez).desc())
-                .limit(2)
-            ).all()
-        if not semkezs:
-            logger.info("No semesters found in database, scraping all semesters.")
-            semkezs = None
-        process.crawl(UnitsSpider, semkezs=semkezs)
-        # process.crawl(LecturersSpider, semkezs=semkezs)
-        # process.crawl(RatingsSpider)
-    else:
-        process.crawl(UnitsSpider)
-        # process.crawl(LecturersSpider)
-        # process.crawl(RatingsSpider)
+    process.crawl(UnitsSpider)
+    # process.crawl(LecturersSpider)
+    # process.crawl(RatingsSpider)
     process.start()
 
 
