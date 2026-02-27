@@ -80,12 +80,12 @@ jobs:
             MAJOR=$(echo $VERSION | cut -d. -f1)
             MINOR=$(echo $VERSION | cut -d. -f2)
             PATCH=$(echo $VERSION | cut -d. -f3)
-            echo "::set-output name=tags::${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi:$VERSION,${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi:$MAJOR.$MINOR,${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi:$MAJOR,${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi:latest"
-            echo "::set-output name=version::$VERSION"
+            echo "tags=${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi:$VERSION,${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi:$MAJOR.$MINOR,${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi:$MAJOR,${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi:latest" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=tags::${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi:nightly"
+            echo "tags=${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi:nightly" >> $GITHUB_OUTPUT
             github_sha_hash=${{ github.sha }}
-            echo "::set-output name=version::nightly:${github_sha_hash:0:7}"
+            echo "version=nightly:${github_sha_hash:0:7}" >> $GITHUB_OUTPUT
           fi
 
       - name: Build and push API
@@ -108,12 +108,12 @@ jobs:
             MAJOR=$(echo $VERSION | cut -d. -f1)
             MINOR=$(echo $VERSION | cut -d. -f2)
             PATCH=$(echo $VERSION | cut -d. -f3)
-            echo "::set-output name=tags::${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi-scraper:$VERSION,${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi-scraper:$MAJOR.$MINOR,${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi-scraper:$MAJOR,${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi-scraper:latest"
-            echo "::set-output name=version::$VERSION"
+            echo "tags=${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi-scraper:$VERSION,${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi-scraper:$MAJOR.$MINOR,${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi-scraper:$MAJOR,${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi-scraper:latest" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=tags::${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi-scraper:nightly"
+            echo "tags=${{ secrets.DOCKER_HUB_USERNAME }}/vvzapi-scraper:nightly" >> $GITHUB_OUTPUT
             github_sha_hash=${{ github.sha }}
-            echo "::set-output name=version::nightly:${github_sha_hash:0:7}"
+            echo "version=nightly:${github_sha_hash:0:7}" >> $GITHUB_OUTPUT
           fi
 
       - name: Build and push scraper
