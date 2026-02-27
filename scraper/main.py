@@ -8,17 +8,14 @@ from pathlib import Path
 from scrapy.crawler import CrawlerProcess
 from scrapy.settings import Settings
 from scrapy.utils.project import get_project_settings
-from sqlmodel import col, distinct, select, text
+from sqlmodel import text
 
 from api.env import Settings as APISettings
-from api.models import LearningUnit
 from api.util.db import get_session
 from api.util.materialize import update_materialized_views
-from scraper.env import Settings as EnvSettings
 from scraper.spiders.lecturers import LecturersSpider
 from scraper.spiders.ratings import RatingsSpider
 from scraper.spiders.units import UnitsSpider
-from scraper.util.caching.rescrape import get_last_semesters
 
 logger = logging.getLogger(__name__)
 
@@ -44,8 +41,8 @@ def crawl():
     add_stdout_logging(settings)
     process = CrawlerProcess(settings)
     process.crawl(UnitsSpider)
-    # process.crawl(LecturersSpider)
-    # process.crawl(RatingsSpider)
+    process.crawl(LecturersSpider)
+    process.crawl(RatingsSpider)
     process.start()
 
 

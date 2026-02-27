@@ -47,6 +47,10 @@ class DBHTTPCache(httpcache.FilesystemCacheStorage):
         if not entry:
             return None
         if entry.flagged:
+            self.logger.info(
+                "URL flagged for rescraping, skipping cache",
+                extra={"url": url},
+            )
             return None
 
         headers = (
@@ -74,6 +78,9 @@ class DBHTTPCache(httpcache.FilesystemCacheStorage):
         self.store(request.url, response, None)
 
     def store(self, url: str, response: Response, timestamp: float | None):
+        if response.status == 302:
+            return
+
         url = self._normalize_url(url)
         headers: dict[str, str] = dict(response.headers.to_unicode_dict())
         with Session(meta_engine.connect()) as session:

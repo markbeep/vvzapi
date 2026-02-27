@@ -16,6 +16,7 @@ from api.models import (
     LearningUnit,
     Lecturer,
     Level,
+    Overwriteable,
     Rating,
     Section,
     UnitExaminerLink,
@@ -139,6 +140,11 @@ class DatabasePipeline:
 
             if not old:
                 self.session.add(item)
+                self.session.commit()
+            elif isinstance(old, Overwriteable):
+                old.overwrite_with(item)
+                old.scraped_at = int(time.time())
+                self.session.add(old)
                 self.session.commit()
 
             return item

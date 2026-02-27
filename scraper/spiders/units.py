@@ -152,7 +152,7 @@ class UnitsSpider(KeywordLoggerSpider):
     def parse_start_url(self, response: Response, **_: Any):  # pyright: ignore[reportExplicitAny]
         if RESCRAPE_SEMKEZS and "cached" in response.flags:
             self.logger.info(
-                "Skipping cached catalogue page due to rescrape settings",
+                "RESCRAPE is on. Not implicitly rescraping catalogue page.",
                 extra={
                     "url": response.url,
                     "request_url": response.request.url if response.request else None,
@@ -579,7 +579,7 @@ class UnitsSpider(KeywordLoggerSpider):
         """
         if RESCRAPE_SEMKEZS and "cached" in response.flags:
             self.logger.info(
-                "Skipping cached legend page due to rescrape settings",
+                "RESCRAPE is on. Not implicitly rescraping legend page.",
                 extra={
                     "url": response.url,
                     "request_url": response.request.url if response.request else None,

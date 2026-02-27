@@ -43,11 +43,16 @@ jobs:
 
       - name: Check SQLite Alembic Migrations
         run: |
-          uv run alembic upgrade heads
-          uv run alembic check
-          uv run alembic downgrade base
-          uv run alembic upgrade heads
-          uv run alembic check
+          uv run alembic -n data_db upgrade heads
+          uv run alembic -n meta_db upgrade heads
+          uv run alembic -n data_db check
+          uv run alembic -n meta_db check
+          uv run alembic -n data_db downgrade base
+          uv run alembic -n meta_db downgrade base
+          uv run alembic -n data_db upgrade heads
+          uv run alembic -n meta_db upgrade heads
+          uv run alembic -n data_db check
+          uv run alembic -n meta_db check
 
   build:
     needs: test

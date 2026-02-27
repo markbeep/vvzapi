@@ -39,7 +39,7 @@ class LecturersSpider(KeywordLoggerSpider):
     def parse_start_url(self, response: Response, **_: Any):  # pyright: ignore[reportExplicitAny]
         if RESCRAPE_SEMKEZS and "cached" in response.flags:
             self.logger.info(
-                "Skipping cached lecturers page due to rescrape settings",
+                "RESCRAPE is on. Not implicitly rescraping lecturers page.",
                 extra={"url": response.url},
             )
             return

@@ -11,6 +11,10 @@ migrate:
     uv run alembic -n data_db upgrade heads
     uv run alembic -n meta_db upgrade heads
 
+check:
+    uv run alembic -n data_db check
+    uv run alembic -n meta_db check
+
 alias s := scrape
 
 scrape:

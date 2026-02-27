@@ -368,6 +368,9 @@ class LearningUnit(BaseModel, Overwriteable, table=True):
     def levels_as_str(self) -> str:
         return ", ".join([str(level) for level in self.levels])
 
+    def last_updated(self) -> str:
+        return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.scraped_at))
+
 
 """
 
