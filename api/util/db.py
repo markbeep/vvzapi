@@ -28,3 +28,27 @@ async def aget_session():
     async with AsyncSession(aengine) as session:
         await session.execute(text("pragma mmap_size=30000000000"))
         yield session
+
+
+meta_engine = create_engine(
+    f"sqlite+pysqlite:///{Settings().meta_db_path}", json_serializer=json_serializer
+)
+
+ameta_engine = create_async_engine(
+    f"sqlite+aiosqlite:///{Settings().meta_db_path}",
+    json_serializer=json_serializer,
+    pool_size=20,
+    max_overflow=30,
+)
+
+
+def meta_get_session():
+    with Session(meta_engine) as session:
+        session.execute(text("PRAGMA foreign_keys=ON"))
+        yield session
+
+
+async def ameta_get_session():
+    async with AsyncSession(ameta_engine) as session:
+        await session.execute(text("pragma mmap_size=30000000000"))
+        yield session

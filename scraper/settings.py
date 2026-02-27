@@ -93,7 +93,7 @@ HTTPCACHE_ENABLED = not Settings().refresh_html
 HTTPCACHE_EXPIRATION_SECS = 0
 HTTPCACHE_DIR = "httpcache"
 HTTPCACHE_IGNORE_HTTP_CODES = []
-HTTPCACHE_STORAGE = "scrapy.extensions.httpcache.FilesystemCacheStorage"
+HTTPCACHE_STORAGE = "scraper.util.db_httpcache.DBHTTPCache"
 
 # Set settings whose default value is deprecated to a future-proof value
 FEED_EXPORT_ENCODING = "utf-8"

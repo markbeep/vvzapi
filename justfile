@@ -8,7 +8,8 @@ dev:
 alias m := migrate
 
 migrate:
-    uv run alembic upgrade heads
+    uv run alembic -n data_db upgrade heads
+    uv run alembic -n meta_db upgrade heads
 
 alias s := scrape
 

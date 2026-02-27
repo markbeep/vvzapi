@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from enum import Enum
-from typing import final, override
+from typing import Mapping, final, override
 
 from pydantic import BaseModel as PydanticBaseModel
 from rapidfuzz import fuzz, process, utils
@@ -586,3 +586,29 @@ class SectionPathView(BaseModel, table=True):
 class UnitDepartmentView(BaseModel, table=True):
     unit_id: int = Field(primary_key=True)
     department_id: int = Field(primary_key=True, index=True)
+
+
+"""
+
+
+METADATA DATABASE
+(separate db)
+
+
+
+"""
+
+
+class MetadataModel(SQLModel):
+    pass
+
+
+class HTTPCache(MetadataModel, table=True):
+    url: str = Field(primary_key=True)
+    status_code: int
+    body: bytes | None = Field(default=None)
+    headers: dict[str, str] | None = Field(default=None, sa_column=Column(JSON))
+    scraped_at: int = Field(
+        default_factory=lambda: int(time.time()),
+        sa_column=Column(INTEGER, nullable=False),
+    )

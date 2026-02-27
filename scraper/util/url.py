@@ -28,3 +28,9 @@ def sort_url_params(url: str) -> str:
     sorted_query = dict(sorted(query.items()))
     url_res = url_res._replace(query=urlencode(sorted_query, True))
     return urlunparse(url_res)
+
+
+def normalized_url(url: str) -> str:
+    sorted = sort_url_params(url)
+    sorted = sorted.replace(".vorlesungen.", ".vvz.").replace("http://", "https://")
+    return sorted.strip("/")
