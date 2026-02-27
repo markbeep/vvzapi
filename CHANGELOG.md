@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.11.0](https://github.com/markbeep/vvzapi/compare/v1.10.3...v1.11.0) (2026-02-27)
+
+
+### Features
+
+* **scraper:** add "Last updated" indicator on unit page ([d09b996](https://github.com/markbeep/vvzapi/commit/d09b996c8c7f2c6a2c5b079182a8a1c8bbd99b19))
+* **scraper:** add logic for handling flagged (outdated) pages to force targeted refreshes of scraped and cached pages ([d09b996](https://github.com/markbeep/vvzapi/commit/d09b996c8c7f2c6a2c5b079182a8a1c8bbd99b19))
+* **search:** add llms.txt to help llms search for courses ([8344c83](https://github.com/markbeep/vvzapi/commit/8344c83acb19ca2bb58369a51dd102f207ebb1dc))
+
+
+### Bug Fixes
+
+* **search:** fix 'cannonical' typo to 'canonical' ([ff7cf35](https://github.com/markbeep/vvzapi/commit/ff7cf35387fcddc745920d2f201be0c2569dbcdf))
+* **search:** retain query when directly being redirected to a single unit after searching ([2e16bd4](https://github.com/markbeep/vvzapi/commit/2e16bd4c7571f40b7f3123adb2b8eac6cb60b9f2))
+
+
+### Miscellaneous Chores
+
+* **scraper:** deprecate unit changes and stop tracking changes in preparation for removing it completely ([d09b996](https://github.com/markbeep/vvzapi/commit/d09b996c8c7f2c6a2c5b079182a8a1c8bbd99b19))
+
+
+### Code Refactoring
+
+* **scraper:** refactor rescrape functionality to properly refresh a few (unit) details every now and then ([d09b996](https://github.com/markbeep/vvzapi/commit/d09b996c8c7f2c6a2c5b079182a8a1c8bbd99b19))
+* **scraper:** use sqlite for html cache instead of default scrapy file-based httpcache ([d09b996](https://github.com/markbeep/vvzapi/commit/d09b996c8c7f2c6a2c5b079182a8a1c8bbd99b19))
+
+
+### Continuous Integration
+
+* remove deprecated set-output from build action ([e649347](https://github.com/markbeep/vvzapi/commit/e649347fdf8d8a1fa4e9ad495e433465dcb899b9))
+* update dockerfiles to correctly execute alembic migrations ([956f929](https://github.com/markbeep/vvzapi/commit/956f9290739da7a558aedc4293945aebaf90d3b4))
+
 ## [1.10.3](https://github.com/markbeep/vvzapi/compare/v1.10.2...v1.10.3) (2026-02-23)
 
 
