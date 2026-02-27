@@ -514,6 +514,7 @@ MISCELLANEOUS
 """
 
 
+# TODO: REMOVE
 class UnitChanges(BaseModel, table=True):
     """We keep track of changes that get applied to learning units"""
 
@@ -524,6 +525,7 @@ class UnitChanges(BaseModel, table=True):
     """The scraped_at before the changes were applied"""
 
 
+# TODO: move to metadata db
 class FinishedScrapingSemester(BaseModel, table=True):
     """Keeps track of which semesters have been fully scraped already."""
 

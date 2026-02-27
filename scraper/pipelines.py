@@ -6,7 +6,7 @@ from typing import cast
 from pydantic import BaseModel
 from scrapy import Spider
 from scrapy.utils.log import SpiderLoggerAdapter
-from sqlmodel import Session, col, select
+from sqlmodel import Session, select
 
 from api.models import (
     Course,
@@ -16,10 +16,8 @@ from api.models import (
     LearningUnit,
     Lecturer,
     Level,
-    Overwriteable,
     Rating,
     Section,
-    UnitChanges,
     UnitExaminerLink,
     UnitLecturerLink,
     UnitSectionLink,
@@ -28,7 +26,6 @@ from api.models import (
 from api.util import db
 from scraper.spiders.units import UnitsSpider
 from scraper.types.mappings import UnitDepartmentMapping, UnitLevelMapping
-from scraper.util.difference import find_unit_differences
 from scraper.util.scrapercache import CACHE_PATH
 
 DEP_LINK = CACHE_PATH / "unit_dep_link.jsonl"
@@ -142,42 +139,6 @@ class DatabasePipeline:
 
             if not old:
                 self.session.add(item)
-                self.session.commit()
-            elif isinstance(old, Overwriteable):
-                if isinstance(old, LearningUnit) and isinstance(item, LearningUnit):
-                    # determine if there are any differences
-                    if differences := find_unit_differences(old, item):
-                        old_changes = self.session.exec(
-                            select(UnitChanges)
-                            .where(
-                                UnitChanges.changes == differences.changes,
-                                UnitChanges.unit_id == differences.unit_id,
-                            )
-                            .order_by(col(UnitChanges.scraped_at).desc())
-                        ).one_or_none()
-                        if old_changes:
-                            self.logger.warning(
-                                "Detecting duplicate changes. Only updating scraped_at",
-                                extra={
-                                    "unit_id": old.id,
-                                    "changes": differences.changes,
-                                    "changes_id": old_changes.id,
-                                },
-                            )
-                            old_changes.scraped_at = differences.scraped_at
-                        else:
-                            self.logger.info(
-                                "LearningUnit changes detected",
-                                extra={
-                                    "unit_id": old.id,
-                                    "changes": differences.changes,
-                                },
-                            )
-                            self.session.add(differences)
-
-                old.overwrite_with(item)
-                old.scraped_at = int(time.time())
-                self.session.add(old)
                 self.session.commit()
 
             return item
