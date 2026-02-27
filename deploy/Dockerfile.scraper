@@ -16,4 +16,6 @@ COPY scraper scraper
 COPY api api
 COPY alembic alembic
 
-CMD ["/bin/sh", "-c", "/app/.venv/bin/alembic upgrade heads && /app/.venv/bin/python -m scraper.main"]
+COPY deploy/scraper_entrypoint.sh scraper_entrypoint.sh
+RUN chmod +x scraper_entrypoint.sh
+CMD ["/app/scraper_entrypoint.sh"]
