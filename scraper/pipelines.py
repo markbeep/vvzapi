@@ -27,8 +27,8 @@ from api.models import (
 )
 from api.util import db
 from scraper.spiders.units import UnitsSpider
+from scraper.types.mappings import UnitDepartmentMapping, UnitLevelMapping
 from scraper.util.difference import find_unit_differences
-from scraper.util.mappings import UnitDepartmentMapping, UnitLevelMapping
 from scraper.util.scrapercache import CACHE_PATH
 
 DEP_LINK = CACHE_PATH / "unit_dep_link.jsonl"

@@ -84,6 +84,8 @@ class DBHTTPCache(httpcache.FilesystemCacheStorage):
 
 @final
 class Migrator:
+    """Used to migrate httpcache to dbhttpcache above"""
+
     def __init__(self, cachedir: str) -> None:
         self.cachedir = cachedir
         self.cache = DBHTTPCache(None)

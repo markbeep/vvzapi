@@ -1,12 +1,13 @@
 # pyright: reportExplicitAny=false,reportAny=false
 
 from typing import Any, override
+
 from scrapy.spiders import CrawlSpider
 from scrapy.utils.log import SpiderLoggerAdapter
 
 
 class KeywordLoggerAdapter(SpiderLoggerAdapter):
-    """A logger adapter which adds the 'keyword' attribute to log records."""
+    """A logger adapter which adds the 'extra' attributes to log records."""
 
     @override
     def process(self, msg: str, kwargs: Any):

@@ -38,8 +38,8 @@ from api.util.vvz_types import (
     WeekdayEnum,
 )
 from scraper.env import Settings
+from scraper.types.mappings import UnitDepartmentMapping, UnitLevelMapping
 from scraper.util.logging import KeywordLoggerSpider
-from scraper.util.mappings import UnitDepartmentMapping, UnitLevelMapping
 from scraper.util.regex_rules import (
     RE_ABSCHNITTID,
     RE_DATE,

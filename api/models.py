@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from enum import Enum
-from typing import Mapping, final, override
+from typing import final, override
 
 from pydantic import BaseModel as PydanticBaseModel
 from rapidfuzz import fuzz, process, utils
@@ -530,16 +530,6 @@ class FinishedScrapingSemester(BaseModel, table=True):
     semkez: str = Field(primary_key=True)
 
 
-class LastCleanup(BaseModel, table=True):
-    """Keeps track of when the last cleanup of the scrapy cache was performed."""
-
-    id: int | None = Field(default=None, primary_key=True)
-    timestamp: int = Field(
-        default_factory=lambda: int(time.time()),
-        sa_column=Column(INTEGER, nullable=False),
-    )
-
-
 class Rating(BaseModel, table=True):
     """Course ratings scraped from the CourseReview site"""
 
@@ -609,6 +599,16 @@ class HTTPCache(MetadataModel, table=True):
     body: bytes | None = Field(default=None)
     headers: dict[str, str] | None = Field(default=None, sa_column=Column(JSON))
     scraped_at: int = Field(
+        default_factory=lambda: int(time.time()),
+        sa_column=Column(INTEGER, nullable=False),
+    )
+
+
+class LastCleanup(MetadataModel, table=True):
+    """Keeps track of when the last cleanup of the scrapy cache was performed."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    timestamp: int = Field(
         default_factory=lambda: int(time.time()),
         sa_column=Column(INTEGER, nullable=False),
     )

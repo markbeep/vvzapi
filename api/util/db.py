@@ -27,6 +27,7 @@ def get_session():
 async def aget_session():
     async with AsyncSession(aengine) as session:
         await session.execute(text("pragma mmap_size=30000000000"))
+        await session.execute(text("PRAGMA foreign_keys=ON"))
         yield session
 
 
@@ -42,13 +43,14 @@ ameta_engine = create_async_engine(
 )
 
 
-def meta_get_session():
+def get_meta_session():
     with Session(meta_engine) as session:
         session.execute(text("PRAGMA foreign_keys=ON"))
         yield session
 
 
-async def ameta_get_session():
+async def aget_meta_session():
     async with AsyncSession(ameta_engine) as session:
         await session.execute(text("pragma mmap_size=30000000000"))
+        await session.execute(text("PRAGMA foreign_keys=ON"))
         yield session
