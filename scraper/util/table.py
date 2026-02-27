@@ -1,13 +1,14 @@
 from re import Pattern
-from scrapy.http import Response
+
 from parsel import Selector, SelectorList
+from scrapy.http import Response
 
 from scraper.util.keymap import TranslationKey, translations
 
 
 class Table:
     """
-    Takes a page and throws all table rows into a list of (key, columns) tuples.
+    Takes a page and transforms all table rows into a list of (key, columns) tuples.
     """
 
     def __init__(

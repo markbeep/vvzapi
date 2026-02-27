@@ -10,16 +10,13 @@ class Settings(BaseSettings):
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
 
-    refresh_html: bool = False
-    """If html files, that are already cached locally, should be refetched"""
-
     # Semester settings only apply to newly scraped semesters
-    # RESCRAPE_AMOUNT will overwrite this and cause only the last
+    # ENABLE_RESCRAPE will overwrite this and cause only the last
     # two already scraped semesters to be rescraped
-    start_year: int = date.today().year
+    start_year: int = date.today().year - 1
     # automatically include next year (if it exists)
     end_year: int = date.today().year + 1
-    semester: str = "W"
+    semester: str = "W,S"
 
     delay: float = 5.0
     """Amount of seconds to at least wait between requests"""
@@ -27,10 +24,10 @@ class Settings(BaseSettings):
     log_append: bool = True
     disable_log_file: bool = False
 
-    # delete valid cached files
+    # rescrapes the full course pages, while only rescraping
+    # the given amount of the oldest cached unit pages
     enable_rescrape: bool = False
     rescrape_amount: int = 500
-    rescrape_age_seconds: int = 24 * 3600 * 14  # 14 days
 
     def read_semesters(self) -> list[Literal["W", "S"]]:
         semesters: list[Literal["W", "S"]] = []

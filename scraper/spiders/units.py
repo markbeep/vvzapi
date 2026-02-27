@@ -38,8 +38,9 @@ from api.util.vvz_types import (
     WeekdayEnum,
 )
 from scraper.env import Settings
+from scraper.types.mappings import UnitDepartmentMapping, UnitLevelMapping
+from scraper.util.caching.rescrape import RESCRAPE_SEMKEZS
 from scraper.util.logging import KeywordLoggerSpider
-from scraper.util.mappings import UnitDepartmentMapping, UnitLevelMapping
 from scraper.util.regex_rules import (
     RE_ABSCHNITTID,
     RE_DATE,
@@ -131,11 +132,11 @@ class UnitsSpider(KeywordLoggerSpider):
     )
     course_ids: dict[str, set[int]] = defaultdict(set)
 
-    def __init__(self, semkezs: list[str] | None = None, *a: Any, **kw: Any):  # pyright: ignore[reportAny,reportExplicitAny]
-        if semkezs is not None:
+    def __init__(self, *a: Any, **kw: Any):  # pyright: ignore[reportAny,reportExplicitAny]
+        if RESCRAPE_SEMKEZS is not None:
             self.start_urls: list[str] = [
                 url
-                for semkez in semkezs
+                for semkez in RESCRAPE_SEMKEZS
                 for url in get_urls(int(semkez[:-1]), "S" if semkez[-1] == "S" else "W")
             ]
         else:
@@ -149,6 +150,16 @@ class UnitsSpider(KeywordLoggerSpider):
 
     @override
     def parse_start_url(self, response: Response, **_: Any):  # pyright: ignore[reportExplicitAny]
+        if RESCRAPE_SEMKEZS and "cached" in response.flags:
+            self.logger.info(
+                "RESCRAPE is on. Not implicitly rescraping catalogue page.",
+                extra={
+                    "url": response.url,
+                    "request_url": response.request.url if response.request else None,
+                },
+            )
+            return
+
         try:
             catalog_semkez = re.search(RE_SEMKEZ, response.url)
             if not catalog_semkez:
@@ -361,6 +372,11 @@ class UnitsSpider(KeywordLoggerSpider):
 
         Example url: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?semkez=2025W&ansicht=ALLE&lerneinheitId=192945&lang=en
         """
+        if RESCRAPE_SEMKEZS and "cached" in response.flags:
+            # the http cache will automatically refetch a set of pages
+            # if there are explicit semkezs to rescrape
+            return
+
         try:
             if "red9.ethz.ch" in response.url:
                 self.logger.info(
@@ -561,6 +577,16 @@ class UnitsSpider(KeywordLoggerSpider):
         """
         Example: www.vvz.ethz.ch/Vorlesungsverzeichnis/legendeStudienplanangaben.view?abschnittId=117361&semkez=2025W&lang=en
         """
+        if RESCRAPE_SEMKEZS and "cached" in response.flags:
+            self.logger.info(
+                "RESCRAPE is on. Not implicitly rescraping legend page.",
+                extra={
+                    "url": response.url,
+                    "request_url": response.request.url if response.request else None,
+                },
+            )
+            return
+
         try:
             semkez = re.search(RE_SEMKEZ, response.url)
             id = re.search(RE_ABSCHNITTID, response.url)

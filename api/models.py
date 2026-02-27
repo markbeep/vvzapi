@@ -368,6 +368,9 @@ class LearningUnit(BaseModel, Overwriteable, table=True):
     def levels_as_str(self) -> str:
         return ", ".join([str(level) for level in self.levels])
 
+    def last_updated(self) -> str:
+        return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.scraped_at))
+
 
 """
 
@@ -514,6 +517,7 @@ MISCELLANEOUS
 """
 
 
+# TODO: REMOVE
 class UnitChanges(BaseModel, table=True):
     """We keep track of changes that get applied to learning units"""
 
@@ -524,20 +528,11 @@ class UnitChanges(BaseModel, table=True):
     """The scraped_at before the changes were applied"""
 
 
+# TODO: move to metadata db
 class FinishedScrapingSemester(BaseModel, table=True):
     """Keeps track of which semesters have been fully scraped already."""
 
     semkez: str = Field(primary_key=True)
-
-
-class LastCleanup(BaseModel, table=True):
-    """Keeps track of when the last cleanup of the scrapy cache was performed."""
-
-    id: int | None = Field(default=None, primary_key=True)
-    timestamp: int = Field(
-        default_factory=lambda: int(time.time()),
-        sa_column=Column(INTEGER, nullable=False),
-    )
 
 
 class Rating(BaseModel, table=True):
@@ -586,3 +581,41 @@ class SectionPathView(BaseModel, table=True):
 class UnitDepartmentView(BaseModel, table=True):
     unit_id: int = Field(primary_key=True)
     department_id: int = Field(primary_key=True, index=True)
+
+
+"""
+
+
+METADATA DATABASE
+(separate db)
+
+
+
+"""
+
+
+class MetadataModel(SQLModel):
+    pass
+
+
+class HTTPCache(MetadataModel, table=True):
+    url: str = Field(primary_key=True)
+    status_code: int
+    body: bytes | None = Field(default=None)
+    headers: dict[str, str] | None = Field(default=None, sa_column=Column(JSON))
+    flagged: bool = Field(default=False)
+    """if set, the entry be rescraped the next time it's accessed"""
+    scraped_at: int = Field(
+        default_factory=lambda: int(time.time()),
+        sa_column=Column(INTEGER, nullable=False),
+    )
+
+
+class LastCleanup(MetadataModel, table=True):
+    """Keeps track of when the last cleanup of the scrapy cache was performed."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    timestamp: int = Field(
+        default_factory=lambda: int(time.time()),
+        sa_column=Column(INTEGER, nullable=False),
+    )

@@ -5,6 +5,7 @@ from scrapy.http import Response
 
 from api.models import Lecturer
 from scraper.env import Settings
+from scraper.util.caching.rescrape import RESCRAPE_SEMKEZS
 from scraper.util.logging import KeywordLoggerSpider
 from scraper.util.regex_rules import RE_DOZIDE, RE_SEMKEZ
 
@@ -18,11 +19,11 @@ def get_urls(year: int, semester: Literal["W", "S"]):
 class LecturersSpider(KeywordLoggerSpider):
     name: str = "lecturers"
 
-    def __init__(self, semkezs: list[str] | None = None, *a: Any, **kw: Any):  # pyright: ignore[reportAny,reportExplicitAny]
-        if semkezs is not None:
+    def __init__(self, *a: Any, **kw: Any):  # pyright: ignore[reportAny,reportExplicitAny]
+        if RESCRAPE_SEMKEZS is not None:
             self.start_urls: list[str] = [
                 url
-                for semkez in semkezs
+                for semkez in RESCRAPE_SEMKEZS
                 for url in get_urls(int(semkez[:-1]), "S" if semkez[-1] == "S" else "W")
             ]
         else:
@@ -36,6 +37,13 @@ class LecturersSpider(KeywordLoggerSpider):
 
     @override
     def parse_start_url(self, response: Response, **_: Any):  # pyright: ignore[reportExplicitAny]
+        if RESCRAPE_SEMKEZS and "cached" in response.flags:
+            self.logger.info(
+                "RESCRAPE is on. Not implicitly rescraping lecturers page.",
+                extra={"url": response.url},
+            )
+            return
+
         semkez = re.search(RE_SEMKEZ, response.url)
         if not semkez:
             self.logger.error(

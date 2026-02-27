@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     )
 
     db_path: str = "data/db.sqlite"
+    meta_db_path: str = "data/meta_db.sqlite"
     cache_expiry: int = 60 * 60 * 24 * 30  # in seconds (30 days)
     sitemap_expiry: int = 86400  # in seconds
     plausible_url: str | None = None

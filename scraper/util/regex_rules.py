@@ -8,7 +8,7 @@ Number variations:
 - 17-412 1L (https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId=13629&semkez=2003S&ansicht=LEHRVERANSTALTUNGEN&lang=de)
 - 10-824 (https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId=6467&semkez=2003S&ansicht=LEHRVERANSTALTUNGEN&lang=de)
 """
-RE_DATE = r"\d{2}\.\d{2}\.\d{4}"  # 31.12.2023
+RE_DATE = r"\d{2}\.\d{2}\.\d{4}"  # Format: 31.12.2023
 RE_SEMKEZ = r"semkez=(\w+)"
 RE_UNITID = r"lerneinheitId=(\d+)"
 RE_DOZIDE = r"dozide=(\d+)"

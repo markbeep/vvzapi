@@ -70,9 +70,11 @@ async def get_unit_lecturers(
 @router.get(
     "/{unit_id}/changes",
     response_model=Sequence[UnitChanges],
-    description="Get a list of changes that the course details have undergone. "
+    description="WILL BE REMOVED BEGINNING OF MARCH 2026. It's too broken.\n"
+    + "Get a list of changes that the course details have undergone. "
     + "Changes are a JSON object that describe what the values were before they "
     + "got updated to either the next change or whatever the model currently has.",
+    deprecated=True,
 )
 async def get_unit_changes(
     unit_id: int,
