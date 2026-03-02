@@ -10,7 +10,6 @@ from api.models import (
     LearningUnit,
     Level,
     Periodicity,
-    UnitChanges,
     UnitExaminerLink,
     UnitLecturerLink,
 )
@@ -59,37 +58,6 @@ async def get_unit_lecturers(
         query = (
             select(UnitLecturerLink.lecturer_id)
             .where(UnitLecturerLink.unit_id == unit_id)
-            .offset(offset)
-            .limit(limit)
-        )
-        results = (await session.exec(query)).all()
-        span.set_attribute("result_count", len(results))
-        return results
-
-
-@router.get(
-    "/{unit_id}/changes",
-    response_model=Sequence[UnitChanges],
-    description="WILL BE REMOVED BEGINNING OF MARCH 2026. It's too broken.\n"
-    + "Get a list of changes that the course details have undergone. "
-    + "Changes are a JSON object that describe what the values were before they "
-    + "got updated to either the next change or whatever the model currently has.",
-    deprecated=True,
-)
-async def get_unit_changes(
-    unit_id: int,
-    session: Annotated[AsyncSession, Depends(aget_session)],
-    limit: Annotated[int, Query(gt=0, le=1000)] = 100,
-    offset: Annotated[int, Query(ge=0)] = 0,
-) -> Sequence[UnitChanges]:
-    with tracer.start_as_current_span("get_unit_changes") as span:
-        span.set_attribute("unit_id", unit_id)
-        span.set_attribute("limit", limit)
-        span.set_attribute("offset", offset)
-        query = (
-            select(UnitChanges)
-            .where(UnitChanges.unit_id == unit_id)
-            .order_by(col(UnitChanges.scraped_at).desc())
             .offset(offset)
             .limit(limit)
         )
