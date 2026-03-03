@@ -9,7 +9,21 @@
     prefetch_next_page: bool = False,
 #}
 
+{# js components/vibrate.js #}
+
 <div class="flex flex-col items-center my-4">
+    <label id="haptic-label"
+           for="haptic-trigger"
+           style="position:fixed;
+                  opacity:0;
+                  pointer-events:none;
+                  width:0;
+                  height:0"
+           aria-hidden="true"
+           tabindex="-1">
+        <input type="checkbox" switch id="haptic-trigger">
+    </label>
+
     {% set q_order_by = '&order_by=' + order_by if order_by != 'title_english' else '' %}
     {% set default_limit = 50 if view == 'compact' else 20 %}
     {% set q_limit = '&limit=%d' % limit if limit != default_limit else '' %}
@@ -25,6 +39,7 @@
                fx-target="#results"
                fx-swap="innerHTML"
                no-preload
+               onclick="vibrate()"
                ext-fx-push>
                 Previous
             </a>
@@ -42,6 +57,7 @@
                fx-target="#results"
                fx-swap="innerHTML"
                no-preload
+               onclick="vibrate()"
                ext-fx-push>
                 Next
             </a>
