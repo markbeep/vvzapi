@@ -513,13 +513,12 @@ async def sitemap_files(sitemap_file: str):
 
 
 @app.get("/static/{file_path:path}", include_in_schema=False)
-async def astro_files(file_path: str):
+async def static_files(file_path: str):
     if file_path.startswith("components"):
         """
-        JS / CSS files can be requested in Jinjax templates by using
-        the relative path under the templates/ directory (i.e. {#js pages/Index/empty.js #}).
-        This will then automatically fetch /static/components/pages/Index/empty.js to add the
-        script into the header.
+        Jinjax static files (JS/CSS) have the path of "/static/components/..."
+        and are located in `api/templates` instead of in `api/static` like
+        other static files.
         """
         if not file_path.endswith(".js") and not file_path.endswith(".css"):
             return HTMLResponse(status_code=404)
@@ -533,10 +532,10 @@ async def astro_files(file_path: str):
     # | Ensures the real path is still |
     # | within the static directory.   |
     # ----------------------------------
-    static_dir = static_dir.absolute()
-    requested_path = static_dir / file_path.lstrip("/")
-    shared_path = os.path.commonprefix([static_dir, os.path.realpath(requested_path)])
-    if shared_path != str(static_dir):
+    static_dir = Path(os.path.realpath(static_dir))
+    requested_path = Path(os.path.realpath(static_dir / file_path.lstrip("/")))
+    common_path = os.path.commonpath([static_dir, requested_path])
+    if common_path != str(static_dir):
         print(f"Directory traversal attempt detected: {requested_path = }")
         raise HTTPException(status_code=404, detail="Not found")
     # ----------------------------------
