@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.12.0](https://github.com/markbeep/vvzapi/compare/v1.11.0...v1.12.0) (2026-03-04)
+
+
+### Features
+
+* **search:** add flag button to report incorrect pages ([086a617](https://github.com/markbeep/vvzapi/commit/086a617cca5a6437793780b8a9b1075d38ad1003))
+* **search:** add haptics for page buttons ([4c73eb3](https://github.com/markbeep/vvzapi/commit/4c73eb30cef318f62c99e9db2ead3ca61c966276))
+
+
+### Code Refactoring
+
+* **search:** simplify static endpoint for path traversal prevention ([8973411](https://github.com/markbeep/vvzapi/commit/89734111969314bb92c143bdef4d0bafe420a232))
+
 ## [1.11.0](https://github.com/markbeep/vvzapi/compare/v1.10.3...v1.11.0) (2026-02-27)
 
 
