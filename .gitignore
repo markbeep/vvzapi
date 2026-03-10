@@ -20,3 +20,6 @@ localhost*.html
 
 # IDE files
 .idea
+
+# mise
+mise.local.toml
