@@ -11,7 +11,7 @@ pages of the last two semesters are rescraped.
 
 from time import time
 
-from sqlmodel import col, distinct, or_, select
+from sqlmodel import col, distinct, not_, or_, select
 
 from api.models import HTTPCache, LearningUnit
 from api.util.db import get_meta_session, get_session
@@ -46,11 +46,13 @@ if RESCRAPE_SEMKEZS is not None:
         ]
     )
     with next(get_meta_session()) as session:
+        # we don't explicitly track german unit pages but they
+        # might be leftover from accidental scrapes
         oldest_urls = set(
             session.exec(
                 select(HTTPCache.url)
+                .where(clauses, not_(col(HTTPCache.url).contains("lang=de")))
                 .order_by(col(HTTPCache.scraped_at))
-                .where(clauses)
                 .limit(rescrape_amount)
             ).all()
         )
