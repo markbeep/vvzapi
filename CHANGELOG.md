@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.12.0](https://github.com/markbeep/vvzapi/compare/v1.11.0...v1.12.0) (2026-04-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove unit changes endpoint/table ([#61](https://github.com/markbeep/vvzapi/issues/61))
+
+### Features
+
+* **search:** add flag button to report incorrect pages ([086a617](https://github.com/markbeep/vvzapi/commit/086a617cca5a6437793780b8a9b1075d38ad1003))
+* **search:** add haptics for page buttons ([4c73eb3](https://github.com/markbeep/vvzapi/commit/4c73eb30cef318f62c99e9db2ead3ca61c966276))
+
+
+### Bug Fixes
+
+* **scraper:** filter out unused german unit pages for ([8079a33](https://github.com/markbeep/vvzapi/commit/8079a33d683b67115cc15f9b7e7631bfcd043b13))
+
+
+### Miscellaneous Chores
+
+* remove unit changes endpoint/table ([#61](https://github.com/markbeep/vvzapi/issues/61)) ([280b071](https://github.com/markbeep/vvzapi/commit/280b0711e01855593a0d9f8be87ab91364346b28))
+* update gitignore with local mise file ([d4e487c](https://github.com/markbeep/vvzapi/commit/d4e487cebfb76f030970ecfe58418af964791801))
+
+
+### Code Refactoring
+
+* **search:** simplify static endpoint for path traversal prevention ([8973411](https://github.com/markbeep/vvzapi/commit/89734111969314bb92c143bdef4d0bafe420a232))
+
 ## [1.11.0](https://github.com/markbeep/vvzapi/compare/v1.10.3...v1.11.0) (2026-02-27)
 
 
