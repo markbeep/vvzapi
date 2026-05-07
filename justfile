@@ -34,6 +34,10 @@ test:
     uv run djlint api/templates/ --lint
     uv run djlint api/templates/ --check
 
+# Checks for API endpoints using Schemathesis (fuzzing)
+schemathesis:
+    uvx schemathesis run http://localhost:8000/openapi.json --checks all --exclude-checks negative_data_rejection
+
 lighthouse PATH="":
     lighthouse http://localhost:8000{{ PATH }} --output-path=localhost.html
 
