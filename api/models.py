@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from enum import Enum
+from enum import Enum, IntEnum
 from typing import final, override
 
 from pydantic import BaseModel as PydanticBaseModel
@@ -84,7 +84,7 @@ and also to avoid the similarity with "Lecturer".
 """
 
 
-class Periodicity(Enum):
+class Periodicity(IntEnum):
     """
     Angabe, in welchem Intervall die Lehrveranstaltung abgehalten wird.
     - 0 einmalige Veranstaltung (einmalig)
@@ -115,7 +115,7 @@ class NamedURL(BaseModel):
     url: str
 
 
-class OccurenceEnum(Enum):
+class OccurenceEnum(IntEnum):
     """
     - 0 Veranstaltung findet dieses Jahr nicht statt (nein)
     - 1 Veranstaltung findet dieses Jahr statt (ja)
@@ -173,7 +173,7 @@ class Level(str, Enum):
         return Level[v]
 
 
-class Department(Enum):
+class Department(IntEnum):
     """This seems to be hardcoded on the VVZ website"""
 
     ARCHITECTURE = 1
@@ -438,7 +438,7 @@ COURSES
 """
 
 
-class CourseHourEnum(Enum):
+class CourseHourEnum(IntEnum):
     WEEKLY_HOURS = 1
     SEMESTER_HOURS = 2
 
