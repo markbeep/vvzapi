@@ -66,7 +66,10 @@ async def build_vvz_filter[T: Select[Any] | SelectOfScalar[Any]](
             span.set_attribute("number", filters.number)
 
         if filters.section is not None or filters.type is not None:
-            query = query.join(UnitSectionLink)
+            query = query.join(
+                UnitSectionLink,
+                onclause=col(LearningUnit.id) == UnitSectionLink.unit_id,
+            )
         if (
             filters.lecturer_id is not None
             or filters.lecturer_name is not None

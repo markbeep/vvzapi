@@ -1,13 +1,15 @@
 from typing import Annotated, Sequence
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from opentelemetry import trace
 from pydantic import BaseModel, Field
 from sqlmodel import case, col, func, or_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from starlette.status import HTTP_404_NOT_FOUND
 
 from api.models import Section, SectionBase, UnitSectionLink
 from api.util.db import aget_session
+from api.util.pydantic_type import Int64, Nullable
 from api.util.sections import SectionLevel, get_child_sections, get_parent_sections
 
 tracer = trace.get_tracer(__name__)
@@ -18,11 +20,11 @@ router = APIRouter(prefix="/section", tags=["Sections"])
 @router.get("/list", response_model=list[int])
 async def list_sections(
     session: Annotated[AsyncSession, Depends(aget_session)],
-    limit: Annotated[int, Query(gt=0, le=1000)] = 100,
-    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[Int64, Query(gt=0, le=1000)] = 100,
+    offset: Annotated[Int64, Query(ge=0)] = 0,
     # VVZ filters
     semkez: Annotated[
-        str | None,
+        Nullable[str],
         Query(
             description="Year + semester (Summer/Winter). Format is YYYY[S/W]. Example: 2025S, 2025W."
         ),
@@ -34,15 +36,16 @@ async def list_sections(
         ),
     ] = False,
     # Custom filters
-    level: Annotated[int | None, Query(description="Level of the section")] = None,
+    level: Annotated[Nullable[Int64], Query(description="Level of the section")] = None,
     name_search: Annotated[
-        str | None, Query(description="Search string for section names")
+        Nullable[str], Query(description="Search string for section names")
     ] = None,
     comment_search: Annotated[
-        str | None, Query(description="Search string for section comments")
+        Nullable[str], Query(description="Search string for section comments")
     ] = None,
     parent_id: Annotated[
-        int | None, Query(description="Filter sections by **direct** parent section ID")
+        Nullable[Int64],
+        Query(description="Filter sections by **direct** parent section ID"),
     ] = None,
 ) -> Sequence[int]:
     with tracer.start_as_current_span("list_sections") as span:
@@ -56,7 +59,7 @@ async def list_sections(
         if parent_id:
             span.set_attribute("parent_id", parent_id)
 
-        name = (func.COALESCE(Section.name_english, Section.name),)
+        name = func.COALESCE(Section.name_english, Section.name)
         query = (
             select(
                 Section.id,
@@ -84,9 +87,9 @@ async def list_sections(
 
         if sort_lex:
             query = query.order_by(
-                case((col(name).is_not(None), 1), else_=0).desc(),  # null last
+                case((name.is_not(None), 1), else_=0).desc(),  # null last
                 col(Section.level).asc(),
-                col(name).op("GLOB")("[^0-9]*").desc(),  # text before numeric
+                name.op("GLOB")("[^0-9]*").desc(),  # text before numeric
                 func.LOWER(name).asc(),
             )
         else:
@@ -108,17 +111,26 @@ class SectionUnitResponse(SectionBase):
     children: list[SectionLevel] = []
 
 
-@router.get("/{section_id}/get", response_model=SectionUnitResponse | None)
+@router.get(
+    "/{section_id}/get",
+    response_model=SectionUnitResponse | None,
+    responses={404: {"description": "Section not found"}},
+)
 async def get_section(
     session: Annotated[AsyncSession, Depends(aget_session)],
-    section_id: int,
+    section_id: Int64,
 ) -> SectionUnitResponse | None:
     with tracer.start_as_current_span("get_section") as span:
         span.set_attribute("section_id", section_id)
         child_sections = await get_child_sections(session, section_id)
         parent_sections = await get_parent_sections(session, section_id)
 
-        sections = await session.get(Section, section_id)
+        section = await session.get(Section, section_id)
+        if not section:
+            raise HTTPException(
+                status_code=HTTP_404_NOT_FOUND, detail="Section not found"
+            )
+
         sub_units = (
             await session.exec(
                 select(UnitSectionLink).where(
@@ -134,7 +146,7 @@ async def get_section(
         span.set_attribute("sub_units_count", len(sub_units))
 
         return SectionUnitResponse.model_validate(
-            sections,
+            section,
             update={
                 "learning_units": [
                     LearningUnitType(id=unit.unit_id, type=unit.type)

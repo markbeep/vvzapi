@@ -1,11 +1,13 @@
 import asyncio
 from collections import defaultdict
 from timeit import default_timer
-from typing import Annotated, cast, override
+from typing import Annotated, Any, cast, override
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from opentelemetry import trace
 from pydantic import BaseModel
+from pyparsing import ParseException
+from sqlalchemy import Select
 from sqlalchemy.sql.elements import BinaryExpression, ColumnElement
 from sqlmodel import (
     Integer,
@@ -22,6 +24,8 @@ from sqlmodel import (
     cast as sql_cast,
 )
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel.sql.expression import SelectOfScalar
+from starlette.status import HTTP_400_BAD_REQUEST
 
 from api.models import (
     Department,
@@ -43,6 +47,7 @@ from api.util.parse_query import (
     QueryKey,
     build_search_operators,
 )
+from api.util.pydantic_type import Int64
 
 router = APIRouter(prefix="/search", tags=["Search"])
 
@@ -502,48 +507,67 @@ async def match_filters(
         span.set_attribute("order_by", order_by)
         span.set_attribute("descending", descending)
 
+        # query to perform the initial filtering
         query = select(
             LearningUnit,
             year := sql_cast(func.substr(LearningUnit.semkez, 1, 4), Integer),
             semester := sql_cast(func.substr(LearningUnit.semkez, 5, 1), String),
         )
+        # secondary query that will be used to return the sorted values
+        final_query = select(LearningUnit)
 
         #########
         # Joins #
         #########
         if any(f.key == "lecturer" for f in filters) or order_by == "lecturer":
-            query = (
-                query.join(
-                    UnitExaminerLink,
-                    onclause=col(LearningUnit.id) == UnitExaminerLink.unit_id,
+
+            def join_lecturer[T: Select[Any] | SelectOfScalar[Any]](q: T) -> T:
+                return (
+                    q.join(
+                        UnitExaminerLink,
+                        onclause=col(LearningUnit.id) == UnitExaminerLink.unit_id,
+                    )
+                    .join(
+                        UnitLecturerLink,
+                        onclause=col(LearningUnit.id) == UnitLecturerLink.unit_id,
+                    )
+                    .join(
+                        Lecturer,
+                        onclause=or_(
+                            col(UnitExaminerLink.lecturer_id) == Lecturer.id,
+                            col(UnitLecturerLink.lecturer_id) == Lecturer.id,
+                        ),
+                    )
                 )
-                .join(
-                    UnitLecturerLink,
-                    onclause=col(LearningUnit.id) == UnitLecturerLink.unit_id,
-                )
-                .join(
-                    Lecturer,
-                    onclause=or_(
-                        col(UnitExaminerLink.lecturer_id) == Lecturer.id,
-                        col(UnitLecturerLink.lecturer_id) == Lecturer.id,
-                    ),
-                )
-            )
+
+            query = join_lecturer(query)
+            final_query = join_lecturer(final_query)
 
         if any(f.key == "offered" for f in filters):
-            query = query.join(
-                UnitSectionLink,
-                onclause=col(LearningUnit.id) == UnitSectionLink.unit_id,
-            ).join(
-                SectionPathView,
-                onclause=col(UnitSectionLink.section_id) == SectionPathView.id,
-            )
+
+            def join_section[T: Select[Any] | SelectOfScalar[Any]](q: T) -> T:
+                return q.join(
+                    UnitSectionLink,
+                    onclause=col(LearningUnit.id) == UnitSectionLink.unit_id,
+                ).join(
+                    SectionPathView,
+                    onclause=col(UnitSectionLink.section_id) == SectionPathView.id,
+                )
+
+            query = join_section(query)
+            final_query = join_section(final_query)
 
         average_rating = None
         if any(f.key == "coursereview" for f in filters):
-            query = query.join(
-                Rating, onclause=col(LearningUnit.number) == Rating.course_number
-            )
+
+            def join_rating[T: Select[Any] | SelectOfScalar[Any]](q: T) -> T:
+                return q.join(
+                    Rating, onclause=col(LearningUnit.number) == Rating.course_number
+                )
+
+            query = join_rating(query)
+            final_query = join_rating(final_query)
+
             average_rating = (
                 col(Rating.recommended)
                 + col(Rating.engaging)
@@ -621,11 +645,9 @@ async def match_filters(
             .limit(limit)
         )
 
-        final_query = (
-            select(LearningUnit)
-            .where(col(LearningUnit.number).in_(valid_numbers))
-            .distinct()
-        )
+        final_query = final_query.where(
+            col(LearningUnit.number).in_(valid_numbers)
+        ).distinct()
 
         if descending:
             final_query = final_query.order_by(
@@ -687,11 +709,15 @@ class SearchResponse(BaseModel):
             yield unit_number, grouped_units
 
 
-@router.get("", response_model=SearchResponse)
+@router.get(
+    "",
+    response_model=SearchResponse,
+    responses={400: {"description": "Bad Request - Invalid query"}},
+)
 async def search_units(
     query: Annotated[str, Query(alias="q")],
-    offset: int = 0,
-    limit: int = 20,
+    offset: Int64 = 0,
+    limit: Int64 = 20,
     order_by: QueryKey = "year",
     order: str = "desc",
 ) -> SearchResponse:
@@ -702,7 +728,21 @@ async def search_units(
         span.set_attribute("order_by", order_by)
         span.set_attribute("order", order)
 
-        search_operators = build_search_operators(query)
+        if len(query) == 0:
+            return SearchResponse(
+                total=0,
+                results={},
+                parsed_query="",
+                exec_time_ms=0.0,
+            )
+
+        try:
+            search_operators = build_search_operators(query)
+        except ParseException as e:
+            raise HTTPException(
+                status_code=HTTP_400_BAD_REQUEST,
+                detail=f"Error parsing query: {str(e)}",
+            )
 
         # default to desc
         descending = not order.startswith("asc")

@@ -18,7 +18,16 @@ router = APIRouter(prefix="/dump", tags=["Data Dump"])
 limiter = Limiter(key_func=get_remote_address)
 
 
-@router.get("")
+@router.get(
+    "",
+    responses={
+        200: {
+            "content": {"application/zip": {}},
+            "description": "Returns a ZIP file containing the database.",
+        },
+        429: {"description": "Rate limit exceeded"},
+    },
+)
 @limiter.limit("2/minute")
 def get_data_dump(request: Request):  # limiter requires request parameter
     """

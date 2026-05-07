@@ -1,33 +1,43 @@
 from typing import Annotated, Sequence
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from opentelemetry import trace
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from starlette.status import HTTP_404_NOT_FOUND
 
 from api.models import Lecturer
 from api.util.db import aget_session
+from api.util.pydantic_type import Int64
 
 tracer = trace.get_tracer(__name__)
 
 router = APIRouter(prefix="/lecturer", tags=["Lecturers"])
 
 
-@router.get("/get/{lecturer_id}", response_model=Lecturer | None)
+@router.get(
+    "/get/{lecturer_id}",
+    response_model=Lecturer | None,
+    responses={404: {"description": "Lecturer not found"}},
+)
 async def get_lecturer(
     session: Annotated[AsyncSession, Depends(aget_session)],
-    lecturer_id: int,
+    lecturer_id: Int64,
 ) -> Lecturer | None:
     with tracer.start_as_current_span("get_lecturer") as span:
         span.set_attribute("lecturer_id", lecturer_id)
-        return await session.get(Lecturer, lecturer_id)
+        lecturer = await session.get(Lecturer, lecturer_id)
+        if not lecturer:
+            raise HTTPException(
+                status_code=HTTP_404_NOT_FOUND, detail="Lecturer not found"
+            )
 
 
 @router.get("/list", response_model=Sequence[Lecturer])
 async def list_lecturers(
     session: Annotated[AsyncSession, Depends(aget_session)],
-    limit: Annotated[int, Query(gt=0, le=1000)] = 100,
-    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[Int64, Query(gt=0, le=1000)] = 100,
+    offset: Annotated[Int64, Query(ge=0)] = 0,
 ) -> Sequence[Lecturer]:
     with tracer.start_as_current_span("list_lecturers") as span:
         span.set_attribute("limit", limit)

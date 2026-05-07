@@ -1,16 +1,29 @@
 # pyright: reportAny=false, reportExplicitAny=false
 
-from typing import final, override
 import json
 from enum import Enum
-from typing import Any, Sequence, cast
+from typing import Annotated, Any, Sequence, cast, final, override
 
 import sqlalchemy as sa
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel, BeforeValidator, Field, parse_obj_as
 from pydantic.json import pydantic_encoder
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import TypeDecorator
+
+# Required to enforce 64bit integers for DB accesses
+# 9007199254740991 is the largest integer JavaScript (and hence most JSON/openapi spec parsers) can safely handle
+Int64 = Annotated[int, Field(ge=0, le=9007199254740991)]
+
+
+def handle_string_null[T](value: T) -> T | None:
+    # If the exact string "null" is sent, convert it to None before Pydantic tries to parse it
+    if value == "null" or value == "":
+        return None
+    return value
+
+
+type Nullable[T] = Annotated[T | None, BeforeValidator(handle_string_null)]
 
 
 @final

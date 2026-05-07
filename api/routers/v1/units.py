@@ -1,9 +1,10 @@
 from typing import Annotated, Sequence
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from opentelemetry import trace
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from starlette.status import HTTP_404_NOT_FOUND
 
 from api.models import (
     Department,
@@ -14,6 +15,7 @@ from api.models import (
     UnitLecturerLink,
 )
 from api.util.db import aget_session
+from api.util.pydantic_type import Int64, Nullable
 from api.util.sections import get_parent_from_unit
 from api.util.unit_filter import VVZFilters, build_vvz_filter
 
@@ -22,19 +24,28 @@ tracer = trace.get_tracer(__name__)
 router = APIRouter(prefix="/unit", tags=["Learning Units"])
 
 
-@router.get("/{unit_id}/get", response_model=LearningUnit | None)
+@router.get(
+    "/{unit_id}/get",
+    response_model=LearningUnit | None,
+    responses={404: {"description": "Learning unit not found"}},
+)
 async def get_unit(
-    unit_id: int,
+    unit_id: Int64,
     session: Annotated[AsyncSession, Depends(aget_session)],
 ) -> LearningUnit | None:
     with tracer.start_as_current_span("get_unit") as span:
         span.set_attribute("unit_id", unit_id)
-        return await session.get(LearningUnit, unit_id)
+        unit = await session.get(LearningUnit, unit_id)
+        if not unit:
+            raise HTTPException(
+                status_code=HTTP_404_NOT_FOUND, detail="Learning unit not found"
+            )
+        return unit
 
 
 @router.get("/{unit_id}/sections", response_model=Sequence[int])
 async def get_unit_sections(
-    unit_id: int,
+    unit_id: Int64,
     session: Annotated[AsyncSession, Depends(aget_session)],
 ) -> Sequence[int]:
     with tracer.start_as_current_span("get_unit_sections") as span:
@@ -46,10 +57,10 @@ async def get_unit_sections(
 
 @router.get("/{unit_id}/lecturers", response_model=Sequence[int])
 async def get_unit_lecturers(
-    unit_id: int,
+    unit_id: Int64,
     session: Annotated[AsyncSession, Depends(aget_session)],
-    limit: Annotated[int, Query(gt=0, le=1000)] = 100,
-    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[Int64, Query(gt=0, le=1000)] = 100,
+    offset: Annotated[Int64, Query(ge=0)] = 0,
 ) -> Sequence[int]:
     with tracer.start_as_current_span("get_unit_lecturers") as span:
         span.set_attribute("unit_id", unit_id)
@@ -68,10 +79,10 @@ async def get_unit_lecturers(
 
 @router.get("/{unit_id}/examiners", response_model=Sequence[int])
 async def get_unit_examiners(
-    unit_id: int,
+    unit_id: Int64,
     session: Annotated[AsyncSession, Depends(aget_session)],
-    limit: Annotated[int, Query(gt=0, le=1000)] = 100,
-    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[Int64, Query(gt=0, le=1000)] = 100,
+    offset: Annotated[Int64, Query(ge=0)] = 0,
 ) -> Sequence[int]:
     with tracer.start_as_current_span("get_unit_examiners") as span:
         span.set_attribute("unit_id", unit_id)
@@ -95,18 +106,18 @@ async def get_unit_examiners(
 )
 async def list_units(
     session: Annotated[AsyncSession, Depends(aget_session)],
-    limit: Annotated[int, Query(gt=0, le=1000)] = 100,
-    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[Int64, Query(gt=0, le=1000)] = 100,
+    offset: Annotated[Int64, Query(ge=0)] = 0,
     # VVZ filters: base
     semkez: Annotated[
-        str | None,
+        Nullable[str],
         Query(
             description="Year + semester (Summer/Winter). Format is YYYY[S/W]. Example: 2025S, 2025W."
         ),
     ] = None,
-    level: Annotated[Level | None, Query(description="Level of the unit")] = None,
+    level: Annotated[Nullable[Level], Query(description="Level of the unit")] = None,
     department: Annotated[
-        Department | None,
+        Nullable[Department],
         Query(
             description="Department offering the unit. 1=ARCHITECTURE, 2=CIVIL_ENVIRONMENTAL_AND_GEOMATIC_ENGINEERING, "
             + "3=MECHANICAL_AND_PROCESS_ENGINEERING, 5=COMPUTER_SCIENCE, 7=MANAGEMENT_TECHNOLOGY_AND_ECONOMICS, "
@@ -117,40 +128,46 @@ async def list_units(
     ] = None,
     # VVZ filters: "Structure"
     section: Annotated[
-        int | None,
+        Nullable[Int64],
         Query(
             description="Section ID to limit results to. Only a single section is required, unlike on VVZ"
         ),
     ] = None,
     # VVZ filters: "Further criteria"
-    number: Annotated[str | None, Query(description="Unit number")] = None,
+    number: Annotated[Nullable[str], Query(description="Unit number")] = None,
     title: Annotated[
-        str | None,
+        Nullable[str],
         Query(
             description="Title of the unit. It returns any results where the given title is included in the German or English unit title."
         ),
     ] = None,
-    lecturer_id: Annotated[int | None, Query(description="ID of the lecturer")] = None,
+    lecturer_id: Annotated[
+        Nullable[Int64], Query(description="ID of the lecturer")
+    ] = None,
     lecturer_name: Annotated[
-        str | None, Query(description="Name of the lecturer")
+        Nullable[str], Query(description="Name of the lecturer")
     ] = None,
     lecturer_surname: Annotated[
-        str | None, Query(description="Surname of the lecturer")
+        Nullable[str], Query(description="Surname of the lecturer")
     ] = None,
     type: Annotated[
-        str | None, Query(description="Unit type: O, W+, W, E-, Z, Dr, etc.")
+        Nullable[str], Query(description="Unit type: O, W+, W, E-, Z, Dr, etc.")
     ] = None,
     language: Annotated[
-        str | None, Query(description="Language of instruction")
+        Nullable[str], Query(description="Language of instruction")
     ] = None,
     periodicity: Annotated[
-        Periodicity | None,
+        Nullable[Periodicity],
         Query(description="Periodicity:0=ONETIME, 1=ANNUAL, 2=SEMESTER, 3=BIENNIAL"),
     ] = None,
-    ects_min: Annotated[float | None, Query(description="Minimum ECTS credits")] = None,
-    ects_max: Annotated[float | None, Query(description="Maximum ECTS credits")] = None,
+    ects_min: Annotated[
+        Nullable[float], Query(description="Minimum ECTS credits")
+    ] = None,
+    ects_max: Annotated[
+        Nullable[float], Query(description="Maximum ECTS credits")
+    ] = None,
     content_search: Annotated[
-        str | None, Query(description="Search within 'Catalogue data' on VVZ")
+        Nullable[str], Query(description="Search within 'Catalogue data' on VVZ")
     ] = None,
 ) -> Sequence[int]:
     with tracer.start_as_current_span("list_units") as span:
