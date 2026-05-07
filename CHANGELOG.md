@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.12.1](https://github.com/markbeep/vvzapi/compare/v1.12.0...v1.12.1) (2026-05-07)
+
+
+### Bug Fixes
+
+* **api:** fix department parameters being incorrectly handled as strings instead of ints ([21ee024](https://github.com/markbeep/vvzapi/commit/21ee024d98035c2585d9e025536867a9b99e1a12)), closes [#62](https://github.com/markbeep/vvzapi/issues/62)
+* **api:** fix various incorrectly unhandled database errors, including no max integer size check or joining tables incorrectly ([05460da](https://github.com/markbeep/vvzapi/commit/05460da08d2cd5193af54d7d7a4b8e3edb9831d3))
+* **api:** improve OpenAPI spec compliance with 'null' support for optional arguments and correctly documented response codes ([05460da](https://github.com/markbeep/vvzapi/commit/05460da08d2cd5193af54d7d7a4b8e3edb9831d3))
+* fix timeslots being set and returned as "null" instead of empty list ([15ae457](https://github.com/markbeep/vvzapi/commit/15ae457605059110ba5b5070bbb26d1f794966c2))
+* **search:** replace single-quoted strings with backticks ([cc7f851](https://github.com/markbeep/vvzapi/commit/cc7f851df91566c40194d574d74e4c4523171a2f))
+
+
+### Dependencies
+
+* update python dependencies ([97face6](https://github.com/markbeep/vvzapi/commit/97face61316ee896bbb0bde3e453dc0a0d318956))
+
+
+### Continuous Integration
+
+* add schemathesis for openapi specs (fuzzy) testing ([25cd9ea](https://github.com/markbeep/vvzapi/commit/25cd9ea30f3367e74e86f6a1969c055a48c8804a))
+
 ## [1.12.0](https://github.com/markbeep/vvzapi/compare/v1.11.0...v1.12.0) (2026-04-01)
 
 
