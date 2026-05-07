@@ -12,9 +12,9 @@ from pyparsing import (
     QuotedString,
     Word,
     alphas,
-    identbodychars,
     infixNotation,
     opAssoc,
+    printables,
 )
 from rapidfuzz import fuzz, process, utils
 
@@ -282,8 +282,8 @@ def _parse_query(query: str) -> ParsedType:
     with tracer.start_as_current_span("parse_query") as span:
         span.set_attribute("query", query)
         key = Word(alphas, alphas + "_")
-        unquoted = Word(identbodychars, excludeChars="()")
-        quoted = QuotedString('"') | QuotedString("'")
+        unquoted = Word(printables, excludeChars='()"`')
+        quoted = QuotedString('"') | QuotedString("`")
         operand = quoted | unquoted
         # NOTE: ensure order of operators from longest to shortest to prevent parsing issues
         operator = (

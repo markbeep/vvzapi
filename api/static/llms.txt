@@ -15,7 +15,7 @@ VVZ API is a search engine for ETH Zurich course catalogue (Vorlesungsverzeichni
 - Use `OR` (case-insensitive) between terms for logical OR.
 - Use parentheses `()` to group sub-expressions.
 - Prefix a term or key with `-` to **negate** it.
-- If a value contains spaces, wrap it in double or single quotes: `key:"multi word value"`.
+- If a value contains spaces, wrap it in double quotes or backticks: `key:"multi word value"`.
 
 ## API Endpoint
 
