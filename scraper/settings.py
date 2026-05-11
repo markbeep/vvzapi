@@ -7,6 +7,7 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
+from api.util.version import get_api_version
 from scraper.env import Settings
 
 BOT_NAME = "vvz-scraper"
@@ -18,7 +19,7 @@ ADDONS = {}
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-USER_AGENT = "vvz-scraper (+https://vvzapi.ch)"
+USER_AGENT = f"vvz-scraper/{get_api_version()} (+https://vvzapi.ch)"
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
