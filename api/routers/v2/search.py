@@ -728,7 +728,7 @@ async def search_units(
         span.set_attribute("order_by", order_by)
         span.set_attribute("order", order)
 
-        if len(query) == 0:
+        if len(query.strip()) == 0:
             return SearchResponse(
                 total=0,
                 results={},
