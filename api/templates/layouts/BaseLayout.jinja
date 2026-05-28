@@ -52,6 +52,23 @@
             <link rel="{{ rel }}" href="{{ href }}" />
         {% endfor %}
 
+        <script>
+        // add last search query
+        document.addEventListener("DOMContentLoaded", () => {
+          const q = sessionStorage.getItem("last_q") || "";
+          const input = document.getElementById("search-top");
+          if (input) input.value = q
+        });
+
+        document.addEventListener("submit", (e) => {
+          const form = e.target;
+          if (form.matches("#search-form")) {
+            const val = form.querySelector("input[name='q']").value;
+            sessionStorage.setItem("last_q", val);
+          }
+        });
+        </script>
+
         {{ catalog.render_assets() }}
     </head>
 

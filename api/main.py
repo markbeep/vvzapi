@@ -4,7 +4,6 @@ import os
 import re
 from pathlib import Path
 from typing import Annotated, Awaitable, Callable, Literal
-from urllib.parse import quote_plus
 
 import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request
@@ -245,7 +244,7 @@ async def root(
                 first = values[0].latest_unit()
                 if first:
                     return RedirectResponse(
-                        f"/unit/{first.id}?q={quote_plus(query)}",
+                        f"/unit/{first.id}",
                         status_code=303,
                         headers={"Vary": "FX-Request"},
                     )
@@ -412,7 +411,6 @@ async def flag_unit(
     background_task: BackgroundTasks,
     session: Annotated[AsyncSession, Depends(aget_session)],
     meta_session: Annotated[AsyncSession, Depends(aget_meta_session)],
-    query: Annotated[str | None, Query(alias="q"), str] = None,
 ):
     unit = await get_unit(unit_id, session)
     if not unit:
@@ -440,8 +438,6 @@ async def flag_unit(
         )
 
     base_url = str(request.url_for("unit_detail", unit_id=unit_id))
-    if query:
-        base_url += f"?q={quote_plus(query)}"
     return RedirectResponse(
         url=base_url,
         status_code=303,

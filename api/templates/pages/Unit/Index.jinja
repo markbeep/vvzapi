@@ -159,7 +159,7 @@
                         </span>
                     </a>
                     <form method="post"
-                          action="/unit/{{ unit.id }}/flag?q={{ query }}"
+                          action="/unit/{{ unit.id }}/flag"
                           onsubmit="return confirm('Flag this unit as having incorrect data? It will be prioritized for re-fetching.');">
                         {% if flagged %}
                             <button type="submit"

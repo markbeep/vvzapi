@@ -1,4 +1,4 @@
-const searchbar = document.getElementById("search-bar");
+const searchbar = document.getElementById("search-input");
 const queries = [
   'e:"Graded Semester Performance" semester:fs level:MSC y:2026 c>3',
   "big data",

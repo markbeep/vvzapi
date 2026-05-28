@@ -39,8 +39,9 @@
         <div>
             <a href="/" class="btn btn-ghost text-xl p-1">VVZ API</a>
         </div>
-        <form action="/" method="get" class="flex-1 join" aria-label="Search form">
-            <input type="search"
+        <form id="search-form" action="/" method="get" class="flex-1 join" aria-label="Search form">
+            <input id="search-top"
+                   type="search"
                    name="q"
                    value="{{ query|e }}"
                    placeholder="Search..."
