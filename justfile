@@ -2,7 +2,7 @@
 
 alias d := dev
 
-dev:
+dev: migrate
     uv run fastapi dev api/main.py
 
 alias m := migrate
