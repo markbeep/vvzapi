@@ -115,13 +115,16 @@ async def send_analytics_event(request: Request):
 
     settings = Settings()
     if settings.plausible_url:
-        async with httpx.AsyncClient() as client:
-            await client.post(
-                settings.plausible_url,
-                json=body,
-                headers=headers,
-                timeout=10,
-            )
+        try:
+            async with httpx.AsyncClient() as client:
+                await client.post(
+                    settings.plausible_url,
+                    json=body,
+                    headers=headers,
+                    timeout=10,
+                )
+        except httpx.ConnectTimeout:
+            print("Plausible connection timed out")
 
     if settings.influxdb_url:
         tags = {

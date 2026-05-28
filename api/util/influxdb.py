@@ -114,5 +114,7 @@ async def send_to_influxdb(
                 headers=headers,
                 timeout=5,
             )
-    except Exception:
-        pass
+    except httpx.ConnectTimeout:
+        print("InfluxDB connection timed out")
+    except Exception as e:
+        print(f"Failed to send to influxDB: {e}")
