@@ -11,6 +11,10 @@ migrate:
     uv run alembic -n data_db upgrade heads
     uv run alembic -n meta_db upgrade heads
 
+downgrade:
+    uv run alembic -n data_db downgrade base
+    uv run alembic -n meta_db downgrade base
+
 check:
     uv run alembic -n data_db check
     uv run alembic -n meta_db check
@@ -29,10 +33,14 @@ tailwind:
 upgrade:
     uvx uv-upgrade
 
-test:
+test_jinja:
+    uv run api/util/test_jinjax.py api/templates/ -g content url_for catalog version -f trim_float
+
+test: test_jinja
     uv run basedpyright
     uv run djlint api/templates/ --lint
     uv run djlint api/templates/ --check
+    uv run ruff format --check api/ scraper/
 
 # Checks for API endpoints using Schemathesis (fuzzing)
 schemathesis:

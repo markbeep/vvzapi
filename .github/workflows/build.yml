@@ -25,34 +25,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          version: "0.9.28"
+      - uses: jdx/mise-action@v4
 
       - run: uv sync --all-extras
 
-      - name: Type check
-        run: uv run basedpyright
-
-      - name: Install sqlite3
+      - name: Test typing and format
         run: |
-          sudo apt-get update
-          sudo apt-get install -y sqlite3 gcc
+          just test
 
       - name: Check SQLite Alembic Migrations
         run: |
-          uv run alembic -n data_db upgrade heads
-          uv run alembic -n meta_db upgrade heads
-          uv run alembic -n data_db check
-          uv run alembic -n meta_db check
-          uv run alembic -n data_db downgrade base
-          uv run alembic -n meta_db downgrade base
-          uv run alembic -n data_db upgrade heads
-          uv run alembic -n meta_db upgrade heads
-          uv run alembic -n data_db check
-          uv run alembic -n meta_db check
+          just migrate
+          just check
+          just downgrade
+          just migrate
+          just check
 
   build:
     needs: test
