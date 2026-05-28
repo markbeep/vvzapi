@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import FileResponse
 from opentelemetry import trace
 from pydantic import BaseModel
@@ -44,7 +44,10 @@ def get_data_dump(request: Request):  # limiter requires request parameter
     with tracer.start_as_current_span("get_data_dump"):
         _ = request
         if not Path(Settings().zip_path).exists():
-            raise HTTPException(status_code=404, detail="Data dump not found")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Data dump not found",
+            )
         return FileResponse(
             Settings().zip_path,
             media_type="application/zip",
