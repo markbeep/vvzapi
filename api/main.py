@@ -252,10 +252,8 @@ async def root(
 
         # swap out results with fixijs if available, else handle request as normal
         layout_name = "Index.WithLayout"
-        fx_response = "false"
         if request.headers.get("fx-request") == "true":
             layout_name = "Index.Results"
-            fx_response = "true"
 
         return catalog_response(
             layout_name,
@@ -267,13 +265,6 @@ async def root(
             results=results,
             view=view,
             headers={
-                # NOTE: FX-Response is for backwards compatibility and can be removed after
-                # around 30 days when all caches should fall off (including the relevant logic in ext-fixi.js)
-                # It can happen that fixi tries to get the partial page, but the browser has the full page cached
-                # before the 'Vary' header was added. This can then result in the whole page being swapped in instead
-                # of only a part of it. ext-fixi.js currently checks for the FX-Response header to
-                # ensure a correctly updated/uncached response.
-                "FX-Response": fx_response,
                 "Vary": "FX-Request",
             },
         )
