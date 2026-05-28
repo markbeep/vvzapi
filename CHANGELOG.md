@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.12.2](https://github.com/markbeep/vvzapi/compare/v1.12.1...v1.12.2) (2026-05-28)
+
+
+### Features
+
+* **scraper:** add version to user-agent header ([d77992b](https://github.com/markbeep/vvzapi/commit/d77992ba79aa62ff2919305ac82c89e5c15d2589))
+
+
+### Bug Fixes
+
+* **api:** fix connection timeouts throwing errors ([e01ce2b](https://github.com/markbeep/vvzapi/commit/e01ce2bb9f53bd56a3621f3e33f44d22c6df2c46))
+* **api:** fix wrong status code of dump endpoint ([b7b01ba](https://github.com/markbeep/vvzapi/commit/b7b01baa780dbdb37fdc8ce6a62a7958352c7feb))
+* **search:** fix non-ascii characters being ignored as search values. Closes [#65](https://github.com/markbeep/vvzapi/issues/65) ([373def4](https://github.com/markbeep/vvzapi/commit/373def47ecde1ba0362cb68d025baf1ab2cae8ee))
+
+
+### Miscellaneous Chores
+
+* add migration step when starting up server locally with just ([f01647e](https://github.com/markbeep/vvzapi/commit/f01647ea4cd4d23a1ca070f2be92d6db0e72b135))
+
+
+### Code Refactoring
+
+* **search:** remove legacy request header for fixi.js backwards compatibility ([5128f87](https://github.com/markbeep/vvzapi/commit/5128f87becf4a3595971b6a13916136d221fc03d))
+* **search:** remove query referral from unit pages url to improve caching ([2666498](https://github.com/markbeep/vvzapi/commit/266649896565e75e829f34f481f56cf24863e51b))
+
+
+### Continuous Integration
+
+* add jinjax testing and use mise for Github action testing ([259635f](https://github.com/markbeep/vvzapi/commit/259635f824a4b0c02823721a263de937ff7146c9))
+
 ## [1.12.1](https://github.com/markbeep/vvzapi/compare/v1.12.0...v1.12.1) (2026-05-07)
 
 
