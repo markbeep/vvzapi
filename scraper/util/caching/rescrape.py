@@ -11,10 +11,10 @@ pages of the last two semesters are rescraped.
 
 from time import time
 
-from sqlmodel import col, distinct, not_, or_, select
+from sqlmodel import col, distinct, func, not_, or_, select
 
-from api.models import HTTPCache, LearningUnit
-from api.util.db import get_meta_session, get_session
+from api.models import HTTPCache
+from api.util.db import get_meta_session
 from scraper.env import Settings
 
 settings = Settings()
@@ -23,16 +23,20 @@ rescrape_amount = Settings().rescrape_amount
 
 
 def get_last_semesters(n: int) -> list[str]:
-    with next(get_session()) as session:
+    with next(get_meta_session()) as session:
+        semkez_expr = func.substr(
+            HTTPCache.url, func.instr(HTTPCache.url, "semkez=") + 7, 5
+        )
         semkezs = session.exec(
-            select(distinct(LearningUnit.semkez))
-            .order_by(col(LearningUnit.semkez).desc())
+            select(distinct(semkez_expr))
+            .where(col(HTTPCache.url).contains("semkez="))
+            .order_by(semkez_expr.desc())
             .limit(n)
         ).all()
     return list(semkezs)
 
 
-RESCRAPE_SEMKEZS = get_last_semesters(1) if enable_rescrape else None
+RESCRAPE_SEMKEZS = get_last_semesters(4) if enable_rescrape else None
 
 # gets the outdated urls and any seite=0 urls
 clauses = []
