@@ -41,6 +41,7 @@ from api.models import (
     UnitExaminerLink,
     UnitLecturerLink,
 )
+from api.routers.v0_router import router as v0_router
 from api.routers.v1.units import get_unit
 from api.routers.v1_router import router as v1_router
 from api.routers.v2.search import search_units
@@ -73,6 +74,7 @@ app = FastAPI(title="VVZ API", version=get_api_version())
 FastAPIInstrumentor.instrument_app(app, excluded_urls="/static/*")
 Instrumentator().instrument(app).expose(app, include_in_schema=False, should_gzip=True)
 
+app.include_router(v0_router)
 app.include_router(v1_router)
 app.include_router(v2_router)
 app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)

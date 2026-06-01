@@ -42,7 +42,7 @@ The search is inspired by [Scryfall](https://scryfall.com/).
 
 ## Versioning
 
-This project uses semantic versioning. Breaking changes will result in a bump of the major version. There should not be any breaking changes to the endpoints of any endpoints that are the same or lower version than the major version. If the current version is `2.x.x`, the endpoints under `/v1` and `/v2` will not be _intentionally_ updated in a way that would break or completely change their usage. But `/v3` would then still be in prerelease and might change anytime.
+This project uses semantic versioning. Breaking changes will result in a bump of the major version. Experimental API endpoints are hosted under the `/v0` path. There should not be any breaking changes to the endpoints of any endpoints that are the same or lower version than the major version. If the current version is `2.x.x`, the endpoints under `/v1` and `/v2` will not be _intentionally_ updated in a way that would break or completely change their usage. But `/v0` would not be fixated and might change anytime.
 
 ---
 
