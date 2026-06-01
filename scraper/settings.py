@@ -22,7 +22,7 @@ ADDONS = {}
 USER_AGENT = f"vvz-scraper/{get_api_version()} (+https://vvzapi.ch)"
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 # Concurrency and throttling settings
 # CONCURRENT_REQUESTS = 16

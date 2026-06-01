@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     def read_semesters(self) -> list[Literal["W", "S"]]:
         semesters: list[Literal["W", "S"]] = []
         for s in self.semester.split(","):
-            s = s.strip()
+            s = s.strip().upper()
             if s == "W" or s == "S":
                 semesters.append(s)
         return semesters

@@ -133,19 +133,13 @@ class UnitsSpider(KeywordLoggerSpider):
     course_ids: dict[str, set[int]] = defaultdict(set)
 
     def __init__(self, *a: Any, **kw: Any):  # pyright: ignore[reportAny,reportExplicitAny]
-        if RESCRAPE_SEMKEZS is not None:
-            self.start_urls: list[str] = [
-                url
-                for semkez in RESCRAPE_SEMKEZS
-                for url in get_urls(int(semkez[:-1]), "S" if semkez[-1] == "S" else "W")
-            ]
-        else:
-            self.start_urls = [
-                url
-                for year in range(Settings().start_year, Settings().end_year + 1)
-                for semester in Settings().read_semesters()
-                for url in get_urls(year, semester)
-            ]
+        self.start_urls: list[str] = [
+            url
+            for year in range(Settings().start_year, Settings().end_year + 1)
+            for semester in Settings().read_semesters()
+            for url in get_urls(year, semester)
+        ]
+
         super().__init__(*a, **kw)
 
     @override
