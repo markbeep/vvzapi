@@ -72,7 +72,11 @@ if settings.jaeger_endpoint:
 
 tracer = trace.get_tracer(__name__)
 
-app = FastAPI(title="VVZ API", version=get_api_version())
+app = FastAPI(
+    title="VVZ API",
+    version=get_api_version(),
+    description="v0 endpoints are experimental and can break at any point. Use the versioned endpoints (v1) for ensured backwards compatibility.",
+)
 FastAPIInstrumentor.instrument_app(app, excluded_urls="/static/*")
 Instrumentator().instrument(app).expose(app, include_in_schema=False, should_gzip=True)
 
