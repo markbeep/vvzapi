@@ -549,6 +549,15 @@ class Rating(BaseModel, table=True):
         return round(avg, 2)
 
 
+class LatestSemkez(BaseModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    semkez: str
+    scraped_at: int = Field(
+        default_factory=lambda: int(time.time()),
+        sa_column=Column(INTEGER, nullable=False),
+    )
+
+
 """
 
 

@@ -6,6 +6,7 @@ import traceback
 from collections import defaultdict
 from typing import Any, Generator, Sequence, cast, override
 
+import scrapy
 from parsel import Selector, SelectorList
 from pydantic import BaseModel
 from scrapy.http import Response
@@ -18,6 +19,7 @@ from api.models import (
     CourseHourEnum,
     CourseLecturerLink,
     Department,
+    LatestSemkez,
     LearningUnit,
     Level,
     NamedURL,
@@ -141,6 +143,16 @@ class UnitsSpider(KeywordLoggerSpider):
         ]
 
         super().__init__(*a, **kw)
+
+    @override
+    async def start(self):
+        yield scrapy.Request(
+            "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/",
+            callback=self.parse_latest_semkez,
+            dont_filter=True,
+        )
+        for url in self.start_urls:
+            yield scrapy.Request(url)
 
     @override
     def parse_start_url(self, response: Response, **_: Any):  # pyright: ignore[reportExplicitAny]
@@ -350,6 +362,13 @@ class UnitsSpider(KeywordLoggerSpider):
                     "id": id,
                 },
             )
+
+    def parse_latest_semkez(self, response: Response):
+        semkez = response.xpath('//select[@id="semkez"]/option[1]/@value').get()
+        if semkez:
+            yield LatestSemkez(semkez=semkez)
+        else:
+            self.logger.error("No semkez found on sucheLehrangebotPre.view")
 
     def parse_unit(
         self, response: Response

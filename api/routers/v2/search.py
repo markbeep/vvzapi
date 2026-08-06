@@ -38,6 +38,7 @@ from api.models import (
     UnitLecturerLink,
     UnitSectionLink,
 )
+from api.util.semkez import semkez_to_comparable
 from api.util.db import aengine
 from api.util.parse_query import (
     AND,
@@ -65,9 +66,7 @@ class GroupedLearningUnits(BaseModel):
     def latest_unit(self) -> LearningUnit | None:
         if not self.units:
             return None
-        return max(
-            self.units, key=lambda unit: unit.semkez.replace("W", "0").replace("S", "1")
-        )
+        return max(self.units, key=lambda unit: semkez_to_comparable(unit.semkez))
 
     def with_semkez(self, semkez: str) -> LearningUnit | None:
         for unit in self.units:
@@ -79,7 +78,7 @@ class GroupedLearningUnits(BaseModel):
     def __iter__(self):
         for unit in sorted(
             self.units,
-            key=lambda u: u.semkez.replace("W", "0").replace("S", "1"),
+            key=lambda u: semkez_to_comparable(u.semkez),
             reverse=True,
         ):
             yield unit.semkez, unit

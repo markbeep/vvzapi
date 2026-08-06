@@ -12,6 +12,7 @@
     average_rating: float | str = "n/a",
     links: dict[str, str] = {}, # href:rel mapping
     flagged: bool = False,
+    is_unpublished: bool,
 #}
 
 {% set main_title = unit.title_english if unit.title_english else unit.title %}
@@ -89,6 +90,12 @@
                     {% if is_outdated %}
                         <div class="alert alert-warning p-2 text-sm max-w-md">
                             <span>You're viewing possible stale or outdated data. Please check the latest semester for more up-to-date information.</span>
+                        </div>
+                    {% endif %}
+
+                    {% if is_unpublished %}
+                        <div class="alert alert-warning p-2 text-sm max-w-md">
+                            <span>This unit is part of an unpublished VVZ semester. Course details might change or be removed.</span>
                         </div>
                     {% endif %}
 

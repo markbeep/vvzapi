@@ -13,6 +13,7 @@ from api.models import (
     CourseLecturerLink,
     Department,
     FinishedScrapingSemester,
+    LatestSemkez,
     LearningUnit,
     Lecturer,
     Level,
@@ -116,9 +117,16 @@ class DatabasePipeline:
                     old.scraped_at = int(time.time())
                 else:
                     old = item
-                self.session.add(old)
-                self.session.commit()
-                return item
+            elif isinstance(item, LatestSemkez):
+                old = self.session.exec(
+                    select(LatestSemkez)
+                    .where(LatestSemkez.semkez == item.semkez)
+                    .limit(1)
+                ).first()
+                self.logger.debug(
+                    "LatestSemkez item processed",
+                    extra={"semkez": item.semkez},
+                )
             else:
                 self.logger.error("Unknown item type", extra={"item": item})
                 return item

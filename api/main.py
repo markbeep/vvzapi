@@ -34,6 +34,7 @@ from api.env import Settings
 from api.models import (
     Course,
     HTTPCache,
+    LatestSemkez,
     LearningUnit,
     Lecturer,
     Rating,
@@ -54,6 +55,7 @@ from api.util.prometheus import (
     SEARCH_QUERY_DURATION,
 )
 from api.util.sections import get_parent_from_unit
+from api.util.semkez import semkez_to_comparable
 from api.util.sitemap import generate_sitemap
 from api.util.templates import catalog_response
 from api.util.version import get_api_version
@@ -365,9 +367,24 @@ async def unit_detail(
             ).first()
             span.set_attribute("is_flagged", flagged is not None)
 
+        with tracer.start_as_current_span("latest_semkez"):
+            latest_semkez = (
+                await session.exec(
+                    select(LatestSemkez.semkez)
+                    .order_by(col(LatestSemkez.id).desc())
+                    .limit(1)
+                )
+            ).first()
+            is_unpublished = False
+            if latest_semkez is not None:
+                is_unpublished = semkez_to_comparable(
+                    unit.semkez
+                ) > semkez_to_comparable(latest_semkez)
+            span.set_attribute("is_unpublished", is_unpublished)
+
         # allows us to add canonical links to the newest unit
         newest_unit_id, _ = max(
-            [(id, sk.replace("W", "0").replace("S", "1")) for id, sk in semkezs],
+            [(id, semkez_to_comparable(sk)) for id, sk in semkezs],
             key=lambda x: x[1],
         )
 
@@ -403,6 +420,7 @@ async def unit_detail(
             average_rating=average_rating,
             links=links,
             flagged=flagged is not None,
+            is_unpublished=is_unpublished,
         )
 
 

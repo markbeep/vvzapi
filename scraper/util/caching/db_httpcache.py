@@ -35,6 +35,16 @@ class DBHTTPCache(httpcache.FilesystemCacheStorage):
     def retrieve_response(self, spider: Spider, request: Request) -> Response | None:
         url = self._normalize_url(request.url)
 
+        # ignore cache for the index vvz page, so we can always fetch the latest official semester number
+        if (
+            url == "https://www.vvz.ethz.ch/Vorlesungsverzeichnis/"
+            or "sucheLehrangebotPre.view" in url
+        ):
+            self.logger.info(
+                "URL marked for no-cache, skipping cache", extra={"url": url}
+            )
+            return None
+
         if should_rescrape(url):
             self.logger.info(
                 "URL marked for rescraping, skipping cache",
