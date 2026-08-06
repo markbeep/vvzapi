@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.12.3](https://github.com/markbeep/vvzapi/compare/v1.12.2...v1.12.3) (2026-08-06)
+
+
+### Features
+
+* **search:** add unpublished semester indicator ([9f9f565](https://github.com/markbeep/vvzapi/commit/9f9f56552ada3cddea4dde1f05650678a34c7092))
+
+
+### Bug Fixes
+
+* **api:** correctly order winter semesters after summer semesters ([9f9f565](https://github.com/markbeep/vvzapi/commit/9f9f56552ada3cddea4dde1f05650678a34c7092))
+* **scraper:** fix scraper not fetching new semesters ([2e63b51](https://github.com/markbeep/vvzapi/commit/2e63b51466a0950e44b81f2b4cea1e21032b4b76))
+* **scraper:** rescrape latest semesters correctly ([51462c5](https://github.com/markbeep/vvzapi/commit/51462c5d01cc180ae0a201e37e35f4ce742274e4))
+* **search:** simplify last-updated indicator ([f04f63a](https://github.com/markbeep/vvzapi/commit/f04f63a7280a3a6f5bfe76e912072ec71f80f61d))
+
+
+### Code Refactoring
+
+* **api:** move experimental endpoints from /v2 to /v0 ([1f8b604](https://github.com/markbeep/vvzapi/commit/1f8b6041d405ce511f8abc865dd14c01771070f3))
+
 ## [1.12.2](https://github.com/markbeep/vvzapi/compare/v1.12.1...v1.12.2) (2026-05-28)
 
 
