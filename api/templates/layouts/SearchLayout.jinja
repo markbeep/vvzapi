@@ -54,6 +54,19 @@
         </div>
     </div>
 
+    <script>
+        // restore the last search query from the URL fragment (#q=...)
+        document.addEventListener("DOMContentLoaded", () => {
+            const match = location.hash.match(/^#q=(.*)$/);
+            if (!match) return;
+            try {
+                const q = decodeURIComponent(match[1]);
+                const input = document.getElementById("search-top");
+                if (input && q) input.value = q;
+            } catch (e) {}
+        });
+    </script>
+
     {{ content }}
 </body>
 

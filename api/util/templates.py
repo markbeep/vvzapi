@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any, Mapping
+from urllib.parse import quote
 
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -35,8 +36,14 @@ def trim_float(value: float) -> int | float:
     return round(value, 3)
 
 
+def urlquote(value: object) -> str:
+    """Percent-encode like `encodeURIComponent` (decode with `decodeURIComponent`)."""
+    return quote(str(value), safe="!~*'()")
+
+
 templates.env.filters["pluralize"] = pluralize_dj  # pyright: ignore[reportUnknownMemberType]
 templates.env.filters["trim_float"] = trim_float  # pyright: ignore[reportUnknownMemberType]
+templates.env.filters["urlquote"] = urlquote  # pyright: ignore[reportUnknownMemberType]
 templates.env.globals["version"] = get_api_version()  # pyright: ignore[reportUnknownMemberType]
 
 

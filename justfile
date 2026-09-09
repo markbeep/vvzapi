@@ -34,7 +34,7 @@ upgrade:
     uvx uv-upgrade
 
 test_jinja:
-    uv run api/util/test_jinjax.py api/templates/ -g content url_for catalog version -f trim_float
+    uv run api/util/test_jinjax.py api/templates/ -g content url_for catalog version -f trim_float urlquote
 
 test: test_jinja
     uv run basedpyright

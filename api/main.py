@@ -4,6 +4,7 @@ import os
 import re
 from pathlib import Path
 from typing import Annotated, Awaitable, Callable, Literal
+from urllib.parse import quote
 
 import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request
@@ -203,6 +204,11 @@ async def root(
         span.set_attribute("view", view)
 
         if not query:
+            if query == "":
+                return RedirectResponse(
+                    url="/",
+                    status_code=303,
+                )
             return catalog_response(
                 "Index.Empty",
                 headers={"Vary": "FX-Request"},
@@ -252,7 +258,7 @@ async def root(
                 first = values[0].latest_unit()
                 if first:
                     return RedirectResponse(
-                        f"/unit/{first.id}",
+                        f"/unit/{first.id}#q={quote(query, safe="!~*'()")}",
                         status_code=303,
                         headers={"Vary": "FX-Request"},
                     )
