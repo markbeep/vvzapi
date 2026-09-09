@@ -588,7 +588,7 @@ async def match_filters(
             final_query = join_section(final_query)
 
         average_rating = None
-        if any(f.key == "coursereview" for f in filters):
+        if any(f.key == "coursereview" for f in filters) or order_by == "coursereview":
 
             def join_rating[T: Select[Any] | SelectOfScalar[Any]](q: T) -> T:
                 return q.join(

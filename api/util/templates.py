@@ -30,7 +30,9 @@ env = Environment(
 templates = Jinja2Templates(env=env)
 
 
-def trim_float(value: float) -> int | float:
+def trim_float(value: float | None) -> int | float:
+    if value is None:
+        return 0
     if value % 1 == 0:
         return int(value)
     return round(value, 3)
