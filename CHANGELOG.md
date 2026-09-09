@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.12.4](https://github.com/markbeep/vvzapi/compare/v1.12.3...v1.12.4) (2026-09-09)
+
+
+### Features
+
+* **search:** add order-by course-review option ([4fb750f](https://github.com/markbeep/vvzapi/commit/4fb750f738855cb170b6209a2f6537923e5a8529))
+* **search:** add restricted/priority/target group filters ([73a5bfa](https://github.com/markbeep/vvzapi/commit/73a5bfa536233e7e63752c422b6e3466aa84efdc))
+* **search:** show course review ratings on search page ([b101fce](https://github.com/markbeep/vvzapi/commit/b101fcebf477cc160b8dd61ebba3ac0fd7b9cf68))
+
+
+### Bug Fixes
+
+* **search:** fix icons filling the screen on initial non-css page load ([77de40d](https://github.com/markbeep/vvzapi/commit/77de40ddc1b47eaf868c074ea588ff1b129c75a8))
+
+
+### Code Refactoring
+
+* **search:** add search query as fragment on unit pages (instead of localStorage) ([c0fb289](https://github.com/markbeep/vvzapi/commit/c0fb289b658190478327442cb3ffb0be7f370a8e))
+
 ## [1.12.3](https://github.com/markbeep/vvzapi/compare/v1.12.2...v1.12.3) (2026-08-06)
 
 
