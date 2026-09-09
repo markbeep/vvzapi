@@ -399,7 +399,7 @@
                     </section>
                 {% endif %}
 
-                {% if unit.max_places or unit.signup_start or unit.signup_end or unit.priority %}
+                {% if unit.max_places or unit.signup_start or unit.signup_end or unit.priority or unit.primary_target_group %}
                     <section class="card bg-base-100 shadow-sm text-sm">
                         <div class="card-body p-5">
                             <h3 class="font-bold text-base-content border-b border-base-200 pb-2 mb-3">
@@ -445,6 +445,18 @@
                                 {% if unit.priority %}
                                     <div class="alert alert-warning p-2 text-xs">
                                         <span><strong>Priority:</strong> {{ unit.priority }}</span>
+                                    </div>
+                                {% endif %}
+                                {% if unit.primary_target_group %}
+                                    <div>
+                                        <dt class="text-base-content/60 text-xs uppercase tracking-wide">
+                                            Primary Target Group
+                                        </dt>
+                                        <dd class="flex flex-wrap gap-1 mt-1">
+                                            {% for group in unit.primary_target_group %}
+                                                <span class="badge badge-outline h-fit whitespace-normal text-left">{{ group }}</span>
+                                            {% endfor %}
+                                        </dd>
                                     </div>
                                 {% endif %}
                             </dl>

@@ -239,6 +239,44 @@
                         </tr>
                         <tr>
                             <td class="px-4 py-3 font-mono font-bold">
+                                priority
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                prio
+                            </td>
+                            <td class="px-4 py-3">
+                                Matches the priority/registration note text. Note: stored in
+                                German or English depending on the scraped page.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                restricted
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                restrict
+                            </td>
+                            <td class="px-4 py-3">
+                                Whether the course has a priority restriction.
+                                <code>restricted:true</code> = has priority,
+                                <code>restricted:false</code> = no priority. Negate to invert.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
+                                primary_target_group
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-500">
+                                ptg, target
+                            </td>
+                            <td class="px-4 py-3">
+                                Matches courses whose primary target group list contains the
+                                given value (e.g. <code>primary_target_group:"Computer Science
+                                MSc"</code>).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-mono font-bold">
                                 language
                             </td>
                             <td class="px-4 py-3 font-mono text-gray-500">
@@ -383,6 +421,25 @@
                                     <code class="text-accent font-bold block mb-1">physics s:W -d:analysis</code>
                                     <span class="text-sm text-base-content/80">Search for "physics" in the Winter semester without any mention
                                     of "analyis" in the description.</span>
+                                </div>
+                            </div>
+                        </a>
+
+                        <a href="/?q=restricted%3Afalse" class="block group">
+                            <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                                <div class="card-body p-4">
+                                    <code class="text-accent font-bold block mb-1">restricted:false</code>
+                                    <span class="text-sm text-base-content/80">Find courses with no priority restriction.</span>
+                                </div>
+                            </div>
+                        </a>
+
+                        <a href="/?q=-primary_target_group%3A%22Data+Science%22"
+                           class="block group">
+                            <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                                <div class="card-body p-4">
+                                    <code class="text-accent font-bold block mb-1">-primary_target_group:"Data Science"</code>
+                                    <span class="text-sm text-base-content/80">Find courses not intended for Data Science students.</span>
                                 </div>
                             </div>
                         </a>

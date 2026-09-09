@@ -38,7 +38,6 @@ from api.models import (
     UnitLecturerLink,
     UnitSectionLink,
 )
-from api.util.semkez import semkez_to_comparable
 from api.util.db import aengine
 from api.util.parse_query import (
     AND,
@@ -49,6 +48,7 @@ from api.util.parse_query import (
     build_search_operators,
 )
 from api.util.pydantic_type import Int64
+from api.util.semkez import semkez_to_comparable
 
 router = APIRouter(prefix="/search", tags=["Search"])
 
@@ -454,6 +454,37 @@ def _build_boolean_clause(op: AND | OR):
                         case Operator.le:
                             booleans.append(average_rating <= rating_value)
                     filters_used.ops.append(filter_)
+                case "priority":
+                    clause = col(LearningUnit.priority).contains(filter_.value)
+                    if filter_.operator == Operator.ne:
+                        clause = not_(clause)
+                    booleans.append(clause)
+                    filters_used.ops.append(filter_)
+                case "primary_target_group":
+                    clause = col(LearningUnit.primary_target_group).contains(
+                        filter_.value
+                    )
+                    if filter_.operator == Operator.ne:
+                        clause = not_(clause)
+                    booleans.append(clause)
+                    filters_used.ops.append(filter_)
+                case "restricted":
+                    restricted = filter_.value.lower() in {"true", "yes", "1", "y", "t"}
+                    if not restricted and filter_.value.lower() not in {
+                        "false",
+                        "no",
+                        "0",
+                        "n",
+                        "f",
+                    }:
+                        continue
+                    if filter_.operator == Operator.ne:
+                        restricted = not restricted
+                    if restricted:
+                        booleans.append(col(LearningUnit.priority).is_not(None))
+                    else:
+                        booleans.append(col(LearningUnit.priority).is_(None))
+                    filters_used.ops.append(filter_)
 
         # matches all filters
         if offered_in_names:
@@ -621,6 +652,9 @@ async def match_filters(
                 | "descriptions_german"
                 | "offered"
                 | "examtype"
+                | "priority"
+                | "restricted"
+                | "primary_target_group"
             ):
                 pass
         if descending:
