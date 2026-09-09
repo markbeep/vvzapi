@@ -41,7 +41,11 @@
                        class="btn btn-sm btn-outline"
                        tabindex="-1"
                        title="CourseReview">
-                        CR
+                        {% if grouped.rating is not none %}
+                            CR {{ grouped.rating }}
+                        {% else %}
+                            CR
+                        {% endif %}
                         <span class="[&>svg]:size-4">
                             <icons.External />
                         </span>

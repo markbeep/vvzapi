@@ -58,6 +58,7 @@ tracer = trace.get_tracer(__name__)
 class GroupedLearningUnits(BaseModel):
     number: str
     units: list[LearningUnit]
+    rating: float | None = None
 
     @property
     def semkezs(self) -> list[str]:
@@ -707,10 +708,22 @@ async def match_filters(
             async with AsyncSession(aengine) as session:
                 with tracer.start_as_current_span("execute_final_query"):
                     results = (await session.exec(final_query)).all()
+                numbers = {unit.number for unit in results if unit.number}
+                ratings: dict[str, float] = {}
+                if numbers:
+                    with tracer.start_as_current_span("execute_ratings_query"):
+                        rating_rows = (
+                            await session.exec(
+                                select(Rating).where(
+                                    col(Rating.course_number).in_(numbers)
+                                )
+                            )
+                        ).all()
+                    ratings = {r.course_number: r.average() for r in rating_rows}
                 session.expunge_all()
-            return results
+            return results, ratings
 
-        count, results = await asyncio.gather(_count(), _results())
+        count, (results, ratings) = await asyncio.gather(_count(), _results())
 
         numbered_units: dict[str, list[LearningUnit]] = defaultdict(list)
         for unit in results:
@@ -723,7 +736,11 @@ async def match_filters(
         return (
             count,
             {
-                number: GroupedLearningUnits(number=number, units=units)
+                number: GroupedLearningUnits(
+                    number=number,
+                    units=units,
+                    rating=ratings.get(number),
+                )
                 for number, units in numbered_units.items()
             },
             filters_used,
