@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.12.5](https://github.com/markbeep/vvzapi/compare/v1.12.4...v1.12.5) (2026-09-13)
+
+
+### Features
+
+* **search:** have offered-in links lead to the corresponding search term ([58ecaad](https://github.com/markbeep/vvzapi/commit/58ecaad62dd824a9c0b250e0f197b3ada9329284))
+
+
+### Bug Fixes
+
+* **search:** fix llms.txt missing new restriction operators ([58ecaad](https://github.com/markbeep/vvzapi/commit/58ecaad62dd824a9c0b250e0f197b3ada9329284))
+
 ## [1.12.4](https://github.com/markbeep/vvzapi/compare/v1.12.3...v1.12.4) (2026-09-09)
 
 
