@@ -40,6 +40,7 @@ from api.models import (
     Lecturer,
     Rating,
     Section,
+    SectionPathView,
     UnitExaminerLink,
     UnitLecturerLink,
 )
@@ -50,7 +51,7 @@ from api.routers.v2.search import search_units
 from api.routers.v2_router import router as v2_router
 from api.util.db import aget_meta_session, aget_session
 from api.util.influxdb import hasher, send_to_influxdb
-from api.util.parse_query import QueryKey
+from api.util.parse_query import QueryKey, offered_in_query
 from api.util.prometheus import (
     SEARCH_QUERY_COUNTER,
     SEARCH_QUERY_DURATION,
@@ -285,6 +286,7 @@ async def root(
 
 class RecursiveSection(BaseModel):
     section: Section
+    search_query: str = ""
     sub_sections: list[RecursiveSection] = []
 
 
@@ -353,9 +355,35 @@ async def unit_detail(
             span.set_attribute("semkez_count", len(semkezs))
 
         with tracer.start_as_current_span("section_tree"):
+            with tracer.start_as_current_span("section_paths"):
+                section_paths = {
+                    row.id: row
+                    for row in (
+                        await session.exec(
+                            select(SectionPathView).where(
+                                col(SectionPathView.id).in_(
+                                    [section.id for section in sections]
+                                )
+                            )
+                        )
+                    ).all()
+                }
+
+            def offered_in_names(section: Section) -> list[str]:
+                path = section_paths.get(section.id)
+                value = (path.path_en or path.path_de) if path else None
+                if value:
+                    return value.split(" > ")
+
+                return [section.name_english or section.name or ""]
+
             # create tree structure of offered in sections
             section_ids = {
-                section.id: RecursiveSection(section=section) for section in sections
+                section.id: RecursiveSection(
+                    section=section,
+                    search_query=offered_in_query(offered_in_names(section)),
+                )
+                for section in sections
             }
             root_sections: list[RecursiveSection] = []
             for section in sections:

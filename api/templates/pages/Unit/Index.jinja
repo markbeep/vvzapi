@@ -550,10 +550,15 @@
                         <li>
                             <div class="flex items-center gap-2 py-0.5">
                                 <span class="h-0.5 w-3 bg-base-300 rounded-full"></span>
-                                <a target="_blank"
-                                   href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?abschnittId={{ tree.section.id }}&semkez={{ tree.section.semkez }}&lang=en"
+                                <a href="/?q={{ tree.search_query|urlquote }}"
                                    class="text-sm text-base-content font-medium hover:underline">
                                     {{ tree.section.name_english if tree.section.name_english else tree.section.name }}
+                                </a>
+                                <a target="_blank"
+                                   href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/sucheLehrangebot.view?abschnittId={{ tree.section.id }}&semkez={{ tree.section.semkez }}&lang=en"
+                                   class="text-xs text-base-content/50 hover:text-base-content/80 hover:underline inline-flex items-center gap-0.5 shrink-0"
+                                   title="Open this section on VVZ">
+                                    VVZ
                                     <span class="[&>svg]:size-3 inline-block">
                                         <icons.External />
                                     </span>

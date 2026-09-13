@@ -56,6 +56,9 @@ Each key also has short aliases for convenience.
 | descriptions_german  | dg                       | Searches description fields in German only. |
 | department           | dep                      | Filters by ETH department, e.g. "Computer Science", "Architecture", "Management Technology and Economics". Uses fuzzy matching to find the closest department. |
 | level                | lvl, lev                 | Course level: BSC, MSC, DZ, DS, DR, SHE, GS, WBZ, or NDS. |
+| priority             | prio                     | Matches the priority/registration note text. Note: stored in German or English depending on the scraped page. |
+| restricted           | restrict                 | Whether the course has a priority restriction. `restricted:true` = has priority, `restricted:false` = no priority. Negate to invert. |
+| primary_target_group | ptg, target              | Matches courses whose primary target group list contains the given value, e.g. `primary_target_group:"Computer Science MSc"`. |
 | language             | lang                     | The language the course is taught in. |
 | offered              | off, o                   | Matches against the section path the course is offered in. See detailed explanation below. |
 | coursereview         | cr                       | Filters by combined average rating on CourseReview (0.0–5.0). Supports comparison operators. |

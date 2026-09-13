@@ -79,6 +79,20 @@ mapping: dict[str, QueryKey] = {
 }
 
 
+def offered_in_query(names: Sequence[str]) -> str:
+    """Build an `o:` query matching section paths that contain every given name.
+
+    Each name becomes its own `o:` term; the search backend ANDs them, requiring a
+    single section path (English or German) that contains all of them.
+    """
+
+    def term(name: str) -> str:
+        quote_char = "`" if '"' in name else '"'
+        return f"o:{quote_char}{name}{quote_char}"
+
+    return " ".join(term(name) for name in names if name)
+
+
 class Operator(str, Enum):
     eq = "="
     ne = "!="
