@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.12.6](https://github.com/markbeep/vvzapi/compare/v1.12.5...v1.12.6) (2026-09-23)
+
+
+### Features
+
+* store more detailed analytics in clickhouse ([da2a4e2](https://github.com/markbeep/vvzapi/commit/da2a4e261e88709b3db86c38483db36d238a50ec))
+
+
+### Bug Fixes
+
+* **api:** scope database session lifetime to function-scope, allowing it to be freed up earlier ([85b0e20](https://github.com/markbeep/vvzapi/commit/85b0e20ea3b65370976ddd8b2bd3f283addc4127))
+* index flagged field of a unit for faster lookups ([85b0e20](https://github.com/markbeep/vvzapi/commit/85b0e20ea3b65370976ddd8b2bd3f283addc4127))
+
 ## [1.12.5](https://github.com/markbeep/vvzapi/compare/v1.12.4...v1.12.5) (2026-09-13)
 
 
