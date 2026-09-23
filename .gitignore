@@ -13,8 +13,6 @@ wheels/
 data
 .scrapy
 
-.env
-
 # lighthouse outputs
 localhost*.html
 
@@ -23,3 +21,6 @@ localhost*.html
 
 # mise
 mise.local.toml
+
+.env
+dashboard

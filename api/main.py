@@ -32,6 +32,18 @@ from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette.background import BackgroundTask
 
+from api.analytics.events import (
+    api_endpoint,
+    classify_client,
+    classify_request_kind,
+    client_family,
+    record_request,
+)
+from api.analytics.prometheus import (
+    API_CLIENT_REQUESTS,
+    CLIENT_TYPE_REQUESTS,
+    INDEX_VIEWS,
+)
 from api.env import Settings
 from api.models import (
     Course,
@@ -48,15 +60,10 @@ from api.models import (
 from api.routers.v0_router import router as v0_router
 from api.routers.v1.units import get_unit
 from api.routers.v1_router import router as v1_router
-from api.routers.v2.search import search_units
+from api.routers.v2.search import run_search
 from api.routers.v2_router import router as v2_router
 from api.util.db import aget_meta_session, aget_session
-from api.util.influxdb import hasher, send_to_influxdb
 from api.util.parse_query import QueryKey, offered_in_query
-from api.util.prometheus import (
-    SEARCH_QUERY_COUNTER,
-    SEARCH_QUERY_DURATION,
-)
 from api.util.sections import get_parent_from_unit
 from api.util.semkez import semkez_to_comparable
 from api.util.sitemap import generate_sitemap
@@ -100,7 +107,10 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # pyright: ignore[reportArgumentType]
 
 
-async def send_analytics_event(request: Request):
+async def send_plausible_event(request: Request):
+    plausible_url = Settings().plausible_url
+    if not plausible_url:
+        return
     headers = {
         "Content-Type": "application/json",
     }
@@ -123,39 +133,11 @@ async def send_analytics_event(request: Request):
     if request.headers.get("referer"):
         body["referrer"] = request.headers.get("referer")
 
-    settings = Settings()
-    if settings.plausible_url:
-        try:
-            async with httpx.AsyncClient() as client:
-                await client.post(
-                    settings.plausible_url,
-                    json=body,
-                    headers=headers,
-                    timeout=10,
-                )
-        except httpx.ConnectTimeout:
-            print("Plausible connection timed out")
-
-    if settings.influxdb_url:
-        tags = {
-            "path": request.url.path,
-            "method": request.method,
-            "hostname": request.url.hostname or "unknown",
-            "ip_hash": hasher.hash_ip(headers.get("X-Forwarded-For", "unknown"))[:16],
-        }
-        fields: dict[str, str | int | float | bool] = {
-            "url": str(request.url),
-            "referrer": request.headers.get("referer", "") or "",
-            "count": 1,
-        }
-        if user_agent := request.headers.get("user-agent", ""):
-            # Truncate user agent for tag storage
-            tags["user_agent"] = user_agent[:100]
-        if request.query_params:
-            for key, value in request.query_params.items():
-                # Prefix with 'param_' to avoid conflicts
-                fields[f"param_{key}"] = str(value)[:200]  # Limit length
-        await send_to_influxdb("pageview", tags=tags, fields=fields)
+    try:
+        async with httpx.AsyncClient() as client:
+            await client.post(plausible_url, json=body, headers=headers, timeout=10)
+    except httpx.ConnectTimeout:
+        print("Plausible connection timed out")
 
 
 @app.middleware("http")
@@ -172,15 +154,31 @@ async def analytics_middleware(
 
     has_extension = re.search(r"\.\w+$", request.url.path) is not None
     settings = Settings()
-    if (
-        response.status_code != 404
-        and response.status_code != 307
-        and (settings.plausible_url or settings.influxdb_url)
-        and not has_extension
-        and not request.url.path.startswith("/metrics")
-    ):
-        task = BackgroundTask(send_analytics_event, request)
-        response.background = task
+    if not request.url.path.startswith("/metrics"):
+        user_agent = request.headers.get("user-agent")
+        client_type = classify_client(user_agent, "sec-fetch-mode" in request.headers)
+        request_kind = classify_request_kind(request.url.path)
+        CLIENT_TYPE_REQUESTS.labels(
+            client_type=client_type,
+            request_kind=request_kind,
+        ).inc()
+        if request_kind == "api":
+            API_CLIENT_REQUESTS.labels(
+                endpoint=api_endpoint(request.url.path),
+                client_type=client_type,
+                client_family=client_family(user_agent),
+            ).inc()
+
+        # Assets and /metrics are skipped; everything else is recorded,
+        # including 404s, because the status code is part of the row.
+        if not has_extension:
+            record_request(request, response.status_code)
+            if (
+                settings.plausible_url
+                and response.status_code not in (404, 307)
+                and response.background is None
+            ):
+                response.background = BackgroundTask(send_plausible_event, request)
 
     return response
 
@@ -188,7 +186,6 @@ async def analytics_middleware(
 @app.get("/", include_in_schema=False)
 async def root(
     request: Request,
-    background_tasks: BackgroundTasks,
     query: Annotated[str | None, Query(alias="q"), str] = None,
     page: Annotated[int, Query(ge=1)] = 1,
     limit: Annotated[int | None, Query(ge=1, le=100)] = None,
@@ -196,7 +193,6 @@ async def root(
     order: str = "asc",
     view: Literal["big", "compact"] = "big",
 ):
-    SEARCH_QUERY_COUNTER.labels(has_query=True if query else False).inc()
     with tracer.start_as_current_span("root_search") as span:
         span.set_attribute("query", query or "")
         span.set_attribute("page", page)
@@ -206,6 +202,12 @@ async def root(
         span.set_attribute("view", view)
 
         if not query:
+            INDEX_VIEWS.labels(
+                client_type=classify_client(
+                    request.headers.get("user-agent"),
+                    "sec-fetch-mode" in request.headers,
+                ),
+            ).inc()
             if query == "":
                 return RedirectResponse(
                     url="/",
@@ -219,40 +221,20 @@ async def root(
         if limit is None:
             limit = 20 if view == "big" else 50
 
-        with SEARCH_QUERY_DURATION.labels(
-            has_query=True if query else False,
+        results = await run_search(
+            query,
+            offset=(page - 1) * limit,
+            limit=limit,
             order_by=order_by,
             order=order,
+            source="web",
             view=view,
-        ).time():
-            results = await search_units(
-                query,
-                offset=(page - 1) * limit,
-                limit=limit,
-                order_by=order_by,
-                order=order,
-            )
+            page=page,
+            request=request,
+        )
 
         span.set_attribute("result_count", results.total)
         span.set_attribute("exec_time_ms", results.exec_time_ms)
-
-        # Track search in InfluxDB
-        background_tasks.add_task(
-            send_to_influxdb,
-            "search",
-            tags={
-                "order_by": order_by,
-                "order": order,
-                "view": view,
-            },
-            fields={
-                "query": query[:500],
-                "result_count": results.total,
-                "exec_time_ms": results.exec_time_ms,
-                "page": page,
-                "limit": limit,
-            },
-        )
 
         if results.total == 1:
             values = list(results.results.values())

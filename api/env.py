@@ -1,12 +1,37 @@
 from typing import final
 
+from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+@final
+class Clickhouse(BaseModel):
+    """ClickHouse analytics store, plus how events are buffered on the way in."""
+
+    url: str | None = None
+    """ClickHouse HTTP interface, e.g. http://localhost:8123"""
+
+    database: str = "vvzapi"
+    user: str = "default"
+    password: str | None = None
+
+    queue_max: int = Field(default=20_000, gt=0)
+    """Bounded so a ClickHouse outage cannot grow memory without limit."""
+
+    flush_interval_seconds: float = Field(default=1.0, gt=0)
+    """How often queued events are written out."""
+
+    max_rows_per_insert: int = Field(default=5_000, gt=0)
+    """ClickHouse dislikes huge single inserts, so batches are split at this size."""
 
 
 @final
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        env_nested_delimiter="_",
     )
 
     db_path: str = "data/db.sqlite"
@@ -21,9 +46,7 @@ class Settings(BaseSettings):
     otel_service_name: str = "vvzapi"
     """OpenTelemetry service name"""
 
-    influxdb_url: str | None = None
-    """Full influxdb url, i.e. http://influxdb.example.com/write?db=vvzapi"""
-    influxdb_token: str | None = None
+    clickhouse: Clickhouse = Clickhouse()
 
     flag_webhook: str | None = None
     """Endpoint to send webhooks to if a unit is flagged"""

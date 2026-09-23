@@ -3,7 +3,7 @@ from collections import defaultdict
 from timeit import default_timer
 from typing import Annotated, Any, cast, override
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from opentelemetry import trace
 from pydantic import BaseModel
 from pyparsing import ParseException
@@ -27,6 +27,22 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import SelectOfScalar
 from starlette.status import HTTP_400_BAD_REQUEST
 
+from api.analytics.events import (
+    boolean_shape,
+    categorize_query,
+    classify_client_for_request,
+    collect_stages,
+    observe_stage,
+    query_filters,
+    record_search,
+)
+from api.analytics.prometheus import (
+    SEARCH_DURATION,
+    SEARCH_FILTER_USED,
+    SEARCH_REQUESTS,
+    SEARCH_RESULT_COUNT,
+    SEARCH_ZERO_RESULTS,
+)
 from api.models import (
     Department,
     LearningUnit,
@@ -696,29 +712,32 @@ async def match_filters(
 
         async def _count():
             async with AsyncSession(aengine) as session:
-                with tracer.start_as_current_span("execute_count_query"):
-                    count_query = query.with_only_columns(
-                        func.count(distinct(LearningUnit.number))
-                    ).order_by(None)
-                    (count,) = (await session.execute(count_query)).one()  # pyright: ignore[reportAny]
-                    count = cast(int, count)
+                with observe_stage("count"):
+                    with tracer.start_as_current_span("execute_count_query"):
+                        count_query = query.with_only_columns(
+                            func.count(distinct(LearningUnit.number))
+                        ).order_by(None)
+                        (count,) = (await session.execute(count_query)).one()  # pyright: ignore[reportAny]
+                        count = cast(int, count)
             return count
 
         async def _results():
             async with AsyncSession(aengine) as session:
-                with tracer.start_as_current_span("execute_final_query"):
-                    results = (await session.exec(final_query)).all()
+                with observe_stage("fetch"):
+                    with tracer.start_as_current_span("execute_final_query"):
+                        results = (await session.exec(final_query)).all()
                 numbers = {unit.number for unit in results if unit.number}
                 ratings: dict[str, float] = {}
                 if numbers:
-                    with tracer.start_as_current_span("execute_ratings_query"):
-                        rating_rows = (
-                            await session.exec(
-                                select(Rating).where(
-                                    col(Rating.course_number).in_(numbers)
+                    with observe_stage("ratings"):
+                        with tracer.start_as_current_span("execute_ratings_query"):
+                            rating_rows = (
+                                await session.exec(
+                                    select(Rating).where(
+                                        col(Rating.course_number).in_(numbers)
+                                    )
                                 )
-                            )
-                        ).all()
+                            ).all()
                     ratings = {r.course_number: r.average() for r in rating_rows}
                 session.expunge_all()
             return results, ratings
@@ -766,19 +785,55 @@ class SearchResponse(BaseModel):
 )
 async def search_units(
     query: Annotated[str, Query(alias="q")],
+    request: Request,
     offset: Int64 = 0,
     limit: Int64 = 20,
     order_by: QueryKey = "year",
     order: str = "desc",
 ) -> SearchResponse:
+    page = (offset // limit) + 1 if limit > 0 else 1
+    return await run_search(
+        query,
+        offset=offset,
+        limit=limit,
+        order_by=order_by,
+        order=order,
+        source="api",
+        view="api",
+        page=page,
+        request=request,
+    )
+
+
+async def run_search(
+    query: str,
+    *,
+    offset: int = 0,
+    limit: int = 20,
+    order_by: QueryKey = "year",
+    order: str = "desc",
+    source: str = "api",
+    view: str = "api",
+    page: int = 1,
+    request: Request | None = None,
+) -> SearchResponse:
+    """Run a search and record analytics for it.
+
+    Single choke point for both the web UI (`/`) and the JSON API (`/search`), so
+    every search is measured exactly once with the same definitions (see
+    `api.analytics.events`).
+    """
     with tracer.start_as_current_span("search_units") as span:
         span.set_attribute("query", query)
         span.set_attribute("offset", offset)
         span.set_attribute("limit", limit)
         span.set_attribute("order_by", order_by)
         span.set_attribute("order", order)
+        span.set_attribute("source", source)
 
         if len(query.strip()) == 0:
+            # Not a search: index views are counted in the `/` handler, and an
+            # empty API query is a no-op.
             return SearchResponse(
                 total=0,
                 results={},
@@ -786,43 +841,96 @@ async def search_units(
                 exec_time_ms=0.0,
             )
 
-        try:
-            search_operators = build_search_operators(query)
-        except ParseException as e:
-            raise HTTPException(
-                status_code=HTTP_400_BAD_REQUEST,
-                detail=f"Error parsing query: {str(e)}",
-            )
+        started = default_timer()
+        count = 0
+        results: dict[str, GroupedLearningUnits] = {}
+        filters_used: AND | OR | None = None
+        exec_time_ms = 0.0
 
-        # default to desc
-        descending = not order.startswith("asc")
+        with collect_stages() as stages_ms:
+            with observe_stage("parse"):
+                try:
+                    search_operators = build_search_operators(query)
+                except ParseException as e:
+                    raise HTTPException(
+                        status_code=HTTP_400_BAD_REQUEST,
+                        detail=f"Error parsing query: {str(e)}",
+                    )
 
-        try:
+            # default to desc
+            descending = not order.startswith("asc")
+
             start = default_timer()
-            count, results, filters_used = await match_filters(
-                search_operators,
-                offset=offset,
-                limit=limit,
-                order_by=order_by,
-                descending=descending,
-            )
+            try:
+                count, results, filters_used = await match_filters(
+                    search_operators,
+                    offset=offset,
+                    limit=limit,
+                    order_by=order_by,
+                    descending=descending,
+                )
+            except ValueError:
+                span.set_attribute("error", "ValueError in query")
             end = default_timer()
-        except ValueError:
-            span.set_attribute("error", "ValueError in query")
-            return SearchResponse(
-                total=0,
-                results={},
-                parsed_query="ERROR IN QUERY",
-                exec_time_ms=0.0,
-            )
+            exec_time_ms = (end - start) * 1000
 
-        parsed_query = str(filters_used)
-        if parsed_query.startswith("(") and parsed_query.endswith(")"):
-            parsed_query = parsed_query[1:-1]
+        duration_seconds = default_timer() - started
 
-        exec_time_ms = (end - start) * 1000
+        if filters_used is None:
+            parsed_query = "ERROR IN QUERY"
+            filters: list[tuple[str, str, int]] = []
+            boolean_op = "none"
+        else:
+            parsed_query = str(filters_used)
+            if parsed_query.startswith("(") and parsed_query.endswith(")"):
+                parsed_query = parsed_query[1:-1]
+            filters = query_filters(filters_used)
+            boolean_op = boolean_shape(filters_used, len(filters))
+
+        filter_keys = {key for key, _, _ in filters}
+        query_type = categorize_query(query, filter_keys)
+        client_type = classify_client_for_request(request)
+
         span.set_attribute("exec_time_ms", exec_time_ms)
         span.set_attribute("total_results", count)
+        span.set_attribute("query_type", query_type)
+        span.set_attribute("boolean_op", boolean_op)
+
+        SEARCH_REQUESTS.labels(
+            source=source,
+            client_type=client_type,
+            query_type=query_type,
+        ).inc()
+        SEARCH_RESULT_COUNT.labels(source=source).observe(count)
+        if count == 0:
+            SEARCH_ZERO_RESULTS.labels(source=source).inc()
+        SEARCH_DURATION.labels(
+            source=source,
+            order_by=order_by,
+            order=order,
+            view=view,
+        ).observe(duration_seconds)
+        for filter_key in filter_keys:
+            SEARCH_FILTER_USED.labels(filter_key=filter_key).inc()
+
+        record_search(
+            request,
+            source=source,
+            raw_query=query,
+            parsed_query=parsed_query,
+            filters=filters,
+            boolean_op=boolean_op,
+            query_type=query_type,
+            result_count=count,
+            exec_time_ms=exec_time_ms,
+            duration_ms=duration_seconds * 1000,
+            stages_ms=stages_ms,
+            page=page,
+            limit=limit,
+            order_by=order_by,
+            order=order,
+            view=view,
+        )
 
         return SearchResponse(
             total=count,

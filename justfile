@@ -73,10 +73,20 @@ jaeger:
       -p 9411:9411 \
       cr.jaegertracing.io/jaegertracing/jaeger:2.15.0
 
-influxdb:
-    docker run --rm -p 8181:8181 \
-      influxdb:3-core influxdb3 serve \
-        --node-id=my-node-0 \
-        --object-store=file \
-        --data-dir=/var/lib/influxdb3/data \
-        --plugin-dir=/var/lib/influxdb3/plugins
+alias ch := clickhouse
+
+# SQL shell against the local analytics ClickHouse
+clickhouse:
+    docker exec -it vvzapi-clickhouse clickhouse-client --user vvzapi --password vvzapi-dev-password --database vvzapi
+
+alias a := analytics
+
+# Local Grafana + Prometheus + InfluxDB analytics stack (host networking)
+analytics:
+    docker compose -f dashboard/docker-compose.yml up -d
+
+analytics-down:
+    docker compose -f dashboard/docker-compose.yml down
+
+analytics-logs:
+    docker compose -f dashboard/docker-compose.yml logs -f
