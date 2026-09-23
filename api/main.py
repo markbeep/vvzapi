@@ -27,6 +27,7 @@ from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from sqlalchemy import true
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette.background import BackgroundTask
@@ -294,8 +295,8 @@ class RecursiveSection(BaseModel):
 async def unit_detail(
     request: Request,
     unit_id: int,
-    session: Annotated[AsyncSession, Depends(aget_session)],
-    meta_session: Annotated[AsyncSession, Depends(aget_meta_session)],
+    session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
+    meta_session: Annotated[AsyncSession, Depends(aget_meta_session, scope="function")],
     query: Annotated[str | None, Query(alias="q"), str] = None,
 ):
     with tracer.start_as_current_span("unit_detail") as span:
@@ -399,7 +400,7 @@ async def unit_detail(
                     select(HTTPCache).where(
                         col(HTTPCache.url).contains(f"semkez={unit.semkez}"),
                         col(HTTPCache.url).contains(f"lerneinheitId={unit.id}"),
-                        col(HTTPCache.flagged).is_(True),
+                        col(HTTPCache.flagged) == true(),
                     )
                 )
             ).first()
@@ -467,8 +468,8 @@ async def flag_unit(
     request: Request,
     unit_id: int,
     background_task: BackgroundTasks,
-    session: Annotated[AsyncSession, Depends(aget_session)],
-    meta_session: Annotated[AsyncSession, Depends(aget_meta_session)],
+    session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
+    meta_session: Annotated[AsyncSession, Depends(aget_meta_session, scope="function")],
 ):
     unit = await get_unit(unit_id, session)
     if not unit:

@@ -19,7 +19,7 @@ router = APIRouter(prefix="/section", tags=["Sections"])
 
 @router.get("/list", response_model=list[int])
 async def list_sections(
-    session: Annotated[AsyncSession, Depends(aget_session)],
+    session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
     limit: Annotated[Int64, Query(gt=0, le=1000)] = 100,
     offset: Annotated[Int64, Query(ge=0)] = 0,
     # VVZ filters
@@ -117,7 +117,7 @@ class SectionUnitResponse(SectionBase):
     responses={404: {"description": "Section not found"}},
 )
 async def get_section(
-    session: Annotated[AsyncSession, Depends(aget_session)],
+    session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
     section_id: Int64,
 ) -> SectionUnitResponse | None:
     with tracer.start_as_current_span("get_section") as span:

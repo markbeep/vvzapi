@@ -16,7 +16,7 @@ router = APIRouter(prefix="/course", tags=["Courses"])
 
 @router.get("/get/{unit_id}", response_model=list[Course])
 async def get_courses(
-    session: Annotated[AsyncSession, Depends(aget_session)],
+    session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
     unit_id: Int64,
 ) -> Sequence[Course]:
     with tracer.start_as_current_span("get_courses") as span:

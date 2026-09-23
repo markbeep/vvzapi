@@ -21,7 +21,7 @@ router = APIRouter(prefix="/lecturer", tags=["Lecturers"])
     responses={404: {"description": "Lecturer not found"}},
 )
 async def get_lecturer(
-    session: Annotated[AsyncSession, Depends(aget_session)],
+    session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
     lecturer_id: Int64,
 ) -> Lecturer | None:
     with tracer.start_as_current_span("get_lecturer") as span:
@@ -35,7 +35,7 @@ async def get_lecturer(
 
 @router.get("/list", response_model=Sequence[Lecturer])
 async def list_lecturers(
-    session: Annotated[AsyncSession, Depends(aget_session)],
+    session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
     limit: Annotated[Int64, Query(gt=0, le=1000)] = 100,
     offset: Annotated[Int64, Query(ge=0)] = 0,
 ) -> Sequence[Lecturer]:

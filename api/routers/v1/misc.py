@@ -24,7 +24,7 @@ class MetricsResponse(BaseModel):
 
 @router.get("/metrics", response_model=MetricsResponse)
 async def get_metrics(
-    session: Annotated[AsyncSession, Depends(aget_session)],
+    session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
 ) -> MetricsResponse:
     with tracer.start_as_current_span("get_metrics"):
         total_learning_units = (await session.exec(select(count("*")))).one()
@@ -52,7 +52,7 @@ async def get_version():
 
 @router.get("/semesters", response_model=list[str])
 async def list_semesters(
-    session: Annotated[AsyncSession, Depends(aget_session)],
+    session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
 ) -> Sequence[str]:
     """List all semesters for which there are learning units available."""
     with tracer.start_as_current_span("list_semesters") as span:

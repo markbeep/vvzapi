@@ -31,7 +31,7 @@ router = APIRouter(prefix="/unit", tags=["Learning Units"])
 )
 async def get_unit(
     unit_id: Int64,
-    session: Annotated[AsyncSession, Depends(aget_session)],
+    session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
 ) -> LearningUnit | None:
     with tracer.start_as_current_span("get_unit") as span:
         span.set_attribute("unit_id", unit_id)
@@ -46,7 +46,7 @@ async def get_unit(
 @router.get("/{unit_id}/sections", response_model=Sequence[int])
 async def get_unit_sections(
     unit_id: Int64,
-    session: Annotated[AsyncSession, Depends(aget_session)],
+    session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
 ) -> Sequence[int]:
     with tracer.start_as_current_span("get_unit_sections") as span:
         span.set_attribute("unit_id", unit_id)
@@ -58,7 +58,7 @@ async def get_unit_sections(
 @router.get("/{unit_id}/lecturers", response_model=Sequence[int])
 async def get_unit_lecturers(
     unit_id: Int64,
-    session: Annotated[AsyncSession, Depends(aget_session)],
+    session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
     limit: Annotated[Int64, Query(gt=0, le=1000)] = 100,
     offset: Annotated[Int64, Query(ge=0)] = 0,
 ) -> Sequence[int]:
@@ -80,7 +80,7 @@ async def get_unit_lecturers(
 @router.get("/{unit_id}/examiners", response_model=Sequence[int])
 async def get_unit_examiners(
     unit_id: Int64,
-    session: Annotated[AsyncSession, Depends(aget_session)],
+    session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
     limit: Annotated[Int64, Query(gt=0, le=1000)] = 100,
     offset: Annotated[Int64, Query(ge=0)] = 0,
 ) -> Sequence[int]:
@@ -105,7 +105,7 @@ async def get_unit_examiners(
     description="List learning unit IDs with optional VVZ-like filters",
 )
 async def list_units(
-    session: Annotated[AsyncSession, Depends(aget_session)],
+    session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
     limit: Annotated[Int64, Query(gt=0, le=1000)] = 100,
     offset: Annotated[Int64, Query(ge=0)] = 0,
     # VVZ filters: base

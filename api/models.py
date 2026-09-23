@@ -601,7 +601,7 @@ class HTTPCache(MetadataModel, table=True):
     status_code: int
     body: bytes | None = Field(default=None)
     headers: dict[str, str] | None = Field(default=None, sa_column=Column(JSON))
-    flagged: bool = Field(default=False)
+    flagged: bool = Field(default=False, index=True)
     """if set, the entry be rescraped the next time it's accessed"""
     scraped_at: int = Field(
         default_factory=lambda: int(time.time()),
