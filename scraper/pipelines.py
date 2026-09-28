@@ -45,11 +45,25 @@ def iter_lines(file_path: Path):
             yield line
 
 
+def inc_stat(spider: Spider, key: str):
+    """Increment a Scrapy stat.
+
+    `Crawler.stats` is optional in the type stubs but always set while the
+    (default-enabled) CoreStats extension is loaded.
+    """
+    if stats := spider.crawler.stats:
+        stats.inc_value(key)
+
+
 class DatabasePipeline:
     def open_spider(self, spider: Spider):
         self.session: Session = next(db.get_session())
         self.logger: SpiderLoggerAdapter = spider.logger
         CACHE_PATH.mkdir(parents=True, exist_ok=True)
+        # Distinct ids so a unit that is inserted from the catalogue page and
+        # then overwritten from its detail page is counted as new, not updated.
+        self._new_unit_ids: set[int] = set()
+        self._updated_unit_ids: set[int] = set()
 
     def process_item(self, item: object, spider: Spider):
         try:
@@ -149,11 +163,29 @@ class DatabasePipeline:
             if not old:
                 self.session.add(item)
                 self.session.commit()
+                inc_stat(spider, "vvzapi/items_new")
+                if isinstance(item, LearningUnit):
+                    if item.id not in self._new_unit_ids:
+                        self._new_unit_ids.add(item.id)
+                        self._updated_unit_ids.discard(item.id)
+                        inc_stat(spider, "vvzapi/units_new")
+                elif isinstance(item, Lecturer):
+                    inc_stat(spider, "vvzapi/lecturers_new")
             elif isinstance(old, Overwriteable):
                 old.overwrite_with(item)
                 old.scraped_at = int(time.time())
                 self.session.add(old)
                 self.session.commit()
+                inc_stat(spider, "vvzapi/items_updated")
+                if isinstance(item, LearningUnit):
+                    if (
+                        item.id not in self._new_unit_ids
+                        and item.id not in self._updated_unit_ids
+                    ):
+                        self._updated_unit_ids.add(item.id)
+                        inc_stat(spider, "vvzapi/units_updated")
+                elif isinstance(item, Lecturer):
+                    inc_stat(spider, "vvzapi/lecturers_updated")
 
             return item
         except Exception as e:

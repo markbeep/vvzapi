@@ -13,6 +13,7 @@ from sqlmodel import text
 from api.env import Settings as APISettings
 from api.util.db import get_session
 from api.util.materialize import update_materialized_views
+from scraper.analytics import record_scrape_run
 from scraper.spiders.lecturers import LecturersSpider
 from scraper.spiders.ratings import RatingsSpider
 from scraper.spiders.units import UnitsSpider
@@ -80,5 +81,6 @@ def vacuum():
 
 if __name__ == "__main__":
     crawl()
+    record_scrape_run()
     update_materialized_view()
     vacuum()

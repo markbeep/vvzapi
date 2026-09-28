@@ -67,6 +67,7 @@ LOG_LEVEL = Settings().log_level.upper()
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
 EXTENSIONS = {
     "scrapy.extensions.feedexport.FeedExporter": None,
+    "scraper.analytics.ScrapeRunAnalytics": 500,
 }
 
 # Configure item pipelines

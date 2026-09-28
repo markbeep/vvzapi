@@ -21,6 +21,47 @@ from api.env import Settings
 logger = logging.getLogger(__name__)
 
 
+def _insert_params(table: str) -> dict[str, str]:
+    return {
+        "database": Settings().clickhouse.database,
+        "query": f"INSERT INTO {table} FORMAT JSONEachRow",
+    }
+
+
+def _encode_rows(rows: list[dict[str, object]]) -> bytes:
+    return "\n".join(
+        json.dumps(row, separators=(",", ":"), default=str) for row in rows
+    ).encode()
+
+
+def _auth() -> tuple[str, str] | None:
+    settings = Settings().clickhouse
+    return (settings.user, settings.password) if settings.password else None
+
+
+def insert_rows_sync(table: str, rows: list[dict[str, object]]) -> None:
+    """Insert rows with a single synchronous request.
+
+    For batch jobs (the scraper) that have no running event loop. Raises on
+    failure, so the caller decides how to handle it; the async writer, by
+    contrast, swallows errors in its flush loop.
+    """
+    settings = Settings().clickhouse
+    if not rows or not settings.url:
+        return
+    response = httpx.post(
+        settings.url,
+        params=_insert_params(table),
+        content=_encode_rows(rows),
+        auth=_auth(),
+        timeout=10,
+    )
+    if response.status_code >= 400:
+        raise RuntimeError(
+            f"clickhouse insert into {table} failed: {response.status_code} {response.text[:400]}"
+        )
+
+
 class ClickHouseWriter:
     def __init__(self) -> None:
         self._queues: dict[str, list[dict[str, object]]] = {}
@@ -72,30 +113,15 @@ class ClickHouseWriter:
         settings = Settings().clickhouse
         if not rows or not settings.url:
             return
-        payload = "\n".join(
-            json.dumps(row, separators=(",", ":"), default=str) for row in rows
-        )
-        url = settings.url
-        params = {
-            "database": settings.database,
-            "query": f"INSERT INTO {table} FORMAT JSONEachRow",
-        }
-        async with httpx.AsyncClient() as client:
-            if settings.password:
-                response = await client.post(
-                    url,
-                    params=params,
-                    content=payload.encode(),
-                    auth=(settings.user, settings.password),
-                    timeout=10,
-                )
-            else:
-                response = await client.post(
-                    url,
-                    params=params,
-                    content=payload.encode(),
-                    timeout=10,
-                )
+        # auth on the client, not the request: httpx types the per-request
+        # `auth` as non-optional, while `AsyncClient` accepts None.
+        async with httpx.AsyncClient(auth=_auth()) as client:
+            response = await client.post(
+                settings.url,
+                params=_insert_params(table),
+                content=_encode_rows(rows),
+                timeout=10,
+            )
             if response.status_code >= 400:
                 # Surface ClickHouse's own message: schema drift is otherwise
                 # invisible because analytics failures must not bubble up.
