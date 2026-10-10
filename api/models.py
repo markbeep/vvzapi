@@ -343,7 +343,9 @@ class LearningUnit(BaseModel, Overwriteable, table=True):
     """Note about whether the exam can be taken as a distance exam."""
     repetition: str | None = Field(default=None)
     """Information about if and how the exam can be repeated."""
-    groups: list[Group] = Field(default_factory=list, sa_column=Column(JSON))
+    groups: list[Group] = Field(
+        default_factory=list, sa_column=Column(PydanticType(list[Group]))
+    )
     """Groups can have no slot nor any info: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lang=de&lerneinheitId=193540&semkez=2025W&ansicht=ALLE&"""
     groups_signup_end: str | None = Field(default=None)
     course_frequency: Periodicity | None = Field(default=None)
@@ -584,19 +586,15 @@ class UnitDepartmentView(BaseModel, table=True):
 """
 
 
-METADATA DATABASE
-(separate db)
+SCRAPY HTTP CACHE
+(metadata tables, kept out of the dump export)
 
 
 
 """
 
 
-class MetadataModel(SQLModel):
-    pass
-
-
-class HTTPCache(MetadataModel, table=True):
+class HTTPCache(BaseModel, table=True):
     url: str = Field(primary_key=True)
     status_code: int
     body: bytes | None = Field(default=None)
@@ -609,7 +607,7 @@ class HTTPCache(MetadataModel, table=True):
     )
 
 
-class LastCleanup(MetadataModel, table=True):
+class LastCleanup(BaseModel, table=True):
     """Keeps track of when the last cleanup of the scrapy cache was performed."""
 
     id: int | None = Field(default=None, primary_key=True)
@@ -617,3 +615,34 @@ class LastCleanup(MetadataModel, table=True):
         default_factory=lambda: int(time.time()),
         sa_column=Column(INTEGER, nullable=False),
     )
+
+
+"""
+
+
+DUMP EXPORT
+(the tables copied into the /dump database)
+
+Metadata tables (`HTTPCache`, `LastCleanup`) are deliberately absent to not be added to the dump.
+
+
+
+"""
+
+
+DUMP_TABLES: tuple[type[BaseModel], ...] = (
+    UnitExaminerLink,
+    UnitLecturerLink,
+    CourseLecturerLink,
+    UnitSectionLink,
+    LearningUnit,
+    Section,
+    UnitTypeLegends,
+    Course,
+    Lecturer,
+    FinishedScrapingSemester,
+    Rating,
+    LatestSemkez,
+    SectionPathView,
+    UnitDepartmentView,
+)

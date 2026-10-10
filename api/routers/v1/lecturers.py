@@ -31,6 +31,7 @@ async def get_lecturer(
             raise HTTPException(
                 status_code=HTTP_404_NOT_FOUND, detail="Lecturer not found"
             )
+        return lecturer
 
 
 @router.get("/list", response_model=Sequence[Lecturer])

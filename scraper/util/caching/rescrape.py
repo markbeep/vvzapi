@@ -14,7 +14,7 @@ from time import time
 from sqlmodel import col, distinct, func, not_, or_, select
 
 from api.models import HTTPCache
-from api.util.db import get_meta_session
+from api.util.db import get_session
 from scraper.env import Settings
 
 settings = Settings()
@@ -23,7 +23,7 @@ rescrape_amount = Settings().rescrape_amount
 
 
 def get_last_semesters(n: int) -> list[str]:
-    with next(get_meta_session()) as session:
+    with next(get_session()) as session:
         semkez_expr = func.substr(
             HTTPCache.url, func.instr(HTTPCache.url, "semkez=") + 7, 5
         )
@@ -49,7 +49,7 @@ if RESCRAPE_SEMKEZS is not None:
             for semkez in RESCRAPE_SEMKEZS
         ]
     )
-    with next(get_meta_session()) as session:
+    with next(get_session()) as session:
         # we don't explicitly track german unit pages but they
         # might be leftover from accidental scrapes
         oldest_urls = set(

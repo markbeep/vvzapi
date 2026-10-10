@@ -32,7 +32,7 @@ limiter = Limiter(key_func=get_remote_address)
 def get_data_dump(request: Request):  # limiter requires request parameter
     """
     ## Data Dump Endpoint
-    This downloads a ZIP file containing the entire sqlite3 database.
+    This downloads a ZIP file containing a trimmed copy of the course-data tables; metadata/cache tables as well as as any constraints are excluded.
 
     Table structure, definition, and reasonings can be found in [models.py](https://github.com/markbeep/vvzapi/blob/main/api/models.py).
 
@@ -46,7 +46,7 @@ def get_data_dump(request: Request):  # limiter requires request parameter
         if not Path(Settings().zip_path).exists():
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Data dump not found",
+                detail="Data dump not found. Please try again later.",
             )
         return FileResponse(
             Settings().zip_path,

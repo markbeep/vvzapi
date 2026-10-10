@@ -2,22 +2,19 @@
 
 alias d := dev
 
-dev: migrate
+dev: upgrade
     uv run fastapi dev api/main.py
 
-alias m := migrate
+alias m := upgrade
 
-migrate:
-    uv run alembic -n data_db upgrade heads
-    uv run alembic -n meta_db upgrade heads
+upgrade:
+    uv run alembic upgrade heads
 
 downgrade:
-    uv run alembic -n data_db downgrade base
-    uv run alembic -n meta_db downgrade base
+    uv run alembic downgrade base
 
 check:
-    uv run alembic -n data_db check
-    uv run alembic -n meta_db check
+    uv run alembic check
 
 alias s := scrape
 
@@ -30,7 +27,7 @@ tailwind:
     tailwindcss -i api/static/tw.css -o api/static/globals.css --watch
 
 # update all uv packages
-upgrade:
+upgrade-deps:
     uvx uv-upgrade
 
 test_jinja:

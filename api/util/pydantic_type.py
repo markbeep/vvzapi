@@ -46,7 +46,7 @@ class PydanticType[T: BaseModel](TypeDecorator[sa.JSON]):
 
     @override
     def process_bind_param(self, value: Any, dialect: sa.Dialect):
-        return jsonable_encoder(value) if value is None else None
+        return jsonable_encoder(value) if value is not None else None
 
     @override
     def process_result_value(  # pyright: ignore[reportIncompatibleMethodOverride]

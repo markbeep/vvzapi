@@ -35,10 +35,10 @@ jobs:
 
       - name: Check SQLite Alembic Migrations
         run: |
-          just migrate
+          just upgrade
           just check
           just downgrade
-          just migrate
+          just upgrade
           just check
 
   build:

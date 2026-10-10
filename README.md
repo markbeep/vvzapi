@@ -18,6 +18,20 @@ Head to https://vvzapi.ch and start playing around with the search or API!
 > If you use the API or the downloadable database, I ask that you please credit the project and link back to the repository.
 > I'm happy to see any projects that use the API and would like to link them here.
 
+## MCP Server
+
+The same data is exposed as a [Model Context Protocol](https://modelcontextprotocol.io) server at `https://vvzapi.ch/mcp` (streamable HTTP, served by the API process itself), so agents (Claude Code/Desktop, Cursor, VS Code, ...) can call it with typed tools instead of hand-rolling HTTP requests.
+
+```json
+{
+  "mcpServers": {
+    "vvz": { "type": "http", "url": "https://vvzapi.ch/mcp" }
+  }
+}
+```
+
+Tools: `search_units`, `get_unit`, `get_unit_courses`, `get_unit_sections`, `get_unit_lecturers`, `get_unit_examiners`, `list_units`, `get_lecturer`, `list_lecturers`, `list_sections`, `get_section`, `list_semesters`. The search query language is documented in the `vvzapi://search-syntax` resource (same text as [`api/static/llms.txt`](./api/static/llms.txt)).
+
 ## Schema
 
 The schema is inspired by the [VVZ Manual](https://www.bi.id.ethz.ch/soapvvz-2023-1/manual/SoapVVZ.pdf#page=18) (starts page 18).
@@ -75,10 +89,7 @@ uv run alembic upgrade heads
 Required if any model was modified.
 
 ```sh
-# main data database
-uv run alembic -n data_db revision --autogenerate -m "message"
-# meta database
-uv run alembic -n meta_db revision --autogenerate -m "message"
+uv run alembic revision --autogenerate -m "message"
 ```
 
 ### Scraper
