@@ -146,7 +146,6 @@ async def send_plausible_event(request: Request):
         "name": "pageview",
         "url": str(request.url),
         "domain": request.url.hostname,
-        "props": dict(request.query_params),
     }
     if request.headers.get("referer"):
         body["referrer"] = request.headers.get("referer")
@@ -542,6 +541,11 @@ async def flag_unit(
 @app.get("/guide", include_in_schema=False)
 async def guide():
     return catalog_response("Guide")
+
+
+@app.get("/privacy", include_in_schema=False)
+async def privacy():
+    return catalog_response("Privacy")
 
 
 @app.get("/{root}", include_in_schema=False)

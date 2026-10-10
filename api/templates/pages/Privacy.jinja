@@ -1,0 +1,498 @@
+<SearchLayout title="VVZ API - Privacy Policy" description="What VVZ API records, how the data stays limited, and your rights under the GDPR." keywords="vvzapi, privacy policy, data protection, gdpr, analytics, user agent" query="">
+
+<main class="grow p-4 sm:p-8">
+    <div class="max-w-3xl mx-auto space-y-8">
+        <header>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                Privacy Policy
+            </h1>
+            <p class="text-gray-600">
+                VVZ API records as little as it can while running a fast search service.
+                This page states what is stored, why it is stored, and what you can ask us
+                to do about it.
+            </p>
+            <p class="text-xs text-base-content/60 mt-1">
+                Last updated 16 October 2026 · Applies to vvzapi.ch, its search interface
+                and its API
+            </p>
+        </header>
+
+        <section id="who-we-are" class="card bg-base-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+                    <a href="#who-we-are"
+                       class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+                        <icons.Link />
+                    </a>
+                    Who we are
+                </h2>
+                <div class="space-y-4 text-sm">
+                    <p>
+                        VVZ API is an independently run, community-made search engine for the
+                        ETH Zurich course catalogue
+                        (<a href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis"
+   target="_blank"
+   class="link link-neutral">Vorlesungsverzeichnis</a>). It is <strong>not</strong> affiliated with ETH Zurich.
+                    </p>
+                    <p>
+                        The controller for the processing described on this page is the
+                        operator of VVZ API. Write to
+                        <a href="mailto:contact@vvzapi.ch" class="link link-neutral">contact@vvzapi.ch</a>
+                        for any question on this page, including requests for postal
+                        correspondence details.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="what-we-record" class="card bg-base-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+                    <a href="#what-we-record"
+                       class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+                        <icons.Link />
+                    </a>
+                    What we record
+                </h2>
+                <div class="space-y-4 text-sm mb-4">
+                    <p>
+                        Every request that is not a static asset or a metrics scrape is
+                        recorded once. The record describes a request, not a person: there is
+                        no account, no login, no cookie and no raw IP address in it. API calls
+                        are recorded the same way as page views.
+                    </p>
+                    <p>
+                        Search terms are recorded too: the text you type into the search box
+                        or send as <code class="kbd kbd-sm">q</code> to the API, along with the individual filters of a
+                        query. This is how we find searches that return nothing and fix them. A
+                        search can therefore be personal without a name attached to it, and it
+                        is handled that way.
+                    </p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra w-full">
+                        <thead>
+                            <tr>
+                                <th>
+                                    Field
+                                </th>
+                                <th>
+                                    Stored as
+                                </th>
+                                <th>
+                                    Why
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-4 py-3 font-mono font-bold">
+                                    client type
+                                </td>
+                                <td class="px-4 py-3 font-mono text-base-content/70">
+                                    browser, crawler, app, unknown
+                                </td>
+                                <td class="px-4 py-3">
+                                    Tells people from bots, and sizes the service.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 font-mono font-bold">
+                                    client family
+                                </td>
+                                <td class="px-4 py-3 font-mono text-base-content/70">
+                                    short label, e.g. python-requests
+                                </td>
+                                <td class="px-4 py-3">
+                                    Shows which tools and which crawlers use the service.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 font-mono font-bold">
+                                    user agent
+                                </td>
+                                <td class="px-4 py-3 font-mono text-base-content/70">
+                                    first 100 characters, as sent
+                                </td>
+                                <td class="px-4 py-3">
+                                    Recognises a client during an abuse investigation, and counts
+                                    clients by family. Nothing else; see
+                                    <a href="#api-users" class="link link-neutral">API users</a>.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 font-mono font-bold">
+                                    IP address
+                                </td>
+                                <td class="px-4 py-3 font-mono text-base-content/70">
+                                    not stored; hourly-salted hash, 16 characters
+                                </td>
+                                <td class="px-4 py-3">
+                                    Estimates visitor counts without keeping addresses, and
+                                    cannot be reversed back into one.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 font-mono font-bold">
+                                    referrer
+                                </td>
+                                <td class="px-4 py-3 font-mono text-base-content/70">
+                                    first 500 characters
+                                </td>
+                                <td class="px-4 py-3">
+                                    Shows which places send visitors here.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 font-mono font-bold">
+                                    url and path
+                                </td>
+                                <td class="px-4 py-3 font-mono text-base-content/70">
+                                    first 1000 characters
+                                </td>
+                                <td class="px-4 py-3">
+                                    Shows which pages and API endpoints are actually used.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 font-mono font-bold">
+                                    query text
+                                </td>
+                                <td class="px-4 py-3 font-mono text-base-content/70">
+                                    first 500 characters
+                                </td>
+                                <td class="px-4 py-3">
+                                    Shows which searches work and which return nothing.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 font-mono font-bold">
+                                    query filters
+                                </td>
+                                <td class="px-4 py-3 font-mono text-base-content/70">
+                                    first 500 characters per value
+                                </td>
+                                <td class="px-4 py-3">
+                                    Shows which filters are actually used.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 font-mono font-bold">
+                                    result and timing numbers
+                                </td>
+                                <td class="px-4 py-3 font-mono text-base-content/70">
+                                    counts and milliseconds
+                                </td>
+                                <td class="px-4 py-3">
+                                    Performance work, and finding queries that fail without an
+                                    error.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 font-mono font-bold">
+                                    request metadata
+                                </td>
+                                <td class="px-4 py-3 font-mono text-base-content/70">
+                                    method, status, page, limit, offset, order, view
+                                </td>
+                                <td class="px-4 py-3">
+                                    Diagnosing errors.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 font-mono font-bold">
+                                    other query parameters
+                                </td>
+                                <td class="px-4 py-3 font-mono text-base-content/70">
+                                    100 characters each, 300 in total
+                                </td>
+                                <td class="px-4 py-3">
+                                    Shows which query options are in use.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="how-it-stays-limited" class="card bg-base-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+                    <a href="#how-it-stays-limited"
+                       class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+                        <icons.Link />
+                    </a>
+                    How the data stays limited
+                </h2>
+                <div class="space-y-4 text-sm">
+                    <p>
+                        Records are pseudonymised when they are written rather than cleaned up
+                        afterwards, and they expire on a fixed schedule. That comes down to
+                        seven commitments:
+                    </p>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>
+                            The IP hash salt rotates every hour, so a hash is a time window
+                            rather than a person.
+                        </li>
+                        <li>
+                            Raw IP addresses never reach the statistics database.
+                        </li>
+                        <li>
+                            The user agent is truncated to 100 characters and serves two
+                            purposes only: recognising a client during an abuse investigation,
+                            and counting clients by family. It is never combined with other
+                            records into a profile of you.
+                        </li>
+                        <li>
+                            Search text is read in aggregate, to see which queries fail and
+                            which filters get used, never to follow one person's searches.
+                        </li>
+                        <li>
+                            Statistics are reviewed as counts per client type, client family,
+                            query shape and result size.
+                        </li>
+                        <li>
+                            Analytics run on our own infrastructure. The analytics instance and
+                            the statistics database are ours, and no third-party analytics
+                            provider receives anything.
+                        </li>
+                        <li>
+                            The statistics database deletes on a fixed schedule: 180 days at the
+                            latest for anything you request or search, 90 days for the separate
+                            search records (see
+                            <a href="#retention" class="link link-neutral">how long records are kept</a>).
+                        </li>
+                    </ul>
+                    <p>
+                        We do not sell data, we do not run advertising, and we do not profile
+                        you for marketing.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="cookies" class="card bg-base-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+                    <a href="#cookies"
+                       class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+                        <icons.Link />
+                    </a>
+                    Cookies and your browser
+                </h2>
+                <div class="space-y-4 text-sm">
+                    <p>
+                        VVZ API sets no cookies and writes nothing to your browser's local or
+                        session storage. There is no cookie banner because there is nothing to
+                        consent to.
+                    </p>
+                    <p>
+                        Searches travel in the URL. Your browser keeps them in its history, and
+                        when you open a result we receive the page you came from as a referrer.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="network" class="card bg-base-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+                    <a href="#network"
+                       class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+                        <icons.Link />
+                    </a>
+                    The network in front of us
+                </h2>
+                <div class="space-y-4 text-sm">
+                    <p>
+                        vvzapi.ch is served through Cloudflare, a content delivery and security
+                        network. Cloudflare terminates the encrypted connection and hands the
+                        request to us, so it sees each request in full before we do: your IP
+                        address, the browser or tool you use, and the URL, search terms included.
+                        It processes that as our processor, at the data centre closest to you, and
+                        keeps its own logs under its own privacy policy.
+                    </p>
+                    <p>
+                        Cloudflare is a US company, so a request to vvzapi.ch reaches a provider
+                        outside Switzerland and the EEA. Those transfers rest on Cloudflare's
+                        certification under the EU-U.S. and Swiss-U.S. Data Privacy Framework, and
+                        on the standard contractual clauses in its data processing addendum.
+                        Turning away floods and abuse before they reach us is part of securing the
+                        service, the legitimate interest described under
+                        <a href="#your-rights" class="link link-neutral">your rights</a>. For an
+                        ordinary request Cloudflare sets no cookie of its own.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="reports" class="card bg-base-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+                    <a href="#reports"
+                       class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+                        <icons.Link />
+                    </a>
+                    Reporting a wrong course entry
+                </h2>
+                <div class="space-y-4 text-sm">
+                    <p>
+                        Reporting an entry marks the cached copy of the matching source page for
+                        review and notifies us of the entry ID. The report itself carries no
+                        personal data.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="retention" class="card bg-base-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+                    <a href="#retention"
+                       class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+                        <icons.Link />
+                    </a>
+                    How long records are kept
+                </h2>
+                <div class="space-y-4 text-sm">
+                    <p>
+                        The statistics database deletes records on a fixed schedule, by itself:
+                        no manual step, and nobody having to remember anything.
+                    </p>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>
+                            <strong>Requests, i.e. page views and API calls: 180 days.</strong>
+                            This is the record with the most in it (path, referrer, user agent,
+                            the query text, hashed address), and it decides how long a search
+                            term is kept.
+                        </li>
+                        <li>
+                            <strong>Searches: 90 days.</strong> The separate search record
+                            (terms, filters, result counts and timings) is deleted earlier than
+                            the request it came from.
+                        </li>
+                    </ul>
+                    <p>
+                        Deletion in the statistics database happens in the background while it
+                        rewrites its data, so an expired record can outlive its lifetime by a
+                        short while before it is dropped; nothing is kept past it deliberately.
+                        A record also says less about anyone as it ages, because the address hash
+                        salt rotates hourly and cannot link a record to a later one. To have a
+                        record that relates to you deleted earlier, see
+                        <a href="#your-rights" class="link link-neutral">your rights</a>.
+                    </p>
+                    <p>
+                        A second analytics instance runs alongside it, older than the statistics
+                        database: Plausible, also on our own hardware. It records the same kind
+                        of page views, but with no deletion schedule, because what it holds
+                        identifies nobody. It sets no cookie, stores neither your address nor
+                        your user agent, and its visitor identifier is a hash made with the day's
+                        salt — a salt that is <strong>deleted after 24 hours</strong>, so the
+                        identifier cannot follow you into the next day, let alone be traced back.
+                        These records cover the page, the referrer, the browser and an
+                        approximate location. They do not include what you searched for: search
+                        terms and filters stay in the statistics database described above and
+                        expire there on the schedule listed. Being unlinkable, the Plausible
+                        records are kept as long-term history for trends instead of being dropped
+                        on a schedule.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="your-rights" class="card bg-base-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+                    <a href="#your-rights"
+                       class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+                        <icons.Link />
+                    </a>
+                    Your rights
+                </h2>
+                <div class="space-y-4 text-sm">
+                    <p>
+                        Request records are processed on the basis of legitimate interests
+                        (Article 6(1)(f) GDPR): running and securing the service, keeping it
+                        fast, and understanding how it is used. Where a request is answered for
+                        you, processing serves the service you asked for (Article 6(1)(b) GDPR).
+                    </p>
+                    <p>
+                        Where the GDPR applies to you, you may request access to your personal
+                        data, rectification, erasure, restriction of processing and
+                        portability, and object to processing based on legitimate interests. No
+                        automated decision-making with legal effect about you takes place
+                        (Article 22 GDPR).
+                    </p>
+                    <p>
+                        Write to <a href="mailto:contact@vvzapi.ch" class="link link-neutral">contact@vvzapi.ch</a>. Because raw
+                        addresses are not stored and the identifier we keep rotates hourly, we
+                        may not be able to find records that relate to you; we will say so if
+                        that is the case.
+                    </p>
+                    <p>
+                        You also have the right to lodge a complaint with a data protection
+                        supervisory authority: in Switzerland the Federal Data Protection and
+                        Information Commissioner (FDPIC), or the authority in your own country.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="api-users" class="card bg-base-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+                    <a href="#api-users"
+                       class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+                        <icons.Link />
+                    </a>
+                    For API users: say who you are
+                </h2>
+                <div class="space-y-4 text-sm">
+                    <p>
+                        API requests are recorded like page views, user agent included. A
+                        library default such as <code class="kbd kbd-sm whitespace-nowrap">python-requests/2.32</code>,
+                        <code class="kbd kbd-sm whitespace-nowrap">Go-http-client/1.1</code> or <code class="kbd kbd-sm whitespace-nowrap">curl/8.5</code> lands in the
+                        same unnamed bucket as everything else, where a careless scraper looks
+                        exactly like you.
+                    </p>
+                    <p>
+                        Please identify your tool using the usual convention:
+                    </p>
+                    <div class="bg-base-200 text-base-content p-4 rounded overflow-x-auto">
+                        <pre><code class="font-semibold">YourTool/1.2 (+https://example.com/your-tool)</code></pre>
+                    </div>
+                    <p>
+                        Your traffic then appears as its own family in our statistics, and if
+                        anything about your usage ever needs a conversation, we can have it with
+                        you rather than guess. Nothing is required, and anonymous clients are
+                        not blocked. An identified client is simply one we can reach. The API
+                        documentation is at <a href="/docs" class="link link-neutral">/docs</a>.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="changes" class="card bg-base-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title text-xl font-bold mb-4 border-b border-base-200 pb-2 group relative w-fit">
+                    <a href="#changes"
+                       class="invisible group-hover:visible absolute -left-6 inset-0 [&>svg]:h-5">
+                        <icons.Link />
+                    </a>
+                    Changes to this policy
+                </h2>
+                <div class="space-y-4 text-sm">
+                    <p>
+                        When this policy changes, the date at the top of the page changes with
+                        it. Questions, or a request about your data, go to
+                        <a href="mailto:contact@vvzapi.ch" class="link link-neutral">contact@vvzapi.ch</a>.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+</SearchLayout>
