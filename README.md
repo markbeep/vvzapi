@@ -75,10 +75,7 @@ uv run alembic upgrade heads
 Required if any model was modified.
 
 ```sh
-# main data database
-uv run alembic -n data_db revision --autogenerate -m "message"
-# meta database
-uv run alembic -n meta_db revision --autogenerate -m "message"
+uv run alembic revision --autogenerate -m "message"
 ```
 
 ### Scraper

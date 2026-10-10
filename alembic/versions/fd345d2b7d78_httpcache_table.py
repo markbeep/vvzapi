@@ -1,9 +1,12 @@
 """httpcache table
 
 Revision ID: fd345d2b7d78
-Revises:
+Revises: 33e0846c3903
 Create Date: 2026-02-27 17:45:49.644585
 
+The Scrapy cache used to live in its own database (data/meta_db.sqlite) with its own
+migration tree. It now shares the main database, so this branch continues the main
+lineage instead of starting a second one.
 """
 
 from typing import Sequence, Union
@@ -15,7 +18,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "fd345d2b7d78"
-down_revision: Union[str, Sequence[str], None] = None
+down_revision: Union[str, Sequence[str], None] = "33e0846c3903"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

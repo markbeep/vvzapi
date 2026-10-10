@@ -584,19 +584,15 @@ class UnitDepartmentView(BaseModel, table=True):
 """
 
 
-METADATA DATABASE
-(separate db)
+SCRAPY HTTP CACHE
+(metadata tables, kept out of the dump export)
 
 
 
 """
 
 
-class MetadataModel(SQLModel):
-    pass
-
-
-class HTTPCache(MetadataModel, table=True):
+class HTTPCache(BaseModel, table=True):
     url: str = Field(primary_key=True)
     status_code: int
     body: bytes | None = Field(default=None)
@@ -609,7 +605,7 @@ class HTTPCache(MetadataModel, table=True):
     )
 
 
-class LastCleanup(MetadataModel, table=True):
+class LastCleanup(BaseModel, table=True):
     """Keeps track of when the last cleanup of the scrapy cache was performed."""
 
     id: int | None = Field(default=None, primary_key=True)
@@ -617,3 +613,34 @@ class LastCleanup(MetadataModel, table=True):
         default_factory=lambda: int(time.time()),
         sa_column=Column(INTEGER, nullable=False),
     )
+
+
+"""
+
+
+DUMP EXPORT
+(the tables copied into the /dump database)
+
+Metadata tables (`HTTPCache`, `LastCleanup`) are deliberately absent to not be added to the dump.
+
+
+
+"""
+
+
+DUMP_TABLES: tuple[type[BaseModel], ...] = (
+    UnitExaminerLink,
+    UnitLecturerLink,
+    CourseLecturerLink,
+    UnitSectionLink,
+    LearningUnit,
+    Section,
+    UnitTypeLegends,
+    Course,
+    Lecturer,
+    FinishedScrapingSemester,
+    Rating,
+    LatestSemkez,
+    SectionPathView,
+    UnitDepartmentView,
+)

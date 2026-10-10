@@ -36,6 +36,7 @@ class Settings(BaseSettings):
 
     db_path: str = "data/db.sqlite"
     meta_db_path: str = "data/meta_db.sqlite"
+    """Legacy Scrapy-cache database; only read by the migration that merges it into db_path"""
     cache_expiry: int = 60 * 60 * 24 * 30  # in seconds (30 days)
     sitemap_expiry: int = 86400  # in seconds
     plausible_url: str | None = None
@@ -56,5 +57,5 @@ class Settings(BaseSettings):
         return self.db_path + ".zip"
 
     @property
-    def vacuum_path(self) -> str:
-        return self.db_path + ".vacuum"
+    def export_path(self) -> str:
+        return self.db_path + ".export"
