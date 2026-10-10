@@ -490,6 +490,11 @@ async def guide():
     return catalog_response("Guide")
 
 
+@app.get("/privacy", include_in_schema=False)
+async def privacy():
+    return catalog_response("Privacy")
+
+
 @app.get("/{root}", include_in_schema=False)
 async def root_static(root: str):
     if root not in [
