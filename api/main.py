@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import re
 from pathlib import Path
-from typing import Annotated, Awaitable, Callable, Literal
+from typing import Annotated, Literal, cast, final
 from urllib.parse import quote
 
 import httpx
@@ -30,7 +30,8 @@ from slowapi.util import get_remote_address
 from sqlalchemy import true
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
-from starlette.background import BackgroundTask
+from starlette.datastructures import MutableHeaders
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from api.analytics.events import (
     api_endpoint,
@@ -45,6 +46,7 @@ from api.analytics.prometheus import (
     INDEX_VIEWS,
 )
 from api.env import Settings
+from api.mcp import mcp_lifespan, mount_mcp
 from api.models import (
     Course,
     HTTPCache,
@@ -86,6 +88,7 @@ app = FastAPI(
     title="VVZ API",
     version=get_api_version(),
     description="v0 endpoints are experimental and can break at any point. Use the versioned endpoints (v1) for ensured backwards compatibility.",
+    lifespan=mcp_lifespan,
 )
 FastAPIInstrumentor.instrument_app(app, excluded_urls="/static/*")
 Instrumentator().instrument(app).expose(app, include_in_schema=False, should_gzip=True)
@@ -93,6 +96,8 @@ Instrumentator().instrument(app).expose(app, include_in_schema=False, should_gzi
 app.include_router(v0_router)
 app.include_router(v1_router)
 app.include_router(v2_router)
+# Serve the MCP server at /mcp; registered before the /{root} catch-all below.
+mount_mcp(app)
 app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
 app.add_middleware(
     CORSMiddleware,

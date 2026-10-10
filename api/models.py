@@ -343,7 +343,9 @@ class LearningUnit(BaseModel, Overwriteable, table=True):
     """Note about whether the exam can be taken as a distance exam."""
     repetition: str | None = Field(default=None)
     """Information about if and how the exam can be repeated."""
-    groups: list[Group] = Field(default_factory=list, sa_column=Column(JSON))
+    groups: list[Group] = Field(
+        default_factory=list, sa_column=Column(PydanticType(list[Group]))
+    )
     """Groups can have no slot nor any info: https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lang=de&lerneinheitId=193540&semkez=2025W&ansicht=ALLE&"""
     groups_signup_end: str | None = Field(default=None)
     course_frequency: Periodicity | None = Field(default=None)

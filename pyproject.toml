@@ -12,6 +12,7 @@ dependencies = [
     "jinja2-htmlmin>=1.1.0",
     "jinja2-pluralize>=0.3.0",
     "jinjax>=0.63",
+    "mcp>=2.3.0,<3",
     "opentelemetry-exporter-otlp-proto-grpc>=1.41.1",
     "opentelemetry-instrumentation-fastapi>=0.62b1",
     "opentelemetry-sdk>=1.41.1",
