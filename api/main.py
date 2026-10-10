@@ -145,47 +145,83 @@ async def send_plausible_event(request: Request):
         print("Plausible connection timed out")
 
 
-@app.middleware("http")
-async def analytics_middleware(
-    request: Request, call_next: Callable[[Request], Awaitable[StreamingResponse]]
-):
-    response: StreamingResponse = await call_next(request)
-
-    if 200 <= response.status_code < 300:
-        if "Cache-Control" not in response.headers:
-            response.headers["Cache-Control"] = (
-                f"public, max-age={Settings().cache_expiry}"
-            )
-
-    has_extension = re.search(r"\.\w+$", request.url.path) is not None
-    settings = Settings()
-    if not request.url.path.startswith("/metrics"):
-        user_agent = request.headers.get("user-agent")
-        client_type = classify_client(user_agent, "sec-fetch-mode" in request.headers)
-        request_kind = classify_request_kind(request.url.path)
-        CLIENT_TYPE_REQUESTS.labels(
+def _record_client_metrics(request: Request, path: str) -> None:
+    user_agent = request.headers.get("user-agent")
+    client_type = classify_client(user_agent, "sec-fetch-mode" in request.headers)
+    request_kind = classify_request_kind(path)
+    CLIENT_TYPE_REQUESTS.labels(
+        client_type=client_type,
+        request_kind=request_kind,
+    ).inc()
+    if request_kind == "api":
+        API_CLIENT_REQUESTS.labels(
+            endpoint=api_endpoint(path),
             client_type=client_type,
-            request_kind=request_kind,
+            client_family=client_family(user_agent),
         ).inc()
-        if request_kind == "api":
-            API_CLIENT_REQUESTS.labels(
-                endpoint=api_endpoint(request.url.path),
-                client_type=client_type,
-                client_family=client_family(user_agent),
-            ).inc()
 
-        # Assets and /metrics are skipped; everything else is recorded,
-        # including 404s, because the status code is part of the row.
-        if not has_extension:
-            record_request(request, response.status_code)
-            if (
-                settings.plausible_url
-                and response.status_code not in (404, 307)
-                and response.background is None
-            ):
-                response.background = BackgroundTask(send_plausible_event, request)
 
-    return response
+@final
+class AnalyticsMiddleware:
+    """Record per-request metrics, a ClickHouse row, cache headers and a pageview.
+
+    Pure ASGI on purpose. `BaseHTTPMiddleware` runs the wrapped app in its own
+    task and waits for that task to emit its first message, so an app that
+    returns without responding makes it raise
+    `RuntimeError("No response returned.")`. Any client that disconnects before
+    the first byte can trigger that, and the long-lived `/mcp` SSE endpoint hits
+    it routinely because its handler cancels its own task group on
+    `http.disconnect`. Handling the messages directly has no such race.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        request = Request(scope)
+        path = request.url.path
+        has_extension = re.search(r"\.\w+$", path) is not None
+        # /metrics is scraped continuously; counting it would drown out real traffic.
+        tracked = not path.startswith("/metrics")
+        status_code = 0
+
+        async def send_and_record(message: Message) -> None:
+            nonlocal status_code
+            if message["type"] == "http.response.start":
+                status_code = cast(int, message["status"])
+                if 200 <= status_code < 300:
+                    headers = MutableHeaders(scope=message)
+                    if "cache-control" not in headers:
+                        headers["Cache-Control"] = (
+                            f"public, max-age={settings.cache_expiry}"
+                        )
+                if tracked:
+                    _record_client_metrics(request, path)
+                    # Assets and /metrics are skipped; everything else is
+                    # recorded, including 404s, because the status code is part
+                    # of the row.
+                    if not has_extension:
+                        record_request(request, status_code)
+            await send(message)
+
+        await self.app(scope, receive, send_and_record)
+
+        # Runs once the response is complete, where the background task used to.
+        # A request that never produced a response is not a pageview.
+        if (
+            tracked
+            and not has_extension
+            and status_code not in (0, 404, 307)
+            and settings.plausible_url
+        ):
+            await send_plausible_event(request)
+
+
+app.add_middleware(AnalyticsMiddleware)
 
 
 @app.get("/", include_in_schema=False)
