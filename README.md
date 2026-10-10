@@ -76,20 +76,25 @@ Additionally, for ease of development, there is both a devcontainer (`.devcontai
 
 ### Alembic Migrations
 
-Locally, a SQLite database is used. Running the migrations automatically creates the database.
+Two SQLite databases are used locally: the main data database (`data/db.sqlite`) and the Scrapy-cache database (`data/meta_db.sqlite`, see `Settings.meta_db_path`). They have separate Alembic namespaces and separate migration directories, and running the migrations automatically creates both.
 
 #### Run migrations
 
 ```sh
-uv run alembic upgrade heads
+just migrate
 ```
+
+`just migrate` upgrades `meta_db` before `data_db`: the cache database's migration merges the Scrapy cache out of the data database, and the data database's migration then drops those tables. Keep that order when upgrading a namespace by hand.
 
 #### Create revision
 
 Required if any model was modified.
 
 ```sh
-uv run alembic revision --autogenerate -m "message"
+# main data database
+uv run alembic -n data_db revision --autogenerate -m "message"
+# meta database
+uv run alembic -n meta_db revision --autogenerate -m "message"
 ```
 
 ### Scraper

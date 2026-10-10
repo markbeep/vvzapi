@@ -12,7 +12,7 @@ from scrapy.settings import BaseSettings
 from sqlmodel import Session
 
 from api.models import HTTPCache
-from api.util.db import engine
+from api.util.db import meta_engine
 from scraper.util.caching.rescrape import should_rescrape
 from scraper.util.url import normalized_url
 
@@ -52,7 +52,7 @@ class DBHTTPCache(httpcache.FilesystemCacheStorage):
             )
             return None
 
-        with Session(engine.connect()) as session:
+        with Session(meta_engine.connect()) as session:
             entry = session.get(HTTPCache, url)
         if not entry:
             return None
@@ -93,7 +93,7 @@ class DBHTTPCache(httpcache.FilesystemCacheStorage):
 
         url = self._normalize_url(url)
         headers: dict[str, str] = dict(response.headers.to_unicode_dict())
-        with Session(engine.connect()) as session:
+        with Session(meta_engine.connect()) as session:
             entry = HTTPCache(
                 url=url,
                 status_code=response.status,

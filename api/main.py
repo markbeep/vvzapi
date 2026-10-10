@@ -64,7 +64,7 @@ from api.routers.v1.units import get_unit
 from api.routers.v1_router import router as v1_router
 from api.routers.v2.search import run_search
 from api.routers.v2_router import router as v2_router
-from api.util.db import aget_session
+from api.util.db import aget_meta_session, aget_session
 from api.util.parse_query import QueryKey, offered_in_query
 from api.util.sections import get_parent_from_unit
 from api.util.semkez import semkez_to_comparable
@@ -319,6 +319,7 @@ async def unit_detail(
     request: Request,
     unit_id: int,
     session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
+    meta_session: Annotated[AsyncSession, Depends(aget_meta_session, scope="function")],
     query: Annotated[str | None, Query(alias="q"), str] = None,
 ):
     with tracer.start_as_current_span("unit_detail") as span:
@@ -418,7 +419,7 @@ async def unit_detail(
 
         with tracer.start_as_current_span("flagged") as span:
             flagged = (
-                await session.exec(
+                await meta_session.exec(
                     select(HTTPCache).where(
                         col(HTTPCache.url).contains(f"semkez={unit.semkez}"),
                         col(HTTPCache.url).contains(f"lerneinheitId={unit.id}"),
@@ -491,13 +492,14 @@ async def flag_unit(
     unit_id: int,
     background_task: BackgroundTasks,
     session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
+    meta_session: Annotated[AsyncSession, Depends(aget_meta_session, scope="function")],
 ):
     unit = await get_unit(unit_id, session)
     if not unit:
         return HTMLResponse(status_code=404)
 
     results = (
-        await session.exec(
+        await meta_session.exec(
             select(HTTPCache).where(
                 col(HTTPCache.url).contains(f"semkez={unit.semkez}"),
                 col(HTTPCache.url).contains(f"lerneinheitId={unit.id}"),
@@ -507,9 +509,9 @@ async def flag_unit(
 
     for entry in results:
         entry.flagged = True
-        session.add(entry)
+        meta_session.add(entry)
 
-    await session.commit()
+    await meta_session.commit()
 
     if Settings().flag_webhook:
         background_task.add_task(

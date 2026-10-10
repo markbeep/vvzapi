@@ -586,15 +586,19 @@ class UnitDepartmentView(BaseModel, table=True):
 """
 
 
-SCRAPY HTTP CACHE
-(metadata tables, kept out of the dump export)
+METADATA DATABASE
+(separate db)
 
 
 
 """
 
 
-class HTTPCache(BaseModel, table=True):
+class MetadataModel(SQLModel):
+    pass
+
+
+class HTTPCache(MetadataModel, table=True):
     url: str = Field(primary_key=True)
     status_code: int
     body: bytes | None = Field(default=None)
@@ -607,7 +611,7 @@ class HTTPCache(BaseModel, table=True):
     )
 
 
-class LastCleanup(BaseModel, table=True):
+class LastCleanup(MetadataModel, table=True):
     """Keeps track of when the last cleanup of the scrapy cache was performed."""
 
     id: int | None = Field(default=None, primary_key=True)

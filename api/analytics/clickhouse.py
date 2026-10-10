@@ -17,8 +17,13 @@ import logging
 import httpx
 
 from api.env import Settings
+from api.util.logs import quiet_httpx_request_logs
 
 logger = logging.getLogger(__name__)
+
+# The analytics writer flushes a ClickHouse insert every few seconds, and httpx logs an INFO
+# line ("HTTP Request: POST ...") for each one. See `quiet_httpx_request_logs` for the scope.
+quiet_httpx_request_logs()
 
 
 def _insert_params(table: str) -> dict[str, str]:

@@ -29,9 +29,10 @@ from api.models import Department, Level, Periodicity
 from api.routers.v1 import courses, lecturers, misc, sections, units
 from api.routers.v2.search import SearchResponse, run_search
 from api.util.db import aget_session
+from api.util.logs import KeywordLoggerAdapter
 from api.util.version import get_api_version
 
-logger = logging.getLogger(__name__)
+logger = KeywordLoggerAdapter(logging.getLogger(__name__), {})
 
 OrderBy = Literal[
     "title",
@@ -123,7 +124,11 @@ async def _tool_call(what: str) -> AsyncIterator[None]:
             raise ToolError(f"{what} failed: {exc.detail}") from exc
     finally:
         logger.info(
-            "mcp %s (%d ms)", what, round((time.perf_counter() - started) * 1000)
+            "mcp tool call",
+            extra={
+                "tool": what,
+                "duration_ms": round((time.perf_counter() - started) * 1000),
+            },
         )
 
 
