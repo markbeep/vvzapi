@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.13.0](https://github.com/markbeep/vvzapi/compare/v1.12.6...v1.13.0) (2026-10-10)
+
+
+### Features
+
+* **api:** add MCP integration. Closes [#68](https://github.com/markbeep/vvzapi/issues/68) ([f6871ad](https://github.com/markbeep/vvzapi/commit/f6871ad741bd0c42d3b4e9d4f35bc6ede3221a9d))
+
+
+### Bug Fixes
+
+* **api:** fix analytics middleware to avoid errors on incomplete /mcp requests ([c62f92c](https://github.com/markbeep/vvzapi/commit/c62f92c848db13691c554db27f860d30b3a73e98))
+* **api:** fix lecturers endpoint not returning anything ([7e705b3](https://github.com/markbeep/vvzapi/commit/7e705b3925ceac1c0acf803529edc06a6f1a0e29))
+* fix internal pydantic type silently nullyfing data ([f4d66fb](https://github.com/markbeep/vvzapi/commit/f4d66fb7ba704afea90a8ecfa1505037867cfacd))
+
+
+### Code Refactoring
+
+* **api:** merge both databases into a single file and trim sql-constraints from dump endpoint ([3bb8a0d](https://github.com/markbeep/vvzapi/commit/3bb8a0d98e9d615acf4db44d27a84f351f04c103))
+
 ## [1.12.6](https://github.com/markbeep/vvzapi/compare/v1.12.5...v1.12.6) (2026-10-10)
 
 
