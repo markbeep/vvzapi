@@ -81,10 +81,10 @@ Two SQLite databases are used locally: the main data database (`data/db.sqlite`)
 #### Run migrations
 
 ```sh
-just migrate
+just upgrade
 ```
 
-`just migrate` upgrades `meta_db` before `data_db`: the cache database's migration merges the Scrapy cache out of the data database, and the data database's migration then drops those tables. Keep that order when upgrading a namespace by hand.
+`just upgrade` upgrades `meta_db` before `data_db`: the cache database's migration merges the Scrapy cache out of the data database, and the data database's migration then drops those tables. Keep that order when upgrading a namespace by hand.
 
 #### Create revision
 

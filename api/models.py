@@ -5,6 +5,7 @@ from enum import Enum, IntEnum
 from typing import final, override
 
 from pydantic import BaseModel as PydanticBaseModel
+from pydantic import computed_field
 from rapidfuzz import fuzz, process, utils
 from sqlalchemy import Index
 from sqlmodel import INTEGER, JSON, Column, Field, SQLModel
@@ -372,6 +373,11 @@ class LearningUnit(BaseModel, Overwriteable, table=True):
 
     def last_updated(self) -> str:
         return time.strftime("%Y-%m-%d", time.localtime(self.scraped_at))
+
+    @computed_field
+    @property
+    def vvz_url(self) -> str:
+        return f"https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={self.id}&semkez={self.semkez}&lang=en&ansicht=ALLE"
 
 
 """

@@ -2,13 +2,13 @@
 
 alias d := dev
 
-dev: migrate
+dev: upgrade
     uv run fastapi dev api/main.py
 
-alias m := migrate
+alias m := upgrade
 
 # meta_db first: its migration imports the cache rows out of data_db before data_db drops them
-migrate:
+upgrade:
     uv run alembic -n meta_db upgrade heads
     uv run alembic -n data_db upgrade heads
 
@@ -31,10 +31,8 @@ tailwind:
     tailwindcss -i api/static/tw.css -o api/static/globals.css --watch
 
 # update all uv packages
-alias upgrade-deps := upgrade
-
-upgrade:
-    uvx uv-upgrade
+upgrade-deps:
+    uvx --from uv-upgrade uvup
 
 test_jinja:
     uv run api/util/test_jinjax.py api/templates/ -g content url_for catalog version -f trim_float urlquote

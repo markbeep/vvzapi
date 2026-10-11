@@ -28,7 +28,7 @@
                 VVZ API is <span class="font-bold">not</span> affiliated with ETH Zurich. Data might be outdated or incorrect.
                 Please view the official
                 <a target="_blank"
-                   href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={{ unit.id }}&semkez={{ unit.semkez }}&lang=en&ansicht=ALLE"
+                   href="{{ unit.vvz_url }}"
                    class="link link-neutral"
                    title="VVZ">
                     ETHZ Vorlesungsverzeichnis
@@ -148,7 +148,7 @@
 
                 <div class="flex gap-2 flex-wrap justify-end h-fit">
                     <a target="_blank"
-                       href="https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId={{ unit.id }}&semkez={{ unit.semkez }}&lang=en&ansicht=ALLE"
+                       href="{{ unit.vvz_url }}"
                        class="btn btn-sm btn-outline"
                        title="VVZ">
                         VVZ
