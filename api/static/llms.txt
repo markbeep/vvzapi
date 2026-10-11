@@ -37,6 +37,20 @@ The response JSON contains:
 - `parsed_query`: how the system interpreted your query
 - `exec_time_ms`: execution time in milliseconds
 
+## MCP Server
+
+The same functionality is also exposed as a [Model Context Protocol](https://modelcontextprotocol.io) server at https://vvzapi.ch/mcp (streamable HTTP). Agents that speak MCP (Claude Code/Desktop, Cursor, VS Code, ...) can connect there and call typed tools — `search_units`, `get_unit`, `get_unit_courses`, `get_unit_lecturers`, `get_unit_examiners`, `get_unit_sections`, `list_units`, `get_lecturer`, `list_lecturers`, `list_sections`, `get_section`, `list_semesters` — instead of hand-rolling HTTP requests. This document is served by that server as the `vvzapi://search-syntax` resource.
+
+Client configuration:
+
+```json
+{
+  "mcpServers": {
+    "vvz": { "type": "http", "url": "https://vvzapi.ch/mcp" }
+  }
+}
+```
+
 ## Filter Keys
 
 Each key also has short aliases for convenience.

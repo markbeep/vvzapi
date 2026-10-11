@@ -87,7 +87,20 @@ tracer = trace.get_tracer(__name__)
 app = FastAPI(
     title="VVZ API",
     version=get_api_version(),
-    description="v0 endpoints are experimental and can break at any point. Use the versioned endpoints (v1) for ensured backwards compatibility.",
+    description=(
+        "v0 endpoints are experimental and can break at any point. "
+        "Use the versioned endpoints (v1) for ensured backwards compatibility."
+        "\n\n## MCP Server\n\n"
+        "The same data is also exposed as a "
+        "[Model Context Protocol](https://modelcontextprotocol.io) server at `/mcp` "
+        "(streamable HTTP, served by this API process). Point MCP clients "
+        "(Claude Code/Desktop, Cursor, VS Code, ...) at `https://vvzapi.ch/mcp` to call the "
+        "typed tools (`search_units`, `get_unit`, `list_units`, ...) instead of hand-rolling "
+        "HTTP requests.\n\n"
+        "```json\n"
+        '{\n  "mcpServers": {\n    "vvz": { "type": "http", "url": "https://vvzapi.ch/mcp" }\n  }\n}\n'
+        "```"
+    ),
     lifespan=mcp_lifespan,
 )
 FastAPIInstrumentor.instrument_app(app, excluded_urls="/static/*")
