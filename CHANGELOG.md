@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.13.1](https://github.com/markbeep/vvzapi/compare/v1.13.0...v1.13.1) (2026-10-11)
+
+
+### Features
+
+* **api:** add VVZ URL (`vvz_url`) to unit endpoints. Closes [#76](https://github.com/markbeep/vvzapi/issues/76) ([7b3bfe1](https://github.com/markbeep/vvzapi/commit/7b3bfe14548c8b869a1471e3de351f441c41c390))
+
+
+### Reverts
+
+* move back to a split-database layout ([6285535](https://github.com/markbeep/vvzapi/commit/62855354108cb5fd5296a0316c54fdd7a2f0ccb0))
+
+
+### Documentation
+
+* add explanation of MCP endpoint ([7ec38ba](https://github.com/markbeep/vvzapi/commit/7ec38babe01d83753d7e467f7fd4f28b6b1c358f))
+
+
+### Miscellaneous Chores
+
+* **scraper:** increase leniency for writing when locked ([6285535](https://github.com/markbeep/vvzapi/commit/62855354108cb5fd5296a0316c54fdd7a2f0ccb0))
+
 ## [1.13.0](https://github.com/markbeep/vvzapi/compare/v1.12.6...v1.13.0) (2026-10-10)
 
 
