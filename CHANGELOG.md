@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.2](https://github.com/markbeep/vvzapi/compare/v1.13.1...v1.13.2) (2026-10-15)
+
+
+### Continuous Integration
+
+* snapshot dump database on new Github release ([af0bc43](https://github.com/markbeep/vvzapi/commit/af0bc43646ccd0e00ed0cf9d4345a58aa4269708))
+
 ## [1.13.1](https://github.com/markbeep/vvzapi/compare/v1.13.0...v1.13.1) (2026-10-11)
 
 
