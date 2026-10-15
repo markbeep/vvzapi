@@ -123,3 +123,34 @@ jobs:
           tags: ${{ steps.vars-scraper.outputs.tags }}
           build-args: |
             VERSION=${{ steps.vars-scraper.outputs.version }}
+
+  backup:
+    name: Attach live database dump
+    # Runs in parallel with the build so the snapshot is taken as close to the release as possible.
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download live database dump
+        id: dump
+        run: |
+          # Soft backup only (~60MB) - a failure must never block the release.
+          asset="database-${{ github.event.release.tag_name }}.zip"
+          if curl \
+            --fail --location --silent --show-error \
+            --retry 3 --retry-all-errors \
+            --connect-timeout 30 --max-time 900 \
+            --output "$asset" https://vvzapi.ch/api/v0/dump; then
+            echo "asset=$asset" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Could not download the live database dump; skipping release asset."
+          fi
+
+      - name: Attach dump to release
+        # Empty output means the download failed, in which case there is nothing to attach.
+        if: steps.dump.outputs.asset != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ github.event.release.tag_name }}" "${{ steps.dump.outputs.asset }}" --clobber
