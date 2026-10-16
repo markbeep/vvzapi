@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.13.3](https://github.com/markbeep/vvzapi/compare/v1.13.2...v1.13.3) (2026-10-16)
+
+
+### Features
+
+* **search:** add privacy policy ([df6c9b4](https://github.com/markbeep/vvzapi/commit/df6c9b4e1011f38308a63e5b1f12b00dca949658))
+
+
+### Continuous Integration
+
+* download dump to nightly release on commit ([ebf4a64](https://github.com/markbeep/vvzapi/commit/ebf4a643e659f5190300a598aa256f548d360cde))
+
 ## [1.13.2](https://github.com/markbeep/vvzapi/compare/v1.13.1...v1.13.2) (2026-10-15)
 
 
