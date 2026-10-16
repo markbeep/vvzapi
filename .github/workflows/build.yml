@@ -127,7 +127,7 @@ jobs:
   backup:
     name: Attach live database dump
     # Runs in parallel with the build so the snapshot is taken as close to the release as possible.
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -135,22 +135,37 @@ jobs:
       - name: Download live database dump
         id: dump
         run: |
-          # Soft backup only (~60MB) - a failure must never block the release.
-          asset="database-${{ github.event.release.tag_name }}.zip"
+          # Soft backup only (~60MB) - a failure must never block the build or release.
+          if [ "${{ github.event_name }}" == "release" ]; then
+            tag="${{ github.event.release.tag_name }}"
+            asset="database-$tag.zip"
+          else
+            # Commits share one rolling prerelease so the snapshots don't pile up.
+            tag="nightly"
+            asset="database-nightly.zip"
+          fi
           if curl \
             --fail --location --silent --show-error \
             --retry 3 --retry-all-errors \
             --connect-timeout 30 --max-time 900 \
             --output "$asset" https://vvzapi.ch/api/v0/dump; then
-            echo "asset=$asset" >> "$GITHUB_OUTPUT"
+            {
+              echo "tag=$tag"
+              echo "asset=$asset"
+            } >> "$GITHUB_OUTPUT"
           else
-            echo "::warning::Could not download the live database dump; skipping release asset."
+            echo "::warning::Could not download the live database dump; skipping asset upload."
           fi
 
-      - name: Attach dump to release
-        # Empty output means the download failed, in which case there is nothing to attach.
+      - name: Attach dump
+        # Empty asset means the download failed, in which case there is nothing to attach.
         if: steps.dump.outputs.asset != ''
         continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ github.event.release.tag_name }}" "${{ steps.dump.outputs.asset }}" --clobber
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.dump.outputs.tag }}
+          # Only the rolling nightly release needs to record the commit; on a release the tag is already fixed.
+          target_commitish: ${{ github.event_name == 'release' && '' || github.sha }}
+          files: ${{ steps.dump.outputs.asset }}
+          # Nightly snapshots are prereleases (so they never become "latest"); tagged releases are not.
+          prerelease: ${{ github.event_name != 'release' }}
