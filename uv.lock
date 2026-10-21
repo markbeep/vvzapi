@@ -2045,7 +2045,7 @@ wheels = [
 
 [[package]]
 name = "vvzapi"
-version = "1.13.2"
+version = "1.13.3"
 source = { virtual = "." }
 dependencies = [
     { name = "aiosqlite" },

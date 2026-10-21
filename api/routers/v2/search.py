@@ -1,13 +1,16 @@
 import asyncio
 from collections import defaultdict
+from dataclasses import dataclass
+from enum import StrEnum
 from timeit import default_timer
-from typing import Annotated, Any, cast, override
+from typing import Annotated, Any, Literal, cast, overload, override
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from opentelemetry import trace
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pyparsing import ParseException
 from sqlalchemy import Select
+from sqlalchemy.orm import load_only
 from sqlalchemy.sql.elements import BinaryExpression, ColumnElement
 from sqlmodel import (
     Integer,
@@ -47,6 +50,7 @@ from api.models import (
     Department,
     LearningUnit,
     Lecturer,
+    Level,
     Rating,
     SectionPathView,
     UnitDepartmentView,
@@ -99,6 +103,137 @@ class GroupedLearningUnits(BaseModel):
             reverse=True,
         ):
             yield unit.semkez, unit
+
+
+class SearchResultView(StrEnum):
+    """How much data a search materializes and returns."""
+
+    full = "full"
+    compact = "compact"
+    numbers = "numbers"
+    ids = "ids"
+
+
+class CompactLearningUnit(BaseModel):
+    """One matching course number, described by its most recent learning unit."""
+
+    number: str = Field(description="Course number, e.g. `252-0027-00L`.")
+    title: str | None = Field(
+        default=None, description="German title of the most recent unit."
+    )
+    title_english: str | None = Field(
+        default=None, description="English title of the most recent unit."
+    )
+    credits: float | None = Field(default=None, description="ECTS credits.")
+    levels: list[Level] = Field(
+        default_factory=list, description="Degree-program levels, e.g. `BSC`, `MSC`."
+    )
+    departments: list[Department] = Field(
+        default_factory=list, description="Offering departments as numeric ids."
+    )
+    language: str | None = Field(
+        default=None, description="Language the unit is taught in."
+    )
+    rating: float | None = Field(
+        default=None, description="Combined CourseReview average, if rated."
+    )
+    semesters: dict[str, int] = Field(
+        default_factory=dict,
+        description=(
+            "Semester (`semkez`) to learning unit id, newest first. Pass an id to "
+            "`/api/v1/unit/{unit_id}/get` for the full record."
+        ),
+    )
+
+
+class SearchResponse(BaseModel):
+    total: int = Field(
+        description="Total amount of matching course numbers, not just those on this page."
+    )
+    results: dict[str, GroupedLearningUnits] = Field(
+        description="Course number to all of its learning units across semesters."
+    )
+    parsed_query: str = Field(description="How the query was interpreted.")
+    exec_time_ms: float = Field(description="Time spent executing the search.")
+
+    @override
+    def __iter__(self):
+        for unit_number, grouped_units in self.results.items():
+            yield unit_number, grouped_units
+
+
+class CompactSearchResponse(BaseModel):
+    total: int = Field(
+        description="Total amount of matching course numbers, not just those on this page."
+    )
+    results: list[CompactLearningUnit] = Field(
+        description="One summary per course number, in page order."
+    )
+    parsed_query: str = Field(description="How the query was interpreted.")
+    exec_time_ms: float = Field(description="Time spent executing the search.")
+
+
+class NumbersResponse(BaseModel):
+    total: int = Field(
+        description="Total amount of matching course numbers, not just those on this page."
+    )
+    results: list[str] = Field(
+        description="Matching course numbers in page order, e.g. `252-0027-00L`."
+    )
+    parsed_query: str = Field(description="How the query was interpreted.")
+    exec_time_ms: float = Field(description="Time spent executing the search.")
+
+
+class IdsResponse(BaseModel):
+    total: int = Field(
+        description="Total number of matching learning units, not just those on this page."
+    )
+    results: list[int] = Field(
+        description=(
+            "Matching learning unit ids in `order_by` order. Each id is a unit that "
+            "matches the query itself; pass it to `/api/v1/unit/{unit_id}/get` for the "
+            "full record."
+        )
+    )
+    parsed_query: str = Field(description="How the query was interpreted.")
+    exec_time_ms: float = Field(description="Time spent executing the search.")
+
+
+@dataclass
+class SearchMatch:
+    """Materialized search results; exactly one representation field is set."""
+
+    count: int
+    filters_used: AND | OR
+    full: dict[str, GroupedLearningUnits] | None = None
+    compact: list[CompactLearningUnit] | None = None
+    numbers: list[str] | None = None
+    ids: list[int] | None = None
+
+
+type SearchResponseUnion = (
+    SearchResponse | CompactSearchResponse | NumbersResponse | IdsResponse
+)
+
+
+_COMPACT_LOAD_ATTRIBUTES = (
+    LearningUnit.id,
+    LearningUnit.number,
+    LearningUnit.semkez,
+    LearningUnit.title,
+    LearningUnit.title_english,
+    LearningUnit.credits,
+    LearningUnit.levels,
+    LearningUnit.departments,
+    LearningUnit.language,
+)
+
+
+def _compact_load_option():
+    # SQLModel annotates fields as their Python values (int, str, ...), which does not
+    # satisfy SQLAlchemy's QueryableAttribute typing. The values are mapped attributes
+    # at runtime; keep this tuple in sync with CompactLearningUnit.
+    return load_only(*_COMPACT_LOAD_ATTRIBUTES)  # pyright: ignore[reportArgumentType]
 
 
 def _build_boolean_clause(op: AND | OR):
@@ -547,12 +682,14 @@ async def match_filters(
     limit: int = 20,
     order_by: QueryKey = "year",
     descending: bool = True,
-) -> tuple[int, dict[str, GroupedLearningUnits], AND | OR]:
+    result_view: SearchResultView = SearchResultView.full,
+) -> SearchMatch:
     with tracer.start_as_current_span("match_filters") as span:
         span.set_attribute("offset", offset)
         span.set_attribute("limit", limit)
         span.set_attribute("order_by", order_by)
         span.set_attribute("descending", descending)
+        span.set_attribute("result_view", result_view.value)
 
         # query to perform the initial filtering
         query = select(
@@ -685,6 +822,8 @@ async def match_filters(
                 *(x for x in default_order_clauses),
             )
 
+        # The final_query finds all relevant course numbers of any matched units, so that all units can be grouped by
+        # number and be returned. Basically, if a unit is filtered out, but another unit of the same course number is still in the results, we want to return all units of that course number.
         # We filter for all unit numbers that can be shown as results (with sorting + page limits)
         # For example: https://vvzapi.ch/unit/199098 got renamed from "Geo.BigData(Science)" to "Geospatial data processing with AI tools – an overview".
         # Searching for "big data" would match the old one, but the new one would show if we didn't re-apply filters.
@@ -710,7 +849,7 @@ async def match_filters(
                 *(x for x in default_order_clauses),
             )
 
-        async def _count():
+        async def _count() -> int:
             async with AsyncSession(aengine) as session:
                 with observe_stage("count"):
                     with tracer.start_as_current_span("execute_count_query"):
@@ -721,7 +860,47 @@ async def match_filters(
                         count = cast(int, count)
             return count
 
-        async def _results():
+        async def _count_ids() -> int:
+            async with AsyncSession(aengine) as session:
+                with observe_stage("count"):
+                    with tracer.start_as_current_span("execute_count_query"):
+                        count_query = query.with_only_columns(
+                            func.count(distinct(LearningUnit.id))
+                        ).order_by(None)
+                        (count,) = (await session.execute(count_query)).one()  # pyright: ignore[reportAny]
+                        count = cast(int, count)
+            return count
+
+        async def _ids_page() -> list[int]:
+            # The ids view pages over matching units, not course numbers, so the
+            # filter is applied to each unit directly.
+            async with AsyncSession(aengine) as session:
+                with observe_stage("fetch"):
+                    with tracer.start_as_current_span("execute_ids_query"):
+                        ids = (
+                            (
+                                await session.execute(
+                                    # Uses the `query` with filtered units, NOT the `final_query` with filtered course numbers
+                                    query.with_only_columns(col(LearningUnit.id))
+                                    .distinct()
+                                    .order_by(col(LearningUnit.id))
+                                    .offset(offset)
+                                    .limit(limit)
+                                )
+                            )
+                            .scalars()
+                            .all()
+                        )
+            return list(ids)
+
+        async def _numbers_page() -> list[str]:
+            async with AsyncSession(aengine) as session:
+                with observe_stage("fetch"):
+                    with tracer.start_as_current_span("execute_numbers_query"):
+                        rows = (await session.execute(valid_numbers)).scalars().all()
+            return list(rows)
+
+        async def _full_results() -> tuple[list[LearningUnit], dict[str, float]]:
             async with AsyncSession(aengine) as session:
                 with observe_stage("fetch"):
                     with tracer.start_as_current_span("execute_final_query"):
@@ -740,58 +919,151 @@ async def match_filters(
                             ).all()
                     ratings = {r.course_number: r.average() for r in rating_rows}
                 session.expunge_all()
-            return results, ratings
+            return list(results), ratings
 
-        count, (results, ratings) = await asyncio.gather(_count(), _results())
+        async def _compact_units() -> list[LearningUnit]:
+            async with AsyncSession(aengine) as session:
+                with observe_stage("fetch"):
+                    with tracer.start_as_current_span("execute_compact_query"):
+                        units = (
+                            await session.exec(
+                                select(LearningUnit)
+                                .options(_compact_load_option())
+                                .where(col(LearningUnit.number).in_(valid_numbers))
+                            )
+                        ).all()
+                session.expunge_all()
+            return list(units)
 
-        numbered_units: dict[str, list[LearningUnit]] = defaultdict(list)
-        for unit in results:
-            if unit.number:
-                numbered_units[unit.number].append(unit)
+        async def _compact_ratings() -> dict[str, float]:
+            async with AsyncSession(aengine) as session:
+                with observe_stage("ratings"):
+                    with tracer.start_as_current_span("execute_ratings_query"):
+                        rating_rows = (
+                            await session.exec(
+                                select(Rating).where(
+                                    col(Rating.course_number).in_(valid_numbers)
+                                )
+                            )
+                        ).all()
+            return {row.course_number: row.average() for row in rating_rows}
 
-        span.set_attribute("total_count", count)
-        span.set_attribute("result_count", len(numbered_units))
-
-        return (
-            count,
-            {
-                number: GroupedLearningUnits(
-                    number=number,
-                    units=units,
-                    rating=ratings.get(number),
+        match result_view:
+            case SearchResultView.numbers:
+                count, numbers_page = await asyncio.gather(_count(), _numbers_page())
+                span.set_attribute("total_count", count)
+                span.set_attribute("result_count", len(numbers_page))
+                return SearchMatch(
+                    count=count, filters_used=filters_used, numbers=numbers_page
                 )
-                for number, units in numbered_units.items()
-            },
-            filters_used,
-        )
+
+            case SearchResultView.ids:
+                count, ids = await asyncio.gather(_count_ids(), _ids_page())
+                span.set_attribute("total_count", count)
+                span.set_attribute("result_count", len(ids))
+                return SearchMatch(count=count, filters_used=filters_used, ids=ids)
+
+            case SearchResultView.compact:
+                count, numbers_page, units, ratings = await asyncio.gather(
+                    _count(), _numbers_page(), _compact_units(), _compact_ratings()
+                )
+                units_by_number: dict[str, list[LearningUnit]] = defaultdict(list)
+                for unit in units:
+                    if unit.number:
+                        units_by_number[unit.number].append(unit)
+
+                compact_results: list[CompactLearningUnit] = []
+                for number in numbers_page:
+                    number_units = sorted(
+                        units_by_number.get(number, []),
+                        key=lambda unit: semkez_to_comparable(unit.semkez),
+                        reverse=True,
+                    )
+                    if not number_units:
+                        continue
+                    latest = number_units[0]
+                    compact_results.append(
+                        CompactLearningUnit(
+                            number=number,
+                            title=latest.title,
+                            title_english=latest.title_english,
+                            credits=latest.credits,
+                            levels=latest.levels,
+                            departments=latest.departments,
+                            language=latest.language,
+                            rating=ratings.get(number),
+                            semesters={unit.semkez: unit.id for unit in number_units},
+                        )
+                    )
+                span.set_attribute("total_count", count)
+                span.set_attribute("result_count", len(compact_results))
+                return SearchMatch(
+                    count=count,
+                    filters_used=filters_used,
+                    compact=compact_results,
+                )
+
+            case SearchResultView.full:
+                count, (results, ratings) = await asyncio.gather(
+                    _count(), _full_results()
+                )
+                numbered_units: dict[str, list[LearningUnit]] = defaultdict(list)
+                for unit in results:
+                    if unit.number:
+                        numbered_units[unit.number].append(unit)
+                span.set_attribute("total_count", count)
+                span.set_attribute("result_count", len(numbered_units))
+                return SearchMatch(
+                    count=count,
+                    filters_used=filters_used,
+                    full={
+                        number: GroupedLearningUnits(
+                            number=number,
+                            units=units,
+                            rating=ratings.get(number),
+                        )
+                        for number, units in numbered_units.items()
+                    },
+                )
 
 
-class SearchResponse(BaseModel):
-    total: int
-    results: dict[str, GroupedLearningUnits]
-    parsed_query: str
-    exec_time_ms: float
-
-    @override
-    def __iter__(self):
-        for unit_number, grouped_units in self.results.items():
-            yield unit_number, grouped_units
+QUERY_DESCRIPTION = (
+    'VVZ search query, e.g. `y:2026 s:fs o:"computer science master"`. Plain text '
+    "matches course titles. Syntax: https://vvzapi.ch/guide"
+)
+ORDER_DESCRIPTION = "Sort direction: `asc` or `desc`."
+OFFSET_DESCRIPTION = (
+    "Number of matching course numbers to skip. Paging is over course numbers, so a "
+    "page can contain more units than `limit`."
+)
+IDS_OFFSET_DESCRIPTION = "Number of matching learning units to skip."
 
 
 @router.get(
     "",
     response_model=SearchResponse,
+    summary="Search learning units (full records)",
     responses={400: {"description": "Bad Request - Invalid query"}},
 )
 async def search_units(
-    query: Annotated[str, Query(alias="q")],
+    query: Annotated[str, Query(alias="q", description=QUERY_DESCRIPTION)],
     request: Request,
-    offset: Int64 = 0,
-    limit: Int64 = 20,
-    order_by: QueryKey = "year",
-    order: str = "desc",
+    offset: Annotated[Int64, Query(description=OFFSET_DESCRIPTION)] = 0,
+    limit: Annotated[
+        Int64, Query(ge=1, le=1000, description="Course numbers per page.")
+    ] = 20,
+    order_by: Annotated[QueryKey, Query(description="Sort key.")] = "year",
+    order: Annotated[str, Query(description=ORDER_DESCRIPTION)] = "desc",
 ) -> SearchResponse:
-    page = (offset // limit) + 1 if limit > 0 else 1
+    """Full learning-unit records, grouped by course number.
+
+    `results` maps each matching course number to all of its learning units across
+    semesters, plus the CourseReview rating.
+
+    Lighter representations: `/search/compact` (one summary per course number),
+    `/search/numbers` (course numbers only) and `/search/ids` (learning unit ids only).
+    """
+    page = (offset // limit) + 1
     return await run_search(
         query,
         offset=offset,
@@ -802,7 +1074,230 @@ async def search_units(
         view="api",
         page=page,
         request=request,
+        result_view=SearchResultView.full,
     )
+
+
+@router.get(
+    "/compact",
+    response_model=CompactSearchResponse,
+    summary="Search course summaries (one per course number)",
+    responses={400: {"description": "Bad Request - Invalid query"}},
+)
+async def search_compact(
+    query: Annotated[str, Query(alias="q", description=QUERY_DESCRIPTION)],
+    request: Request,
+    offset: Annotated[Int64, Query(description=OFFSET_DESCRIPTION)] = 0,
+    limit: Annotated[
+        Int64, Query(ge=1, le=2000, description="Course numbers per page.")
+    ] = 20,
+    order_by: Annotated[QueryKey, Query(description="Sort key.")] = "year",
+    order: Annotated[str, Query(description=ORDER_DESCRIPTION)] = "desc",
+) -> CompactSearchResponse:
+    """One summary per matching course number instead of full unit records.
+
+    Each entry carries the most recent unit's title(s), credits, levels, departments,
+    language and CourseReview rating, plus a `semesters` map of `semkez` -> learning
+    unit id (newest first) for resolving full records via `/api/v1/unit/{unit_id}/get`.
+    """
+    page = (offset // limit) + 1
+    return await run_search(
+        query,
+        offset=offset,
+        limit=limit,
+        order_by=order_by,
+        order=order,
+        source="api",
+        view="api",
+        page=page,
+        request=request,
+        result_view=SearchResultView.compact,
+    )
+
+
+@router.get(
+    "/numbers",
+    response_model=NumbersResponse,
+    summary="Search course numbers only",
+    responses={
+        400: {"description": "Bad Request - Invalid query"},
+        200: {
+            "content": {
+                "application/json": {
+                    "example": {
+                        "total": 2,
+                        "results": ["252-0027-00L", "263-0006-00L"],
+                        "parsed_query": "title contains 'machine learning'",
+                        "exec_time_ms": 12.3,
+                    }
+                }
+            }
+        },
+    },
+)
+async def search_numbers(
+    query: Annotated[str, Query(alias="q", description=QUERY_DESCRIPTION)],
+    request: Request,
+    offset: Annotated[Int64, Query(description=OFFSET_DESCRIPTION)] = 0,
+    limit: Annotated[
+        Int64, Query(ge=1, le=10_000, description="Course numbers per page.")
+    ] = 20,
+    order_by: Annotated[QueryKey, Query(description="Sort key.")] = "year",
+    order: Annotated[str, Query(description=ORDER_DESCRIPTION)] = "desc",
+) -> NumbersResponse:
+    """Only the matching course numbers (e.g. `252-0027-00L`), no unit data.
+
+    This view answers the filters with a single cheap query and a small response, so its
+    `limit` cap is 10,000 instead of 1,000. `total` still counts all matching course
+    numbers, not just the returned page.
+    """
+    page = (offset // limit) + 1
+    return await run_search(
+        query,
+        offset=offset,
+        limit=limit,
+        order_by=order_by,
+        order=order,
+        source="api",
+        view="api",
+        page=page,
+        request=request,
+        result_view=SearchResultView.numbers,
+    )
+
+
+@router.get(
+    "/ids",
+    response_model=IdsResponse,
+    summary="Search learning unit ids only",
+    responses={
+        400: {"description": "Bad Request - Invalid query"},
+        200: {
+            "content": {
+                "application/json": {
+                    "example": {
+                        "total": 3,
+                        "results": [193444, 193445, 194002],
+                        "parsed_query": "title contains 'machine learning'",
+                        "exec_time_ms": 12.3,
+                    }
+                }
+            }
+        },
+    },
+)
+async def search_ids(
+    query: Annotated[str, Query(alias="q", description=QUERY_DESCRIPTION)],
+    request: Request,
+    offset: Annotated[Int64, Query(description=IDS_OFFSET_DESCRIPTION)] = 0,
+    limit: Annotated[
+        Int64,
+        Query(ge=1, le=10_000, description="Learning units per page."),
+    ] = 20,
+    order_by: Annotated[QueryKey, Query(description="Sort key.")] = "year",
+    order: Annotated[str, Query(description=ORDER_DESCRIPTION)] = "desc",
+) -> IdsResponse:
+    """Only the ids of learning units that match the query.
+
+    The filter is applied per learning unit; unlike the other views, results are not
+    grouped or paged by course number. `limit`/`offset` page over units and `total` is
+    the number of matching units. Resolve an id with `/api/v1/unit/{unit_id}/get`.
+    """
+    page = (offset // limit) + 1
+    return await run_search(
+        query,
+        offset=offset,
+        limit=limit,
+        order_by=order_by,
+        order=order,
+        source="api",
+        view="api",
+        page=page,
+        request=request,
+        result_view=SearchResultView.ids,
+    )
+
+
+def _empty_response(result_view: SearchResultView) -> SearchResponseUnion:
+    match result_view:
+        case SearchResultView.compact:
+            return CompactSearchResponse(
+                total=0, results=[], parsed_query="", exec_time_ms=0.0
+            )
+        case SearchResultView.numbers:
+            return NumbersResponse(
+                total=0, results=[], parsed_query="", exec_time_ms=0.0
+            )
+        case SearchResultView.ids:
+            return IdsResponse(total=0, results=[], parsed_query="", exec_time_ms=0.0)
+        case SearchResultView.full:
+            return SearchResponse(
+                total=0, results={}, parsed_query="", exec_time_ms=0.0
+            )
+
+
+@overload
+async def run_search(
+    query: str,
+    *,
+    offset: int = 0,
+    limit: int = 20,
+    order_by: QueryKey = "year",
+    order: str = "desc",
+    source: str = "api",
+    view: str = "api",
+    page: int = 1,
+    request: Request | None = None,
+    result_view: Literal[SearchResultView.full] = SearchResultView.full,
+) -> SearchResponse: ...
+
+
+@overload
+async def run_search(
+    query: str,
+    *,
+    offset: int = 0,
+    limit: int = 20,
+    order_by: QueryKey = "year",
+    order: str = "desc",
+    source: str = "api",
+    view: str = "api",
+    page: int = 1,
+    request: Request | None = None,
+    result_view: Literal[SearchResultView.compact],
+) -> CompactSearchResponse: ...
+
+
+@overload
+async def run_search(
+    query: str,
+    *,
+    offset: int = 0,
+    limit: int = 20,
+    order_by: QueryKey = "year",
+    order: str = "desc",
+    source: str = "api",
+    view: str = "api",
+    page: int = 1,
+    request: Request | None = None,
+    result_view: Literal[SearchResultView.numbers],
+) -> NumbersResponse: ...
+
+
+@overload
+async def run_search(
+    query: str,
+    *,
+    offset: int = 0,
+    limit: int = 20,
+    order_by: QueryKey = "year",
+    order: str = "desc",
+    source: str = "api",
+    view: str = "api",
+    page: int = 1,
+    request: Request | None = None,
+    result_view: Literal[SearchResultView.ids],
+) -> IdsResponse: ...
 
 
 async def run_search(
@@ -816,12 +1311,14 @@ async def run_search(
     view: str = "api",
     page: int = 1,
     request: Request | None = None,
-) -> SearchResponse:
+    result_view: SearchResultView = SearchResultView.full,
+) -> SearchResponseUnion:
     """Run a search and record analytics for it.
 
     Single choke point for both the web UI (`/`) and the JSON API (`/search`), so
     every search is measured exactly once with the same definitions (see
-    `api.analytics.events`).
+    `api.analytics.events`). `result_view` selects how much data is materialized and
+    which response model is returned.
     """
     with tracer.start_as_current_span("search_units") as span:
         span.set_attribute("query", query)
@@ -830,20 +1327,16 @@ async def run_search(
         span.set_attribute("order_by", order_by)
         span.set_attribute("order", order)
         span.set_attribute("source", source)
+        span.set_attribute("result_view", result_view.value)
 
         if len(query.strip()) == 0:
             # Not a search: index views are counted in the `/` handler, and an
             # empty API query is a no-op.
-            return SearchResponse(
-                total=0,
-                results={},
-                parsed_query="",
-                exec_time_ms=0.0,
-            )
+            return _empty_response(result_view)
 
         started = default_timer()
         count = 0
-        results: dict[str, GroupedLearningUnits] = {}
+        matched: SearchMatch | None = None
         filters_used: AND | OR | None = None
         exec_time_ms = 0.0
 
@@ -862,13 +1355,16 @@ async def run_search(
 
             start = default_timer()
             try:
-                count, results, filters_used = await match_filters(
+                matched = await match_filters(
                     search_operators,
                     offset=offset,
                     limit=limit,
                     order_by=order_by,
                     descending=descending,
+                    result_view=result_view,
                 )
+                count = matched.count
+                filters_used = matched.filters_used
             except ValueError:
                 span.set_attribute("error", "ValueError in query")
             end = default_timer()
@@ -932,9 +1428,32 @@ async def run_search(
             view=view,
         )
 
-        return SearchResponse(
-            total=count,
-            results=results,
-            parsed_query=parsed_query,
-            exec_time_ms=exec_time_ms,
-        )
+        match result_view:
+            case SearchResultView.compact:
+                return CompactSearchResponse(
+                    total=count,
+                    results=matched.compact if matched and matched.compact else [],
+                    parsed_query=parsed_query,
+                    exec_time_ms=exec_time_ms,
+                )
+            case SearchResultView.numbers:
+                return NumbersResponse(
+                    total=count,
+                    results=matched.numbers if matched and matched.numbers else [],
+                    parsed_query=parsed_query,
+                    exec_time_ms=exec_time_ms,
+                )
+            case SearchResultView.ids:
+                return IdsResponse(
+                    total=count,
+                    results=matched.ids if matched and matched.ids else [],
+                    parsed_query=parsed_query,
+                    exec_time_ms=exec_time_ms,
+                )
+            case SearchResultView.full:
+                return SearchResponse(
+                    total=count,
+                    results=matched.full if matched and matched.full else {},
+                    parsed_query=parsed_query,
+                    exec_time_ms=exec_time_ms,
+                )
