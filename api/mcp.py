@@ -27,7 +27,7 @@ from starlette.routing import Route
 from api.env import Settings
 from api.models import Department, Level, Periodicity
 from api.routers.v1 import courses, lecturers, misc, sections, units
-from api.routers.v2.search import SearchResponse, run_search
+from api.routers.v2.search import SearchResultView, run_search
 from api.util.db import aget_session
 from api.util.logs import KeywordLoggerAdapter
 from api.util.version import get_api_version
@@ -188,34 +188,6 @@ def mount_mcp(app: FastAPI) -> None:
     )
 
 
-def _summarize_search(response: SearchResponse) -> dict[str, JsonValue]:
-    """Trim the search response to one compact record per course number."""
-    results: list[JsonValue] = []
-    for number, grouped in response.results.items():
-        if not grouped.units:
-            continue
-        # semkez is YYYY + S/W, so lexicographic max == most recent semester.
-        latest = max(grouped.units, key=lambda unit: unit.semkez)
-        record: dict[str, JsonValue] = {
-            "number": number,
-            "title": latest.title,
-            "title_english": latest.title_english,
-            "credits": latest.credits,
-            "levels": [level.value for level in latest.levels],
-            "departments": [department.value for department in latest.departments],
-            "language": latest.language,
-            "rating": grouped.rating,
-            "semesters": {unit.semkez: unit.id for unit in grouped.units},
-        }
-        results.append(record)
-    return {
-        "total": response.total,
-        "results": results,
-        "parsed_query": response.parsed_query,
-        "exec_time_ms": response.exec_time_ms,
-    }
-
-
 # Tool returns are spelled `dict[str, JsonValue]` (never an alias): the SDK publishes a plain object
 # schema only for a literal `dict[str, T]` annotation, and wraps every other return form in a
 # `{"result": ...}` envelope.
@@ -252,8 +224,9 @@ async def search_units(
             source="mcp",
             view="api",
             page=(offset // limit) + 1,
+            result_view=SearchResultView.compact,
         )
-    return _summarize_search(response)
+    return response.model_dump(mode="json")
 
 
 @mcp.tool()
