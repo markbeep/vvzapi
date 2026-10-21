@@ -36,7 +36,7 @@ def get_data_dump(request: Request):  # limiter requires request parameter
 
     Table structure, definition, and reasonings can be found in [models.py](https://github.com/markbeep/vvzapi/blob/main/api/models.py).
 
-    **Note:** Access the `/api/vX/dump/metadata` endpoint to get the size and last modified value of the database dump
+    **Note:** Access the `/api/v1/dump/metadata` endpoint to get the size and last modified value of the database dump
     to avoid downloading it unnecessarily.
 
     **Rate Limiting:** This endpoint is rate-limited to 2 requests per minute.
