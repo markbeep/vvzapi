@@ -1,7 +1,7 @@
 # VVZ API – Search Syntax Guide
 
 > Base URL: https://vvzapi.ch
-> Search endpoint: GET /api/v2/search?q={query}
+> Search endpoint: GET /api/v0/search?q={query}
 > Interactive search: https://vvzapi.ch/?q={query}
 > MCP server (typed tools for agents): https://vvzapi.ch/mcp
 > Full syntax guide (for humans): https://vvzapi.ch/guide
@@ -21,7 +21,7 @@ VVZ API is a search engine for ETH Zurich course catalogue (Vorlesungsverzeichni
 ## API Endpoint
 
 ```
-GET /api/v2/search?q={query}&offset=0&limit=20&order_by=year&order=desc
+GET /api/v0/search?q={query}&offset=0&limit=20&order_by=year&order=desc
 ```
 
 Parameters:
@@ -31,11 +31,18 @@ Parameters:
 - `order_by`: field to sort by — one of: title, title_german, title_english, number, credits, year, semester, lecturer, department, level, language, coursereview, descriptions, offered, examtype
 - `order`: "desc" (default) or "asc"
 
-The response JSON contains:
+The full response JSON contains:
 - `total`: total number of matching course numbers
 - `results`: a dict mapping course numbers to grouped learning units (across semesters)
 - `parsed_query`: how the system interpreted your query
 - `exec_time_ms`: execution time in milliseconds
+
+Lighter result views for the same query. `compact` and `numbers` page over course numbers; `ids` pages over learning units:
+- `GET /api/v0/search/compact` — one summary per course number (latest titles, credits, levels, departments, language, rating, and a `semesters` map of semkez -> learning unit id); `limit` up to 2000 course numbers
+- `GET /api/v0/search/numbers` — only the matching course numbers; `limit` up to 10000 course numbers
+- `GET /api/v0/search/ids` — only the ids of learning units that match the query themselves (course-number grouping is ignored); `total` counts matching units; `limit` up to 10000 units
+
+The compact, numbers and ids views return `{total, results, parsed_query, exec_time_ms}` with `results` as a JSON array.
 
 ## MCP Server
 

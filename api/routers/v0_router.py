@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
+from api.routers.v0.search import router as search_router
 from api.routers.v2.dump import router as dump_router
-from api.routers.v2.search import router as search_router
 
 router = APIRouter(prefix="/api/v0", tags=["Experimental"])
 

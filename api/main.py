@@ -59,11 +59,10 @@ from api.models import (
     UnitExaminerLink,
     UnitLecturerLink,
 )
+from api.routers.v0.search import run_search
 from api.routers.v0_router import router as v0_router
 from api.routers.v1.units import get_unit
 from api.routers.v1_router import router as v1_router
-from api.routers.v2.search import run_search
-from api.routers.v2_router import router as v2_router
 from api.util.db import aget_meta_session, aget_session
 from api.util.parse_query import QueryKey, offered_in_query
 from api.util.sections import get_parent_from_unit
@@ -108,7 +107,6 @@ Instrumentator().instrument(app).expose(app, include_in_schema=False, should_gzi
 
 app.include_router(v0_router)
 app.include_router(v1_router)
-app.include_router(v2_router)
 # Serve the MCP server at /mcp; registered before the /{root} catch-all below.
 mount_mcp(app)
 app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)

@@ -27,7 +27,7 @@ from starlette.routing import Route
 from api.env import Settings
 from api.models import Department, Level, Periodicity
 from api.routers.v1 import courses, lecturers, misc, sections, units
-from api.routers.v2.search import SearchResultView, run_search
+from api.routers.v0.search import SearchResultView, run_search
 from api.util.db import aget_session
 from api.util.logs import KeywordLoggerAdapter
 from api.util.version import get_api_version
