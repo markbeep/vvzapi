@@ -56,7 +56,9 @@ The search is inspired by [Scryfall](https://scryfall.com/).
 
 ## Versioning
 
-This project uses semantic versioning. Breaking changes will result in a bump of the major version. Experimental API endpoints are hosted under the `/v0` path. There should not be any breaking changes to the endpoints of any endpoints that are the same or lower version than the major version. If the current version is `2.x.x`, the endpoints under `/v1` and `/v2` will not be _intentionally_ updated in a way that would break or completely change their usage. But `/v0` would not be fixated and might change anytime.
+This project uses semantic versioning. Breaking changes will result in a bump of the major version. Experimental API endpoints are hosted under the `/v0` path, while stable endpoints are currently under `/v1`. In the future, if any stable endpoints are updated, a new `/v2` will be released and `/v1` will be deprecated.
+
+**Note:** Do not depend too strictly on experimental API endpoints! Or if you do, use the `/api/v1/misc/version` endpoint to check the VVZAPI version. Breaking changes (even to the experimental endpoints) will result in a major (X.0.0) bump.
 
 ---
 
