@@ -1,5 +1,29 @@
 # Changelog
 
+## [2.0.0](https://github.com/markbeep/vvzapi/compare/v1.13.3...v2.0.0) (2026-10-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* **api:** move the data dump to /api/v1
+* **api:** remove the deprecated /api/v2 mount
+
+### Features
+
+* **mcp:** use the compact search view ([7067b51](https://github.com/markbeep/vvzapi/commit/7067b51bae977d081e6e5d6d55e62fd3f83aead4))
+* **search:** add compact/numbers/ids result views ([8705fcc](https://github.com/markbeep/vvzapi/commit/8705fcc7324fca74bd6aa095b15714157819683d))
+
+
+### Documentation
+
+* clarify how the project and API versions are handled ([c361ba1](https://github.com/markbeep/vvzapi/commit/c361ba1f2be98b6d99c45644053e9b7b8a821260))
+
+
+### Code Refactoring
+
+* **api:** move the data dump to /api/v1 ([0145bf9](https://github.com/markbeep/vvzapi/commit/0145bf9967c9c0018638c31ce15fbc4d7d920c9c))
+* **api:** remove the deprecated /api/v2 mount ([e17d6f6](https://github.com/markbeep/vvzapi/commit/e17d6f6753693e1b9b54dc72a24ea634a0b30416))
+
 ## [1.13.3](https://github.com/markbeep/vvzapi/compare/v1.13.2...v1.13.3) (2026-10-16)
 
 
