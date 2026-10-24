@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.0.1](https://github.com/markbeep/vvzapi/compare/v2.0.0...v2.0.1) (2026-10-24)
+
+
+### Dependencies
+
+* update dependencies ([22097d0](https://github.com/markbeep/vvzapi/commit/22097d006865cce544317fcc8b1d592f5a67f8ef))
+* update ruff typing changes ([22097d0](https://github.com/markbeep/vvzapi/commit/22097d006865cce544317fcc8b1d592f5a67f8ef))
+
+
+### Styles
+
+* **search:** reformat templates with djlint ([22097d0](https://github.com/markbeep/vvzapi/commit/22097d006865cce544317fcc8b1d592f5a67f8ef))
+
 ## [2.0.0](https://github.com/markbeep/vvzapi/compare/v1.13.3...v2.0.0) (2026-10-23)
 
 
