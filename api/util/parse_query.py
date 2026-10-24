@@ -1,6 +1,7 @@
+from collections.abc import Generator, Sequence
 from enum import Enum
-from typing import Generator, Sequence, cast, get_args, override
 from typing import Literal as TLiteral
+from typing import cast, get_args, override
 
 from opentelemetry import trace
 from pydantic import BaseModel
@@ -13,7 +14,7 @@ from pyparsing import (
     Regex,
     Word,
     alphas,
-    infixNotation,
+    infixNotation,  # pyright: ignore[reportUnknownVariableType]
     opAssoc,
 )
 from rapidfuzz import fuzz, process, utils
@@ -122,10 +123,10 @@ class FilterOperator(BaseModel):
 
 
 class LogicalOperator(BaseModel):
-    ops: list["FilterOperator | AND | OR"]
+    ops: list[FilterOperator | AND | OR]
 
     @override
-    def __iter__(self) -> Generator[FilterOperator, None, None]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __iter__(self) -> Generator[FilterOperator]:  # pyright: ignore[reportIncompatibleMethodOverride]
         for op in self.ops:
             if isinstance(op, FilterOperator):
                 yield op
@@ -139,14 +140,14 @@ class LogicalOperator(BaseModel):
             if i > 0:
                 result += f" {self.__class__.__name__.lower()} "  # AND / OR
             if isinstance(op, (AND, OR)):
-                result += f"({str(op)})"
+                result += f"({op!s})"
             else:
                 result += str(op)
         return result
 
     @override
     def __repr__(self) -> str:
-        def _format_ops(ops: list["FilterOperator | AND | OR"], indent: int = 0) -> str:
+        def _format_ops(ops: list[FilterOperator | AND | OR], indent: int = 0) -> str:
             lines: list[str] = []
             for op in ops:
                 if isinstance(op, (AND, OR)):

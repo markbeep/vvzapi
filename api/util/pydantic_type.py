@@ -1,8 +1,9 @@
 # pyright: reportAny=false, reportExplicitAny=false
 
 import json
+from collections.abc import Sequence
 from enum import Enum
-from typing import Annotated, Any, Sequence, cast, final, override
+from typing import Annotated, Any, cast, final, override
 
 import sqlalchemy as sa
 from fastapi.encoders import jsonable_encoder
@@ -32,7 +33,7 @@ class PydanticType[T: BaseModel](TypeDecorator[sa.JSON]):
 
     def __init__(
         self,
-        pydantic_type: type[T] | type[Sequence[T]] | type[dict[str, list[T]]],
+        pydantic_type: type[T | Sequence[T] | dict[str, list[T]]],
     ):
         super().__init__()
         self.pydantic_type = pydantic_type

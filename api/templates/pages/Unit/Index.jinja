@@ -19,7 +19,9 @@
 {% set secondary_title = unit.title if unit.title_english and unit.title and unit.title != unit.title_english else None %}
 {% set main_abstract = unit.abstract_english if unit.abstract_english else unit.abstract %}
 
+{# djlint:off #}
 <SearchLayout query={{ query }} title={{ (main_title or "Unknown") + " - VVZ API" }} description={{ main_abstract }} links={{ links }}>
+{# djlint:on #}
 
 <main class="grow p-4 sm:p-8">
     <div class="max-w-7xl mx-auto space-y-8">
@@ -99,21 +101,17 @@
                         </div>
                     {% endif %}
 
-                    <h1 class="text-3xl font-bold text-base-content">
-                        {{ main_title }}
-                    </h1>
+                    <h1 class="text-3xl font-bold text-base-content">{{ main_title }}</h1>
                     {% if secondary_title %}
-                        <h2 class="text-xl text-base-content/70 font-medium">
-                            {{ secondary_title }}
-                        </h2>
+                        <h2 class="text-xl text-base-content/70 font-medium">{{ secondary_title }}</h2>
                     {% endif %}
 
                     {% if lecturers %}
                         <div class="mt-4 text-sm text-base-content/80">
                             {% if lecturers == examiners %}
-                                <span class="font-bold">Lecturers & Examiners: </span>
+                                <span class="font-bold">Lecturers & Examiners:</span>
                             {% else %}
-                                <span class="font-bold">Lecturers: </span>
+                                <span class="font-bold">Lecturers:</span>
                             {% endif %}
                             {% for lecturer in lecturers %}
                                 <a href="{{ lecturer.search_query() }}" class="mr-2">
@@ -126,7 +124,7 @@
                         </div>
                         {% if examiners and examiners != lecturers %}
                             <div class="mt-4 text-sm text-base-content/80">
-                                <span class="font-bold">Examiners: </span>
+                                <span class="font-bold">Examiners:</span>
                                 {% for lecturer in examiners %}
                                     <a href="{{ lecturer.search_query() }}" class="mr-2">
                                         {{- lecturer -}}
@@ -197,12 +195,8 @@
                 {% if main_abstract %}
                     <section class="card bg-base-100 shadow-sm">
                         <div class="card-body">
-                            <h3 class="card-title text-lg font-bold border-b border-base-200 pb-2 mb-4">
-                                Abstract
-                            </h3>
-                            <p class="max-w-none text-base-content/80 font-sans">
-                                {{- main_abstract -}}
-                            </p>
+                            <h3 class="card-title text-lg font-bold border-b border-base-200 pb-2 mb-4">Abstract</h3>
+                            <p class="max-w-none text-base-content/80 font-sans">{{- main_abstract -}}</p>
                         </div>
                     </section>
                 {% endif %}
@@ -210,9 +204,7 @@
                 {% if unit.objective or unit.objective_english %}
                     <section class="card bg-base-100 shadow-sm">
                         <div class="card-body">
-                            <h3 class="card-title text-lg font-bold border-b border-base-200 pb-2 mb-4">
-                                Objective
-                            </h3>
+                            <h3 class="card-title text-lg font-bold border-b border-base-200 pb-2 mb-4">Objective</h3>
                             <p class="max-w-none text-base-content/80">
                                 {{- unit.objective_english if unit.objective_english else unit.objective -}}
                             </p>
@@ -223,12 +215,8 @@
                 {% if unit.content or unit.content_english %}
                     <section class="card bg-base-100 shadow-sm">
                         <div class="card-body">
-                            <h3 class="card-title text-lg font-bold border-b border-base-200 pb-2 mb-4">
-                                Content
-                            </h3>
-                            <p class="max-w-none text-base-content/80">
-                                {{- unit.content_english if unit.content_english else unit.content -}}
-                            </p>
+                            <h3 class="card-title text-lg font-bold border-b border-base-200 pb-2 mb-4">Content</h3>
+                            <p class="max-w-none text-base-content/80">{{- unit.content_english if unit.content_english else unit.content -}}</p>
                         </div>
                     </section>
                 {% endif %}
@@ -236,27 +224,21 @@
                 {% if unit.literature or unit.literature_english or unit.lecture_notes or unit.learning_materials %}
                     <section class="card bg-base-100 shadow-sm">
                         <div class="card-body">
-                            <h3 class="card-title text-lg font-bold border-b border-base-200 pb-2 mb-4">
-                                Resources
-                            </h3>
+                            <h3 class="card-title text-lg font-bold border-b border-base-200 pb-2 mb-4">Resources</h3>
 
                             {% if unit.lecture_notes or unit.lecture_notes_english %}
                                 <div class="mb-4">
-                                    <h4 class="font-bold text-base-content text-sm mb-1">
-                                        Lecture Notes
-                                    </h4>
+                                    <h4 class="font-bold text-base-content text-sm mb-1">Lecture Notes</h4>
                                     <p class="text-sm text-base-content/80">
                                         {{- unit.lecture_notes_english if
-                                        unit.lecture_notes_english else unit.lecture_notes -}}
+                                            unit.lecture_notes_english else unit.lecture_notes -}}
                                     </p>
                                 </div>
                             {% endif %}
 
                             {% if unit.literature or unit.literature_english %}
                                 <div class="mb-4">
-                                    <h4 class="font-bold text-base-content text-sm mb-1">
-                                        Literature
-                                    </h4>
+                                    <h4 class="font-bold text-base-content text-sm mb-1">Literature</h4>
                                     <p class="text-sm text-base-content/80">
                                         {{- unit.literature_english if unit.literature_english else unit.literature -}}
                                     </p>
@@ -265,18 +247,15 @@
 
                             {% if unit.learning_materials %}
                                 <div class="mb-4">
-                                    <h4 class="font-bold text-base-content text-sm mb-1">
-                                        Learning Materials (Links)
-                                    </h4>
+                                    <h4 class="font-bold text-base-content text-sm mb-1">Learning Materials (Links)</h4>
                                     <ul class="list-disc list-inside text-sm text-neutral">
                                         {% for category, urls in unit.learning_materials.items() %}
-                                            <li class="font-semibold text-base-content list-none mt-2">
-                                                {{ category }}
-                                            </li>
+                                            <li class="font-semibold text-base-content list-none mt-2">{{ category }}</li>
                                             {% for link in urls %}
                                                 <li class="ml-4 break-all">
-                                                    <a href="{{ link.url }}" target="_blank" class="link link-hover">
-                                                    {{ link.name or link.url }}</a>
+                                                    <a href="{{ link.url }}"
+                                                       target="_blank"
+                                                       class="link link-hover">{{ link.name or link.url }}</a>
                                                 </li>
                                             {% endfor %}
                                         {% endfor %}
@@ -292,15 +271,11 @@
 
                 <section class="card bg-base-100 shadow-sm text-sm">
                     <div class="card-body p-5">
-                        <h3 class="font-bold text-base-content border-b border-base-200 pb-2 mb-3">
-                            General Information
-                        </h3>
+                        <h3 class="font-bold text-base-content border-b border-base-200 pb-2 mb-3">General Information</h3>
                         <dl class="space-y-2">
                             {% if unit.language %}
                                 <div class="flex justify-between">
-                                    <dt class="text-base-content/70">
-                                        Language
-                                    </dt>
+                                    <dt class="text-base-content/70">Language</dt>
                                     <dd class="font-medium text-base-content">
                                         {{ unit.language }}
                                     </dd>
@@ -309,9 +284,7 @@
 
                             {% if unit.levels %}
                                 <div class="flex justify-between">
-                                    <dt class="text-base-content/70">
-                                        Levels
-                                    </dt>
+                                    <dt class="text-base-content/70">Levels</dt>
                                     <dd class="font-medium text-base-content text-right">
                                         {% for level in unit.levels %}
                                             <span title="{{ level.description() }}">
@@ -327,9 +300,7 @@
 
                             {% if unit.course_frequency %}
                                 <div class="flex justify-between">
-                                    <dt class="text-base-content/70">
-                                        Frequency
-                                    </dt>
+                                    <dt class="text-base-content/70">Frequency</dt>
                                     <dd class="font-medium text-base-content">
                                         {{ unit.course_frequency }}
                                     </dd>
@@ -342,15 +313,11 @@
                 {% if unit.exam_type or unit.exam_language %}
                     <section class="card bg-base-100 shadow-sm text-sm">
                         <div class="card-body p-5">
-                            <h3 class="font-bold text-base-content border-b border-base-200 pb-2 mb-3">
-                                Examination
-                            </h3>
+                            <h3 class="font-bold text-base-content border-b border-base-200 pb-2 mb-3">Examination</h3>
                             <dl class="space-y-3">
                                 {% if unit.exam_type %}
                                     <div>
-                                        <dt class="text-base-content/60 text-xs uppercase tracking-wide">
-                                            Type
-                                        </dt>
+                                        <dt class="text-base-content/60 text-xs uppercase tracking-wide">Type</dt>
                                         <dd class="font-medium text-base-content">
                                             {{ unit.exam_type }}
                                         </dd>
@@ -359,9 +326,7 @@
 
                                 {% if unit.exam_mode %}
                                     <div>
-                                        <dt class="text-base-content/60 text-xs uppercase tracking-wide">
-                                            Mode
-                                        </dt>
+                                        <dt class="text-base-content/60 text-xs uppercase tracking-wide">Mode</dt>
                                         <dd class="font-medium text-base-content">
                                             {{ unit.exam_mode }}
                                         </dd>
@@ -370,9 +335,7 @@
 
                                 {% if unit.written_aids %}
                                     <div>
-                                        <dt class="text-base-content/60 text-xs uppercase tracking-wide">
-                                            Aids
-                                        </dt>
+                                        <dt class="text-base-content/60 text-xs uppercase tracking-wide">Aids</dt>
                                         <dd class="text-base-content/80">
                                             {{ unit.written_aids }}
                                         </dd>
@@ -381,9 +344,7 @@
 
                                 {% if unit.digital %}
                                     <div>
-                                        <dt class="text-base-content/60 text-xs uppercase tracking-wide">
-                                            Digital
-                                        </dt>
+                                        <dt class="text-base-content/60 text-xs uppercase tracking-wide">Digital</dt>
                                         <dd class="text-base-content/80">
                                             {{ unit.digital }}
                                         </dd>
@@ -391,9 +352,7 @@
                                 {% endif %}
                             </dl>
                             {% if unit.additional_info %}
-                                <div class="mt-3 pt-3 border-t border-base-200 text-base-content/70 italic">
-                                    {{ unit.additional_info }}
-                                </div>
+                                <div class="mt-3 pt-3 border-t border-base-200 text-base-content/70 italic">{{ unit.additional_info }}</div>
                             {% endif %}
                         </div>
                     </section>
@@ -402,30 +361,22 @@
                 {% if unit.max_places or unit.signup_start or unit.signup_end or unit.priority or unit.primary_target_group %}
                     <section class="card bg-base-100 shadow-sm text-sm">
                         <div class="card-body p-5">
-                            <h3 class="font-bold text-base-content border-b border-base-200 pb-2 mb-3">
-                                Registration & Places
-                            </h3>
+                            <h3 class="font-bold text-base-content border-b border-base-200 pb-2 mb-3">Registration & Places</h3>
                             <dl class="space-y-2">
                                 {% if unit.max_places and unit.max_places > -1 %}
                                     <div class="flex justify-between">
-                                        <dt class="text-base-content/60">
-                                            Max Places
-                                        </dt>
+                                        <dt class="text-base-content/60">Max Places</dt>
                                         <dd class="font-medium text-base-content">
                                             {{ unit.max_places }}
                                         </dd>
                                     </div>
                                 {% elif unit.max_places == -1 %}
-                                    <div class="text-warning font-medium text-xs">
-                                        Limited places (Special selection)
-                                    </div>
+                                    <div class="text-warning font-medium text-xs">Limited places (Special selection)</div>
                                 {% endif %}
 
                                 {% if unit.signup_start %}
                                     <div class="flex justify-between">
-                                        <dt class="text-base-content/60">
-                                            Signup Start
-                                        </dt>
+                                        <dt class="text-base-content/60">Signup Start</dt>
                                         <dd class="font-medium text-base-content">
                                             {{ unit.signup_start }}
                                         </dd>
@@ -434,9 +385,7 @@
 
                                 {% if unit.signup_end %}
                                     <div class="flex justify-between">
-                                        <dt class="text-base-content/60">
-                                            Signup End
-                                        </dt>
+                                        <dt class="text-base-content/60">Signup End</dt>
                                         <dd class="font-medium text-base-content">
                                             {{ unit.signup_end }}
                                         </dd>
@@ -449,9 +398,7 @@
                                 {% endif %}
                                 {% if unit.primary_target_group %}
                                     <div>
-                                        <dt class="text-base-content/60 text-xs uppercase tracking-wide">
-                                            Primary Target Group
-                                        </dt>
+                                        <dt class="text-base-content/60 text-xs uppercase tracking-wide">Primary Target Group</dt>
                                         <dd class="flex flex-wrap gap-1 mt-1">
                                             {% for group in unit.primary_target_group %}
                                                 <span class="badge badge-outline h-fit whitespace-normal text-left">{{ group }}</span>
@@ -468,39 +415,25 @@
 
         {% if courses %}
             <section class="mt-8">
-                <h3 class="text-xl font-bold text-base-content mb-4">
-                    Course Components
-                </h3>
+                <h3 class="text-xl font-bold text-base-content mb-4">Course Components</h3>
                 <div class="card bg-base-100 shadow-sm overflow-hidden overflow-x-auto">
                     <table class="table table-zebra w-full text-left text-sm">
                         <thead>
                             <tr>
-                                <th>
-                                    Type
-                                </th>
-                                <th>
-                                    Title
-                                </th>
-                                <th>
-                                    Time & Place
-                                </th>
-                                <th>
-                                    Hours
-                                </th>
+                                <th>Type</th>
+                                <th>Title</th>
+                                <th>Time & Place</th>
+                                <th>Hours</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for course in courses %}
                                 <tr>
-                                    <td class="font-mono text-base-content/60">
-                                        {{ course.type.value if course.type else '?' }}
-                                    </td>
+                                    <td class="font-mono text-base-content/60">{{ course.type.value if course.type else '?' }}</td>
                                     <td class="font-medium text-base-content">
                                         {{ course.title if course.title else 'Course' }}
                                         {% if course.comment %}
-                                            <div class="text-xs text-base-content/60 font-normal mt-1">
-                                                {{ course.comment }}
-                                            </div>
+                                            <div class="text-xs text-base-content/60 font-normal mt-1">{{ course.comment }}</div>
                                         {% endif %}
                                     </td>
                                     <td class="text-base-content/80">
@@ -526,8 +459,8 @@
                                     <td class="text-base-content/70">
                                         {% if course.hours %}
                                             {{ course.hours|trim_float }} h {{ "weekly" if
-                                            course.hour_type.value
-                                            == 1 else 'semesterly' }}
+                                                course.hour_type.value
+                                                == 1 else 'semesterly' }}
                                         {% else %}
                                             -
                                         {% endif %}
@@ -542,9 +475,7 @@
 
         {% if sections %}
             <section class="mt-8 mb-4">
-                <h3 class="text-xl font-bold text-base-content mb-4">
-                    Offered In
-                </h3>
+                <h3 class="text-xl font-bold text-base-content mb-4">Offered In</h3>
                 <ul class="card bg-base-100 shadow-sm space-y-1 p-5">
                     {% for tree in sections recursive %}
                         <li>
@@ -566,7 +497,7 @@
                                 {% if tree.section.comment_english or tree.section.comment %}
                                     <span class="text-xs text-base-content/70 italic">
                                         ({{ tree.section.comment_english if tree.section.comment_english else
-                                        tree.section.comment }})
+                                            tree.section.comment }})
                                     </span>
                                 {% endif %}
                             </div>

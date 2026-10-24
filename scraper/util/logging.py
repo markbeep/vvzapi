@@ -13,7 +13,7 @@ class KeywordLoggerAdapter(SpiderLoggerAdapter):
     def process(self, msg: str, kwargs: Any):
         # append key=value pairs from extra to the message (sorted for deterministic order)
         if extra := kwargs.get("extra", {}):
-            pairs = [f"{k}={str(extra[k])}" for k in sorted(extra)]
+            pairs = [f"{k}={extra[k]!s}" for k in sorted(extra)]
             msg = f"{msg} {' '.join(pairs)}"
         return msg, kwargs
 

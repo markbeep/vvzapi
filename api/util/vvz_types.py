@@ -1,5 +1,9 @@
+# Duplicate values are intentional aliases (German weekday names).
+# ruff: noqa: PIE796
+
 from enum import Enum
 from typing import NewType, override
+
 from pydantic import BaseModel
 
 

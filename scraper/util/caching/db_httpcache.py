@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from email.parser import Parser
 from pathlib import Path
 from typing import final, override
@@ -15,6 +16,11 @@ from api.models import HTTPCache
 from api.util.db import meta_engine
 from scraper.util.caching.rescrape import should_rescrape
 from scraper.util.url import normalized_url
+
+
+def _as_str_dict(headers: Mapping[str | bytes, object]) -> dict[str, str]:
+    """Scrapy's to_unicode_dict() is untyped; normalize it to plain str pairs."""
+    return {str(key): str(value) for key, value in headers.items()}
 
 
 @final
@@ -92,7 +98,7 @@ class DBHTTPCache(httpcache.FilesystemCacheStorage):
             return
 
         url = self._normalize_url(url)
-        headers: dict[str, str] = dict(response.headers.to_unicode_dict())
+        headers = _as_str_dict(response.headers.to_unicode_dict())
         with Session(meta_engine.connect()) as session:
             entry = HTTPCache(
                 url=url,
@@ -134,7 +140,7 @@ class Migrator:
                     headers = dict(parsed.items())
                 self._add(url, timestamp, status, headers, body)
                 print(f"Migrated {url} from {dir}")
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - best-effort cache migration
                 print(f"[red]Failed to migrate from {dir}: {e}[/red]")
 
     def _add(

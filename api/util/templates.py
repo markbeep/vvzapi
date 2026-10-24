@@ -1,5 +1,6 @@
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 from urllib.parse import quote
 
 from fastapi.responses import HTMLResponse
@@ -43,10 +44,12 @@ def urlquote(value: object) -> str:
     return quote(str(value), safe="!~*'()")
 
 
-templates.env.filters["pluralize"] = pluralize_dj  # pyright: ignore[reportUnknownMemberType]
-templates.env.filters["trim_float"] = trim_float  # pyright: ignore[reportUnknownMemberType]
-templates.env.filters["urlquote"] = urlquote  # pyright: ignore[reportUnknownMemberType]
-templates.env.globals["version"] = get_api_version()  # pyright: ignore[reportUnknownMemberType]
+# jinja2 infers the filter/global maps from their specific default values, so assigning
+# custom callables of different signatures reports a false positive.
+templates.env.filters["pluralize"] = pluralize_dj
+templates.env.filters["trim_float"] = trim_float  # pyright: ignore[reportArgumentType]
+templates.env.filters["urlquote"] = urlquote
+templates.env.globals["version"] = get_api_version()  # pyright: ignore[reportArgumentType]
 
 
 env.add_extension(JinjaX)

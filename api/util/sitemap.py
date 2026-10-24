@@ -49,13 +49,14 @@ def generate_sitemap(expiry_seconds: int | None = None) -> None:
         path.mkdir(parents=True, exist_ok=True)
 
         if (path / "sitemap.xml").exists():
-            if expiry_seconds is not None:
-                if (
-                    path / "sitemap.xml"
-                ).lstat().st_mtime + expiry_seconds > datetime.now().timestamp():
-                    print("Sitemap is still fresh, skipping generation.")
-                    span.set_attribute("skipped", True)
-                    return
+            if (
+                expiry_seconds is not None
+                and (path / "sitemap.xml").lstat().st_mtime + expiry_seconds
+                > datetime.now().timestamp()
+            ):
+                print("Sitemap is still fresh, skipping generation.")
+                span.set_attribute("skipped", True)
+                return
             with open(path / "sitemap.xml", "r", encoding="utf-8") as f:
                 changes = _parse_index(ET.parse(f).getroot())
         else:

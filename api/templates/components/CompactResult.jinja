@@ -7,9 +7,7 @@
 
 <div class="card bg-base-100 shadow-sm group-hover:shadow-none not-hover:transition-shadow flex justify-center p-2 gap-1 relative group w-full">
     <div class="flex flex-row gap-2">
-        <span class="badge badge-ghost h-fit p-0.5 text-xs m-0">
-            {{ unit.number }}
-        </span>
+        <span class="badge badge-ghost h-fit p-0.5 text-xs m-0">{{ unit.number }}</span>
 
         <h3 class="font-bold text-neutral leading-tight">
             <a href="/unit/{{ unit.id }}#q={{ query|urlquote }}"
@@ -22,14 +20,10 @@
 
     <div class="flex flex-row gap-2 items-center">
         {% if unit.credits %}
-            <p class="text-xs bg-base-300 p-0.5 rounded whitespace-nowrap">
-                {{ unit.credits|trim_float }} ECTS
-            </p>
+            <p class="text-xs bg-base-300 p-0.5 rounded whitespace-nowrap">{{ unit.credits|trim_float }} ECTS</p>
         {% endif %}
 
-        <p class="text-xs whitespace-nowrap">
-            {{ grouped.semkezs|join(", ") }}
-        </p>
+        <p class="text-xs whitespace-nowrap">{{ grouped.semkezs|join(", ") }}</p>
 
         {% if unit.levels_as_str() %}
             <p class="text-xs bg-base-300 p-0.5 rounded line-clamp-1 min-w-8"

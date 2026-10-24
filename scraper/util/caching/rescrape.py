@@ -11,7 +11,7 @@ pages of the last two semesters are rescraped.
 
 from time import time
 
-from sqlmodel import col, distinct, func, not_, or_, select
+from sqlmodel import col, func, not_, or_, select
 
 from api.models import HTTPCache
 from api.util.db import get_meta_session
@@ -28,7 +28,8 @@ def get_last_semesters(n: int) -> list[str]:
             HTTPCache.url, func.instr(HTTPCache.url, "semkez=") + 7, 5
         )
         semkezs = session.exec(
-            select(distinct(semkez_expr))
+            select(semkez_expr)
+            .distinct()
             .where(col(HTTPCache.url).contains("semkez="))
             .order_by(semkez_expr.desc())
             .limit(n)

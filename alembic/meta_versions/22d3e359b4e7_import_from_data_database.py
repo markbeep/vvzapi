@@ -19,8 +19,9 @@ the rows are read before they are dropped.
 # pyright: reportAny=false, reportExplicitAny=false
 
 import logging
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Sequence, Union
+from typing import Any
 
 from sqlalchemy import Connection, create_engine, inspect, text
 
@@ -29,9 +30,9 @@ from api.env import Settings
 
 # revision identifiers, used by Alembic.
 revision: str = "22d3e359b4e7"
-down_revision: Union[str, Sequence[str], None] = "bd150ba2a167"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "bd150ba2a167"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 logger = logging.getLogger("alembic.runtime.migration")
 

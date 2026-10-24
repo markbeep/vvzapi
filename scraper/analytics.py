@@ -120,7 +120,7 @@ class _ScrapeLogHandler(logging.Handler):
                     "message": record.getMessage()[:MAX_MESSAGE_CHARS],
                 }
             )
-        except Exception:  # noqa: BLE001 - a log handler must never raise
+        except Exception:  # noqa: BLE001, S110 - a log handler must never raise
             pass
 
 
@@ -132,7 +132,7 @@ class ScrapeRunAnalytics:
     the log handler once per process."""
 
     @classmethod
-    def from_crawler(cls, crawler: Crawler) -> "ScrapeRunAnalytics":
+    def from_crawler(cls, crawler: Crawler) -> ScrapeRunAnalytics:
         global _handler
         if _handler is None:
             _handler = _ScrapeLogHandler(level=logging.WARNING)

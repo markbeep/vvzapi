@@ -9,7 +9,9 @@
 
 {% set og_description = og_description or description %}
 
+{# djlint:off #}
 <BaseLayout title={{ title|e }} description={{ description|e }} og_description={{ og_description|e }} keywords={{ keywords|e }} links={{ links }}>
+{# djlint:on #}
 
 <body class="bg-base-200 min-h-screen flex flex-col min-w-[20rem]">
     <div id="navbar"
@@ -39,7 +41,11 @@
         <div>
             <a href="/" class="btn btn-ghost text-xl p-1">VVZ API</a>
         </div>
-        <form id="search-form" action="/" method="get" class="flex-1 join" aria-label="Search form">
+        <form id="search-form"
+              action="/"
+              method="get"
+              class="flex-1 join"
+              aria-label="Search form">
             <input id="search-top"
                    type="search"
                    name="q"

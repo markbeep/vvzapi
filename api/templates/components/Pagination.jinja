@@ -44,9 +44,7 @@
                 Previous
             </a>
         {% else %}
-            <button class="join-item btn btn-outline btn-disabled" disabled>
-                Previous
-            </button>
+            <button type="button" class="join-item btn btn-outline btn-disabled" disabled>Previous</button>
         {% endif %}
 
         {% if page * limit < results.total %}
@@ -78,12 +76,8 @@
                 </script>
             {% endif %}
         {% else %}
-            <button class="join-item btn btn-outline btn-disabled" disabled>
-                Next
-            </button>
+            <button type="button" class="join-item btn btn-outline btn-disabled" disabled>Next</button>
         {% endif %}
     </div>
-    <p class="text-xs">
-        Page {{ page }} of {{ (results.total // limit) + (1 if results.total % limit > 0 else 0) }}
-    </p>
+    <p class="text-xs">Page {{ page }} of {{ (results.total // limit) + (1 if results.total % limit > 0 else 0) }}</p>
 </div>

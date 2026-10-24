@@ -4,7 +4,8 @@ import json
 import re
 import traceback
 from collections import defaultdict
-from typing import Any, Generator, Sequence, cast, override
+from collections.abc import Generator, Sequence
+from typing import Any, Literal, cast, override
 
 import scrapy
 from parsel import Selector, SelectorList
@@ -12,7 +13,6 @@ from pydantic import BaseModel
 from scrapy.http import Response
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import Rule
-from typing_extensions import Literal
 
 from api.models import (
     Course,
@@ -132,7 +132,7 @@ class UnitsSpider(KeywordLoggerSpider):
             callback="parse_legend",
         ),
     )
-    course_ids: dict[str, set[int]] = defaultdict(set)
+    course_ids: dict[str, set[int]] = defaultdict(set)  # noqa: RUF012 - scrapy class attribute
 
     def __init__(self, *a: Any, **kw: Any):  # pyright: ignore[reportAny,reportExplicitAny]
         self.start_urls: list[str] = [
@@ -234,7 +234,7 @@ class UnitsSpider(KeywordLoggerSpider):
                 extra={"count": sec_count, "semkez": catalog_semkez},
             )
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - log and keep the crawl running
             self.logger.error(
                 "Error parsing catalogue page",
                 extra={
@@ -352,7 +352,7 @@ class UnitsSpider(KeywordLoggerSpider):
                     competencies_english=competencies,
                 )
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - log and keep the crawl running
             self.logger.error(
                 "Error extracting unit catalogue data",
                 extra={
@@ -518,8 +518,7 @@ class UnitsSpider(KeywordLoggerSpider):
 
             groups_signup_end, groups = self.extract_groups(response)
             offered_in = self.extract_offered_in(response, unit_id)
-            for offered in offered_in:
-                yield offered
+            yield from offered_in
 
             learning_materials = self.extract_learning_materials(response) or None
 
@@ -569,14 +568,13 @@ class UnitsSpider(KeywordLoggerSpider):
             for k, cols in table.rows:
                 course_number = re.match(RE_NUMBER, k)
                 if course_number:
-                    for course_or_lecturer in self.extract_course_info(
+                    yield from self.extract_course_info(
                         parent_unit=unit_id,
                         semkez=semkez,
                         cols=cols,
                         url=response.url,
-                    ):
-                        yield course_or_lecturer
-        except Exception as e:
+                    )
+        except Exception as e:  # noqa: BLE001 - log and keep the crawl running
             self.logger.error(
                 "Error parsing learning unit",
                 extra={
@@ -636,7 +634,7 @@ class UnitsSpider(KeywordLoggerSpider):
                 semkez=semkez,
                 legend=unit_legends,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - log and keep the crawl running
             self.logger.error(
                 "Error parsing legend",
                 extra={
@@ -791,7 +789,7 @@ class UnitsSpider(KeywordLoggerSpider):
 
     def extract_course_info(
         self, parent_unit: int, semkez: str, cols: SelectorList[Selector], url: str
-    ) -> Generator[Course | CourseLecturerLink, None, None]:
+    ) -> Generator[Course | CourseLecturerLink]:
         if len(cols) == 5:
             number_sel, title_sel, hours_sel, slots_sel, lecturers_sel = cols
         else:
@@ -932,7 +930,6 @@ class UnitsSpider(KeywordLoggerSpider):
                 cols = cols[:only_for]
             except ValueError:
                 restriction = None
-                pass
 
             # Cut the group name from ['Group 2', '19.10.', '08:15-17:00', ... ]
             group = cols[0]

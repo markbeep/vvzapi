@@ -1,15 +1,15 @@
 import asyncio
 from collections import defaultdict
+from collections.abc import Generator
 from dataclasses import dataclass
 from enum import StrEnum
 from timeit import default_timer
-from typing import Annotated, Any, Literal, cast, overload, override
+from typing import Annotated, Any, Literal, overload, override
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from opentelemetry import trace
 from pydantic import BaseModel, Field
 from pyparsing import ParseException
-from sqlalchemy import Select
 from sqlalchemy.orm import load_only
 from sqlalchemy.sql.elements import BinaryExpression, ColumnElement
 from sqlmodel import (
@@ -27,7 +27,7 @@ from sqlmodel import (
     cast as sql_cast,
 )
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel.sql.expression import SelectOfScalar
+from sqlmodel.sql.expression import Select, SelectOfScalar
 from starlette.status import HTTP_400_BAD_REQUEST
 
 from api.analytics.events import (
@@ -157,9 +157,8 @@ class SearchResponse(BaseModel):
     exec_time_ms: float = Field(description="Time spent executing the search.")
 
     @override
-    def __iter__(self):
-        for unit_number, grouped_units in self.results.items():
-            yield unit_number, grouped_units
+    def __iter__(self) -> Generator[tuple[str, GroupedLearningUnits]]:
+        yield from self.results.items()
 
 
 class CompactSearchResponse(BaseModel):
@@ -705,7 +704,9 @@ async def match_filters(
         #########
         if any(f.key == "lecturer" for f in filters) or order_by == "lecturer":
 
-            def join_lecturer[T: Select[Any] | SelectOfScalar[Any]](q: T) -> T:
+            def join_lecturer[T: Select[Any, Any, Any] | SelectOfScalar[Any]](
+                q: T,
+            ) -> T:
                 return (
                     q.join(
                         UnitExaminerLink,
@@ -729,7 +730,9 @@ async def match_filters(
 
         if any(f.key == "offered" for f in filters):
 
-            def join_section[T: Select[Any] | SelectOfScalar[Any]](q: T) -> T:
+            def join_section[T: Select[Any, Any, Any] | SelectOfScalar[Any]](
+                q: T,
+            ) -> T:
                 return q.join(
                     UnitSectionLink,
                     onclause=col(LearningUnit.id) == UnitSectionLink.unit_id,
@@ -744,7 +747,9 @@ async def match_filters(
         average_rating = None
         if any(f.key == "coursereview" for f in filters) or order_by == "coursereview":
 
-            def join_rating[T: Select[Any] | SelectOfScalar[Any]](q: T) -> T:
+            def join_rating[T: Select[Any, Any, Any] | SelectOfScalar[Any]](
+                q: T,
+            ) -> T:
                 return q.join(
                     Rating, onclause=col(LearningUnit.number) == Rating.course_number
                 )
@@ -851,101 +856,115 @@ async def match_filters(
 
         async def _count() -> int:
             async with AsyncSession(aengine) as session:
-                with observe_stage("count"):
-                    with tracer.start_as_current_span("execute_count_query"):
-                        count_query = query.with_only_columns(
-                            func.count(distinct(LearningUnit.number))
-                        ).order_by(None)
-                        (count,) = (await session.execute(count_query)).one()  # pyright: ignore[reportAny]
-                        count = cast(int, count)
+                with (
+                    observe_stage("count"),
+                    tracer.start_as_current_span("execute_count_query"),
+                ):
+                    count_query = query.with_only_columns(
+                        func.count(distinct(LearningUnit.number))
+                    ).order_by(None)
+                    count = await session.scalar(count_query) or 0
             return count
 
         async def _count_ids() -> int:
             async with AsyncSession(aengine) as session:
-                with observe_stage("count"):
-                    with tracer.start_as_current_span("execute_count_query"):
-                        count_query = query.with_only_columns(
-                            func.count(distinct(LearningUnit.id))
-                        ).order_by(None)
-                        (count,) = (await session.execute(count_query)).one()  # pyright: ignore[reportAny]
-                        count = cast(int, count)
+                with (
+                    observe_stage("count"),
+                    tracer.start_as_current_span("execute_count_query"),
+                ):
+                    count_query = query.with_only_columns(
+                        func.count(distinct(LearningUnit.id))
+                    ).order_by(None)
+                    count = await session.scalar(count_query) or 0
             return count
 
         async def _ids_page() -> list[int]:
             # The ids view pages over matching units, not course numbers, so the
             # filter is applied to each unit directly.
             async with AsyncSession(aengine) as session:
-                with observe_stage("fetch"):
-                    with tracer.start_as_current_span("execute_ids_query"):
-                        ids = (
-                            (
-                                await session.execute(
-                                    # Uses the `query` with filtered units, NOT the `final_query` with filtered course numbers
-                                    query.with_only_columns(col(LearningUnit.id))
-                                    .distinct()
-                                    .order_by(col(LearningUnit.id))
-                                    .offset(offset)
-                                    .limit(limit)
-                                )
+                with (
+                    observe_stage("fetch"),
+                    tracer.start_as_current_span("execute_ids_query"),
+                ):
+                    ids = (
+                        (
+                            await session.execute(
+                                # Uses the `query` with filtered units, NOT the `final_query` with filtered course numbers
+                                query.with_only_columns(col(LearningUnit.id))
+                                .distinct()
+                                .order_by(col(LearningUnit.id))
+                                .offset(offset)
+                                .limit(limit)
                             )
-                            .scalars()
-                            .all()
                         )
+                        .scalars()
+                        .all()
+                    )
             return list(ids)
 
         async def _numbers_page() -> list[str]:
             async with AsyncSession(aengine) as session:
-                with observe_stage("fetch"):
-                    with tracer.start_as_current_span("execute_numbers_query"):
-                        rows = (await session.execute(valid_numbers)).scalars().all()
+                with (
+                    observe_stage("fetch"),
+                    tracer.start_as_current_span("execute_numbers_query"),
+                ):
+                    rows = (await session.execute(valid_numbers)).scalars().all()
             return list(rows)
 
         async def _full_results() -> tuple[list[LearningUnit], dict[str, float]]:
             async with AsyncSession(aengine) as session:
-                with observe_stage("fetch"):
-                    with tracer.start_as_current_span("execute_final_query"):
-                        results = (await session.exec(final_query)).all()
+                with (
+                    observe_stage("fetch"),
+                    tracer.start_as_current_span("execute_final_query"),
+                ):
+                    results = (await session.exec(final_query)).all()
                 numbers = {unit.number for unit in results if unit.number}
                 ratings: dict[str, float] = {}
                 if numbers:
-                    with observe_stage("ratings"):
-                        with tracer.start_as_current_span("execute_ratings_query"):
-                            rating_rows = (
-                                await session.exec(
-                                    select(Rating).where(
-                                        col(Rating.course_number).in_(numbers)
-                                    )
+                    with (
+                        observe_stage("ratings"),
+                        tracer.start_as_current_span("execute_ratings_query"),
+                    ):
+                        rating_rows = (
+                            await session.exec(
+                                select(Rating).where(
+                                    col(Rating.course_number).in_(numbers)
                                 )
-                            ).all()
+                            )
+                        ).all()
                     ratings = {r.course_number: r.average() for r in rating_rows}
                 session.expunge_all()
             return list(results), ratings
 
         async def _compact_units() -> list[LearningUnit]:
             async with AsyncSession(aengine) as session:
-                with observe_stage("fetch"):
-                    with tracer.start_as_current_span("execute_compact_query"):
-                        units = (
-                            await session.exec(
-                                select(LearningUnit)
-                                .options(_compact_load_option())
-                                .where(col(LearningUnit.number).in_(valid_numbers))
-                            )
-                        ).all()
+                with (
+                    observe_stage("fetch"),
+                    tracer.start_as_current_span("execute_compact_query"),
+                ):
+                    units = (
+                        await session.exec(
+                            select(LearningUnit)
+                            .options(_compact_load_option())
+                            .where(col(LearningUnit.number).in_(valid_numbers))
+                        )
+                    ).all()
                 session.expunge_all()
             return list(units)
 
         async def _compact_ratings() -> dict[str, float]:
             async with AsyncSession(aengine) as session:
-                with observe_stage("ratings"):
-                    with tracer.start_as_current_span("execute_ratings_query"):
-                        rating_rows = (
-                            await session.exec(
-                                select(Rating).where(
-                                    col(Rating.course_number).in_(valid_numbers)
-                                )
+                with (
+                    observe_stage("ratings"),
+                    tracer.start_as_current_span("execute_ratings_query"),
+                ):
+                    rating_rows = (
+                        await session.exec(
+                            select(Rating).where(
+                                col(Rating.course_number).in_(valid_numbers)
                             )
-                        ).all()
+                        )
+                    ).all()
             return {row.course_number: row.average() for row in rating_rows}
 
         match result_view:
@@ -1347,7 +1366,7 @@ async def run_search(
                 except ParseException as e:
                     raise HTTPException(
                         status_code=HTTP_400_BAD_REQUEST,
-                        detail=f"Error parsing query: {str(e)}",
+                        detail=f"Error parsing query: {e!s}",
                     )
 
             # default to desc

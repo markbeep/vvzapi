@@ -1,4 +1,5 @@
-from typing import Annotated, Sequence
+from collections.abc import Sequence
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from opentelemetry import trace
@@ -107,8 +108,8 @@ class LearningUnitType(BaseModel):
 
 class SectionUnitResponse(SectionBase):
     learning_units: list[LearningUnitType]
-    parents: list[SectionLevel] = []
-    children: list[SectionLevel] = []
+    parents: list[SectionLevel]
+    children: list[SectionLevel]
 
 
 @router.get(

@@ -23,7 +23,7 @@ _RatingsResponse = TypeAdapter(list[_Rating])
 @final
 class RatingsSpider(KeywordLoggerSpider):
     name: str = "ratings"
-    start_urls = ["https://cr.vsos.ethz.ch/getAllRatingsAvg"]
+    start_urls = ["https://cr.vsos.ethz.ch/getAllRatingsAvg"]  # noqa: RUF012 - scrapy class attribute
 
     @override
     def parse_start_url(self, response: Response, **_: Any):  # pyright: ignore[reportExplicitAny]

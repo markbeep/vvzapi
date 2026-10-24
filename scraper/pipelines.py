@@ -1,5 +1,6 @@
 import time
 import traceback
+from collections.abc import Iterator
 from pathlib import Path
 from typing import cast
 
@@ -39,10 +40,9 @@ def append(file_path: Path, item: BaseModel):
         f.write(item.model_dump_json() + "\n")
 
 
-def iter_lines(file_path: Path):
+def iter_lines(file_path: Path) -> Iterator[str]:
     with open(file_path, "r") as f:
-        for line in f:
-            yield line
+        yield from f
 
 
 def inc_stat(spider: Spider, key: str):
@@ -145,20 +145,21 @@ class DatabasePipeline:
                 self.logger.error("Unknown item type", extra={"item": item})
                 return item
 
-            if isinstance(item, LearningUnit) and isinstance(spider, UnitsSpider):
-                # check off the course as having been added
-                if item.id in (ids := spider.course_ids[item.semkez]):
-                    ids.remove(item.id)
-                    if len(ids) == 0:
-                        if not self.session.get(FinishedScrapingSemester, item.semkez):
-                            self.session.add(
-                                FinishedScrapingSemester(semkez=item.semkez)
-                            )
-                            self.session.commit()
-                        self.logger.info(
-                            "Finished scraping all courses for semester",
-                            extra={"semkez": item.semkez},
-                        )
+            # check off the course as having been added
+            if (
+                isinstance(item, LearningUnit)
+                and isinstance(spider, UnitsSpider)
+                and item.id in (ids := spider.course_ids[item.semkez])
+            ):
+                ids.remove(item.id)
+                if len(ids) == 0:
+                    if not self.session.get(FinishedScrapingSemester, item.semkez):
+                        self.session.add(FinishedScrapingSemester(semkez=item.semkez))
+                        self.session.commit()
+                    self.logger.info(
+                        "Finished scraping all courses for semester",
+                        extra={"semkez": item.semkez},
+                    )
 
             if not old:
                 self.session.add(item)
@@ -188,7 +189,7 @@ class DatabasePipeline:
                     inc_stat(spider, "vvzapi/lecturers_updated")
 
             return item
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - log and keep the crawl running
             self.logger.error(
                 "Error adding item",
                 extra={

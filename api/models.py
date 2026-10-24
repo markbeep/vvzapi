@@ -252,7 +252,7 @@ class Department(IntEnum):
                 return dept
 
         # fuzzy match with full name
-        keys = list(str(x) for x in Department)
+        keys = [str(x) for x in Department]
         if result := process.extractOne(
             name, keys, scorer=fuzz.WRatio, processor=utils.default_process
         ):

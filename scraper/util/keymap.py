@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from typing import Literal
+
+from pydantic import BaseModel
 
 
 class Translation(BaseModel):
@@ -57,7 +58,6 @@ TranslationKey = Literal[
     "general_restrictions",
     # Groups
     "groups",
-    #
     "other",
     "unkeyed",
 ]
@@ -154,6 +154,6 @@ translations: dict[TranslationKey, Translation] = {
 
 def get_key(value: str) -> TranslationKey:
     for key, translation in translations.items():
-        if value.startswith(translation.de) or value.startswith(translation.en):
+        if value.startswith((translation.de, translation.en)):
             return key
     return "other"

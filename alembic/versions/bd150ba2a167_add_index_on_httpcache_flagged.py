@@ -10,13 +10,13 @@ data database's history; the cache has its own database again, so the schema liv
 1.13.0 can still resolve their revision chain.
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 # revision identifiers, used by Alembic.
 revision: str = "bd150ba2a167"
-down_revision: Union[str, Sequence[str], None] = "357b241a4250"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "357b241a4250"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

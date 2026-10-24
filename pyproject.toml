@@ -6,32 +6,33 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "aiosqlite>=0.22.1",
-    "alembic>=1.18.4",
-    "fastapi[standard]>=0.136.1",
+    "alembic>=1.20.1",
+    "fastapi[standard]>=0.162.0",
     "jinja2>=3.1.6",
     "jinja2-htmlmin>=1.1.0",
     "jinja2-pluralize>=0.3.0",
-    "jinjax>=0.63",
+    "jinjax>=0.66",
     "mcp>=2.3.0,<3",
-    "opentelemetry-exporter-otlp-proto-grpc>=1.41.1",
-    "opentelemetry-instrumentation-fastapi>=0.62b1",
-    "opentelemetry-sdk>=1.41.1",
-    "prometheus-fastapi-instrumentator>=7.1.0",
-    "pydantic>=2.13.4",
-    "pydantic-settings>=2.14.0",
-    "pyparsing>=3.3.2",
-    "rapidfuzz>=3.14.5",
-    "scrapy>=2.15.2",
-    "slowapi>=0.1.9",
-    "sqlmodel>=0.0.38",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.45.1",
+    "opentelemetry-instrumentation-fastapi>=0.66b1",
+    "opentelemetry-sdk>=1.45.1",
+    "prometheus-fastapi-instrumentator>=8.1.0",
+    "pydantic>=2.14.1",
+    "pydantic-settings>=2.16.1",
+    "pyparsing>=3.3.3",
+    "rapidfuzz>=3.14.6",
+    "scrapy>=2.19.0",
+    "slowapi>=0.1.10",
+    "sqlalchemy[asyncio]>=2.1.6",
+    "sqlmodel>=0.0.48",
     "toml>=0.10.2",
 ]
 
 [dependency-groups]
 dev = [
-    "basedpyright>=1.39.3",
-    "djlint>=1.36.4",
-    "ruff>=0.15.12",
+    "basedpyright>=1.40.2",
+    "djlint>=1.47.0",
+    "ruff>=0.17.2",
 ]
 
 [tool.basedpyright]
@@ -44,7 +45,8 @@ allowedUntypedLibraries = ["jinja2_pluralize", "slowapi", "jinjax", "opentelemet
 
 [tool.djlint]
 profile = "django"
-ignore = "H021"
+extension = "jinja"
+ignore = "H021,D004,D018"
 format_js=true
 format_css=true
 line_break_after_multiline_tag=true

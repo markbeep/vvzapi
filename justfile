@@ -32,7 +32,8 @@ tailwind:
 
 # update all uv packages
 upgrade-deps:
-    uvx --from uv-upgrade uvup
+    uv lock --upgrade
+    uv sync
 
 test_jinja:
     uv run api/util/test_jinjax.py api/templates/ -g content url_for catalog version -f trim_float urlquote
@@ -42,6 +43,7 @@ test: test_jinja
     uv run djlint api/templates/ --lint
     uv run djlint api/templates/ --check
     uv run ruff format --check api/ scraper/
+    uv run ruff check
 
 # Checks for API endpoints using Schemathesis (fuzzing)
 schemathesis:

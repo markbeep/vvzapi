@@ -22,11 +22,11 @@ from typing import Final, Literal
 
 from fastapi import Request
 
-from api.env import Settings
 from api.analytics.clickhouse import writer
-from api.util.parse_query import AND, OR, Operator
 from api.analytics.privacy import hasher
 from api.analytics.prometheus import SEARCH_STAGE_DURATION
+from api.env import Settings
+from api.util.parse_query import AND, OR, Operator
 
 # `crawler` = search engines, AI crawlers, SEO/monitoring/scanner bots.
 # `app`     = a programmatic client: HTTP library, SDK, CLI or custom client.

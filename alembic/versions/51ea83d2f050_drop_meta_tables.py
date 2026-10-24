@@ -16,8 +16,9 @@ table whose rows the cache database does not hold. That also covers an import th
 skipped because the source table lacks a column the merge expects.
 """
 
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence, Union, cast
+from typing import cast
 
 from sqlalchemy import Connection, create_engine, inspect, text
 
@@ -26,9 +27,9 @@ from api.env import Settings
 
 # revision identifiers, used by Alembic.
 revision: str = "51ea83d2f050"
-down_revision: Union[str, Sequence[str], None] = "fa7834bf8f88"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "fa7834bf8f88"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 MERGED_TABLES = ("httpcache", "lastcleanup")
 _MERGE_HINT = "run `alembic -n meta_db upgrade heads` first"
