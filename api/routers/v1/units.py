@@ -27,13 +27,13 @@ router = APIRouter(prefix="/unit", tags=["Learning Units"])
 
 @router.get(
     "/{unit_id}/get",
-    response_model=LearningUnit | None,
+    response_model=LearningUnit,
     responses={404: {"description": "Learning unit not found"}},
 )
 async def get_unit(
     unit_id: Int64,
     session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
-) -> LearningUnit | None:
+) -> LearningUnit:
     with tracer.start_as_current_span("get_unit") as span:
         span.set_attribute("unit_id", unit_id)
         unit = await session.get(LearningUnit, unit_id)
