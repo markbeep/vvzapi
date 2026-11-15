@@ -28,7 +28,7 @@ Parameters:
 - `q` (required): the search query string using the syntax described below
 - `offset`: pagination offset (default 0)
 - `limit`: number of results per page (default 20)
-- `order_by`: field to sort by — one of: title, title_german, title_english, number, credits, year, semester, lecturer, department, level, language, coursereview, descriptions, offered, examtype
+- `order_by`: field to sort by — one of: title, title_german, title_english, number, credits, year, semester, semkez, lecturer, department, level, language, coursereview. `year` sorts chronologically.
 - `order`: "desc" (default) or "asc"
 
 The full response JSON contains:
@@ -72,6 +72,7 @@ Each key also has short aliases for convenience.
 | credits              | c, ects, mv              | Number of ECTS credits. Supports comparison operators. |
 | year                 | y                        | Academic year, e.g. 2024. Supports comparison operators. |
 | semester             | s                        | Semester type: S or FS for Spring/Summer, W or HS for Autumn/Winter. |
+| semkez               | —                        | Exact semester in `YYYY[S/W]` form, e.g. `2025W`. |
 | examtype             | e                        | Type of examination, e.g. "Session Examination", "Graded Semester Performance". |
 | descriptions         | d                        | Searches all description fields (abstract, objectives, content, literature, comments, etc.) in both languages. |
 | descriptions_english | de                       | Searches description fields in English only. |
@@ -95,6 +96,22 @@ ETH Zurich operates on a two-semester academic year:
 When filtering by semester, all four abbreviations are accepted: `s:HS`, `s:W`, `s:FS`, `s:S`. The aliases `H` and `F` also work (`s:H` for Herbstsemester, `s:F` for Frühlingssemester).
 
 When combined with a year filter, note that the year refers to the academic year as catalogued by ETH — e.g., `y:2025 s:HS` means the Autumn semester starting in September 2025, and `y:2026 s:FS` means the Spring semester starting in February 2026.
+
+## API quirks
+
+- **Search groups by course number.** Once any unit of a number matches, all its historical units are returned. Use the `semesters` map from `/api/v0/search/compact` or filter client-side by `semkez` if you only want the matching semester.
+- **Full-search `units` are newest-first** within each course number.
+- **`NOT` and wildcards are unsupported.** Negate with `-term` and quote multi-word values.
+- **Section vs. unit `level`.** `list_sections.level` is the section depth; prefer the `depth` alias. `list_units.level` is a degree enum (BSC, MSC, ...).
+- **List endpoints return bare IDs**, except `/api/v1/lecturer/list`, which returns lecturer objects.
+- **`get_unit` excludes lecturers and course times.** Use `get_unit_lecturers`, `get_unit_examiners` and `get_unit_courses`.
+- **`get_unit_sections` includes ancestor sections** by default; pass `direct=true` for only directly linked sections.
+- **`credits` is the ECTS field.** `levels` and `departments` are lists.
+- **Unknown unit, lecturer or section IDs return 404** on the corresponding `get` endpoint.
+- **Section names can be null in one language**: `name` (German) or `name_english`.
+- **Semesters 2009–2019 are missing** from the dataset entirely.
+- **The latest semester may lag** behind the VVZ website.
+- **`/api/v2` was removed**; use `/api/v0` for search.
 
 ## Comparison Operators
 
