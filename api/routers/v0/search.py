@@ -359,6 +359,26 @@ def _build_boolean_clause(op: AND | OR):
                             value="FS" if sem_filter == "S" else "HS",
                         )
                     )
+                case "semkez":
+                    semkez = filter_.value.upper()
+                    if (
+                        len(semkez) != 5
+                        or not semkez[:4].isdigit()
+                        or semkez[4] not in {"S", "W"}
+                    ):
+                        raise ValueError(f"Invalid semkez: {filter_.value}")
+                    if filter_.operator == Operator.ne:
+                        clause = col(LearningUnit.semkez) != semkez
+                    else:
+                        clause = col(LearningUnit.semkez) == semkez
+                    booleans.append(clause)
+                    filters_used.ops.append(
+                        FilterOperator(
+                            key=filter_.key,
+                            operator=filter_.operator,
+                            value=semkez,
+                        )
+                    )
                 case "lecturer":
                     clause = or_(
                         func.concat(Lecturer.name, " ", Lecturer.surname).like(
@@ -801,6 +821,8 @@ async def match_filters(
                 order_by_clauses = [col(LearningUnit.credits)]
             case "semester":
                 order_by_clauses = [semester]
+            case "semkez":
+                order_by_clauses = [col(LearningUnit.semkez)]
             case "lecturer":
                 order_by_clauses = [col(Lecturer.surname), col(Lecturer.name)]
             case "department":

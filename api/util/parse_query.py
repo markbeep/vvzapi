@@ -33,6 +33,7 @@ QueryKey = TLiteral[
     "credits",
     "year",
     "semester",
+    "semkez",
     "lecturer",
     "descriptions",
     "descriptions_german",
