@@ -114,7 +114,12 @@ async def build_vvz_filter[T: Select[Any] | SelectOfScalar[Any]](
         if filters.number is not None:
             query_filters.append(LearningUnit.number == filters.number)
         if filters.title is not None:
-            query_filters.append(col(LearningUnit.title).like(f"%{filters.title}%"))
+            query_filters.append(
+                or_(
+                    col(LearningUnit.title).like(f"%{filters.title}%"),
+                    col(LearningUnit.title_english).like(f"%{filters.title}%"),
+                )
+            )
         if filters.lecturer_id is not None:
             query_filters.append(
                 or_(
