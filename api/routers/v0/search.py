@@ -280,7 +280,9 @@ def _build_boolean_clause(op: AND | OR):
                     try:
                         ects_value = float(filter_.value)
                     except ValueError:
-                        continue
+                        raise ValueError(
+                            f"Invalid credits value: {filter_.value}"
+                        ) from None
                     match filter_.operator:
                         case Operator.eq:
                             booleans.append(col(LearningUnit.credits) == ects_value)
@@ -297,7 +299,7 @@ def _build_boolean_clause(op: AND | OR):
                     filters_used.ops.append(filter_)
                 case "year":
                     if not filter_.value.isdigit():
-                        continue
+                        raise ValueError(f"Invalid year: {filter_.value}")
                     year_value = int(filter_.value)
                     match filter_.operator:
                         case Operator.eq:
@@ -336,7 +338,7 @@ def _build_boolean_clause(op: AND | OR):
                         "F",
                         "H",
                     ]:
-                        continue
+                        raise ValueError(f"Invalid semester: {filter_.value}")
                     sem_filter = filter_.value[0].upper()
                     if sem_filter == "F":  # fs
                         sem_filter = "S"
@@ -534,7 +536,7 @@ def _build_boolean_clause(op: AND | OR):
                 case "department":
                     closest_dept = Department.closest_match(filter_.value)
                     if not closest_dept:
-                        continue
+                        raise ValueError(f"Unknown department: {filter_.value}")
                     subquery = select(UnitDepartmentView.unit_id).where(
                         UnitDepartmentView.department_id == closest_dept.value
                     )
@@ -550,7 +552,11 @@ def _build_boolean_clause(op: AND | OR):
                         )
                     )
                 case "level":
-                    clause = col(LearningUnit.levels).contains(filter_.value)
+                    try:
+                        level_value = Level(filter_.value.upper())
+                    except ValueError:
+                        raise ValueError(f"Invalid level: {filter_.value}") from None
+                    clause = col(LearningUnit.levels).contains(level_value.value)
                     if filter_.operator == Operator.ne:
                         clause = not_(clause)
                     booleans.append(clause)
@@ -558,7 +564,7 @@ def _build_boolean_clause(op: AND | OR):
                         FilterOperator(
                             key=filter_.key,
                             operator=filter_.operator,
-                            value=filter_.value.upper(),
+                            value=level_value.value,
                         )
                     )
                 case "language":
@@ -590,7 +596,9 @@ def _build_boolean_clause(op: AND | OR):
                     try:
                         rating_value = float(filter_.value)
                     except ValueError:
-                        continue
+                        raise ValueError(
+                            f"Invalid coursereview value: {filter_.value}"
+                        ) from None
                     match filter_.operator:
                         case Operator.eq:
                             booleans.append(average_rating == rating_value)
@@ -628,7 +636,7 @@ def _build_boolean_clause(op: AND | OR):
                         "n",
                         "f",
                     }:
-                        continue
+                        raise ValueError(f"Invalid restricted value: {filter_.value}")
                     if filter_.operator == Operator.ne:
                         restricted = not restricted
                     if restricted:
@@ -1384,23 +1392,20 @@ async def run_search(
                 )
                 count = matched.count
                 filters_used = matched.filters_used
-            except ValueError:
-                span.set_attribute("error", "ValueError in query")
+            except ValueError as exc:
+                raise HTTPException(
+                    status_code=HTTP_400_BAD_REQUEST, detail=str(exc)
+                ) from exc
             end = default_timer()
             exec_time_ms = (end - start) * 1000
 
         duration_seconds = default_timer() - started
 
-        if filters_used is None:
-            parsed_query = "ERROR IN QUERY"
-            filters: list[tuple[str, str, int]] = []
-            boolean_op = "none"
-        else:
-            parsed_query = str(filters_used)
-            if parsed_query.startswith("(") and parsed_query.endswith(")"):
-                parsed_query = parsed_query[1:-1]
-            filters = query_filters(filters_used)
-            boolean_op = boolean_shape(filters_used, len(filters))
+        parsed_query = str(filters_used)
+        if parsed_query.startswith("(") and parsed_query.endswith(")"):
+            parsed_query = parsed_query[1:-1]
+        filters = query_filters(filters_used)
+        boolean_op = boolean_shape(filters_used, len(filters))
 
         filter_keys = {key for key, _, _ in filters}
         query_type = categorize_query(query, filter_keys)
