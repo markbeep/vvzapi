@@ -134,11 +134,13 @@ async def get_section(
 
         sub_units = (
             await session.exec(
-                select(UnitSectionLink).where(
+                select(UnitSectionLink.unit_id, UnitSectionLink.type)
+                .where(
                     col(UnitSectionLink.section_id).in_(
                         [x.id for x in child_sections] + [section_id]
                     )
                 )
+                .distinct()
             )
         ).all()
 
@@ -150,8 +152,8 @@ async def get_section(
             section,
             update={
                 "learning_units": [
-                    LearningUnitType(id=unit.unit_id, type=unit.type)
-                    for unit in sub_units
+                    LearningUnitType(id=unit_id, type=unit_type)
+                    for unit_id, unit_type in sub_units
                 ],
                 "children": child_sections,
                 "parents": parent_sections,

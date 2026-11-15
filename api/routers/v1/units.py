@@ -195,7 +195,9 @@ async def list_units(
             ects_max=ects_max,
             content_search=content_search,
         )
-        query = await build_vvz_filter(session, select(LearningUnit.id), filters)
+        query = await build_vvz_filter(
+            session, select(LearningUnit.id).distinct(), filters
+        )
         results = (
             await session.exec(
                 query.order_by(col(LearningUnit.id).asc()).offset(offset).limit(limit)
