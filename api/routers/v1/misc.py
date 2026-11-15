@@ -7,7 +7,7 @@ from sqlalchemy.sql.functions import count
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from api.models import BaseModel, LearningUnit
+from api.models import BaseModel, Course, LearningUnit, Lecturer, Section
 from api.util.db import aget_session
 from api.util.version import get_api_version
 
@@ -28,10 +28,18 @@ async def get_metrics(
     session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
 ) -> MetricsResponse:
     with tracer.start_as_current_span("get_metrics"):
-        total_learning_units = (await session.exec(select(count("*")))).one()
-        total_courses = (await session.exec(select(count("*")))).one()
-        total_lecturers = (await session.exec(select(count("*")))).one()
-        total_sections = (await session.exec(select(count("*")))).one()
+        total_learning_units = (
+            await session.exec(select(count("*")).select_from(LearningUnit))
+        ).one()
+        total_courses = (
+            await session.exec(select(count("*")).select_from(Course))
+        ).one()
+        total_lecturers = (
+            await session.exec(select(count("*")).select_from(Lecturer))
+        ).one()
+        total_sections = (
+            await session.exec(select(count("*")).select_from(Section))
+        ).one()
 
         return MetricsResponse(
             total_learning_units=total_learning_units,
