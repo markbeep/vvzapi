@@ -3,7 +3,7 @@ from typing import Any, cast
 from opentelemetry import trace
 from pydantic import BaseModel
 from sqlalchemy import ColumnExpressionArgument
-from sqlmodel import and_, col, or_
+from sqlmodel import and_, col, or_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql._expression_select_cls import Select, SelectOfScalar
 
@@ -13,6 +13,7 @@ from api.models import (
     Lecturer,
     Level,
     Periodicity,
+    UnitDepartmentView,
     UnitExaminerLink,
     UnitLecturerLink,
     UnitSectionLink,
@@ -104,7 +105,11 @@ async def build_vvz_filter[T: Select[Any] | SelectOfScalar[Any]](
             query_filters.append(col(LearningUnit.levels).contains(filters.level))
         if filters.department is not None:
             query_filters.append(
-                col(LearningUnit.departments).contains(filters.department)
+                col(LearningUnit.id).in_(
+                    select(UnitDepartmentView.unit_id).where(
+                        UnitDepartmentView.department_id == filters.department
+                    )
+                )
             )
         if filters.number is not None:
             query_filters.append(LearningUnit.number == filters.number)
