@@ -37,7 +37,14 @@ async def list_sections(
         ),
     ] = False,
     # Custom filters
-    level: Annotated[Nullable[Int64], Query(description="Level of the section")] = None,
+    depth: Annotated[
+        Nullable[Int64],
+        Query(description="Section depth (0 = top-level programme)"),
+    ] = None,
+    level: Annotated[
+        Nullable[Int64],
+        Query(description="Deprecated alias for depth", deprecated=True),
+    ] = None,
     name_search: Annotated[
         Nullable[str], Query(description="Search string for section names")
     ] = None,
@@ -50,13 +57,14 @@ async def list_sections(
     ] = None,
 ) -> Sequence[int]:
     with tracer.start_as_current_span("list_sections") as span:
+        section_depth = depth if depth is not None else level
         span.set_attribute("limit", limit)
         span.set_attribute("offset", offset)
         span.set_attribute("sort_lex", sort_lex)
         if semkez:
             span.set_attribute("semkez", semkez)
-        if level:
-            span.set_attribute("level", level)
+        if section_depth is not None:
+            span.set_attribute("depth", section_depth)
         if parent_id:
             span.set_attribute("parent_id", parent_id)
 
@@ -67,7 +75,7 @@ async def list_sections(
             )
             .where(
                 Section.semkez == semkez if semkez is not None else True,
-                Section.level == level if level is not None else True,
+                Section.level == section_depth if section_depth is not None else True,
                 or_(
                     col(Section.name).like(f"%{name_search}%"),
                     col(Section.name_english).like(f"%{name_search}%"),
