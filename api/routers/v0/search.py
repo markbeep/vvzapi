@@ -819,6 +819,8 @@ async def match_filters(
                 order_by_clauses = [col(LearningUnit.number)]
             case "credits":
                 order_by_clauses = [col(LearningUnit.credits)]
+            case "year":
+                order_by_clauses = [year, semester]
             case "semester":
                 order_by_clauses = [semester]
             case "semkez":
@@ -835,8 +837,7 @@ async def match_filters(
                 if average_rating is not None:
                     order_by_clauses = [average_rating]
             case (
-                "year"
-                | "descriptions"
+                "descriptions"
                 | "descriptions_english"
                 | "descriptions_german"
                 | "offered"
