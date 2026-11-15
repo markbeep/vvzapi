@@ -1069,7 +1069,11 @@ async def match_filters(
                     full={
                         number: GroupedLearningUnits(
                             number=number,
-                            units=units,
+                            units=sorted(
+                                units,
+                                key=lambda unit: semkez_to_comparable(unit.semkez),
+                                reverse=True,
+                            ),
                             rating=ratings.get(number),
                         )
                         for number, units in numbered_units.items()
