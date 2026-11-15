@@ -4,7 +4,8 @@
     limit: int,
     order_by: QueryKey,
     order: str,
-    results: SearchResponse,
+    results: SearchResponse | None = None,
+    error: str | None = None,
     view: Literal["big", "compact"],
 #}
 
@@ -17,7 +18,7 @@
          class="flex flex-col max-w-5xl mx-auto {% if view == "compact" %}space-y-2{% else %}space-y-4{% endif %}">
 
         {# djlint:off #}
-        <Index.Results query={{ query }} page={{ page }} limit={{ limit }} order_by={{ order_by }} order={{ order }} results={{ results }} view={{ view }} />
+        <Index.Results query={{ query }} page={{ page }} limit={{ limit }} order_by={{ order_by }} order={{ order }} results={{ results }} error={{ error }} view={{ view }} />
         {# djlint:on #}
 
     </div>

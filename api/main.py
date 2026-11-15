@@ -272,17 +272,39 @@ async def root(
         if limit is None:
             limit = 20 if view == "big" else 50
 
-        results = await run_search(
-            query,
-            offset=(page - 1) * limit,
-            limit=limit,
-            order_by=order_by,
-            order=order,
-            source="web",
-            view=view,
-            page=page,
-            request=request,
-        )
+        # swap out results with fixijs if available, else handle request as normal
+        layout_name = "Index.WithLayout"
+        if request.headers.get("fx-request") == "true":
+            layout_name = "Index.Results"
+
+        try:
+            results = await run_search(
+                query,
+                offset=(page - 1) * limit,
+                limit=limit,
+                order_by=order_by,
+                order=order,
+                source="web",
+                view=view,
+                page=page,
+                request=request,
+            )
+        except HTTPException as exc:
+            if exc.status_code != 400:
+                raise
+            return catalog_response(
+                layout_name,
+                status_code=400,
+                query=query,
+                page=page,
+                limit=limit,
+                order_by=order_by,
+                order=order,
+                results=None,
+                error=str(exc.detail),
+                view=view,
+                headers={"Vary": "FX-Request"},
+            )
 
         span.set_attribute("result_count", results.total)
         span.set_attribute("exec_time_ms", results.exec_time_ms)
@@ -297,11 +319,6 @@ async def root(
                         status_code=303,
                         headers={"Vary": "FX-Request"},
                     )
-
-        # swap out results with fixijs if available, else handle request as normal
-        layout_name = "Index.WithLayout"
-        if request.headers.get("fx-request") == "true":
-            layout_name = "Index.Results"
 
         return catalog_response(
             layout_name,

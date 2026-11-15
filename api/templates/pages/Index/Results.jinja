@@ -4,11 +4,18 @@
     limit: int,
     order_by: QueryKey,
     order: str,
-    results: SearchResponse,
+    results: SearchResponse | None = None,
+    error: str | None = None,
     view: Literal["big", "compact"],
 #}
 
-{% if results.total %}
+{% if error %}
+    <div role="alert" class="text-center text-gray-500 mt-10">
+        <p class="text-xs">
+            {{ error|e }} · See the <a class="link" href="/guide">search guide</a>.
+        </p>
+    </div>
+{% elif results.total %}
     <div class="text-gray-600">
         <p class="text-xs pb-2">
             Found {{ results.total }} relevant result{{ results.total|pluralize }}
