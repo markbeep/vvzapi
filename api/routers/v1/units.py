@@ -14,6 +14,7 @@ from api.models import (
     Periodicity,
     UnitExaminerLink,
     UnitLecturerLink,
+    UnitSectionLink,
 )
 from api.util.db import aget_session
 from api.util.pydantic_type import Int64, Nullable
@@ -48,12 +49,29 @@ async def get_unit(
 async def get_unit_sections(
     unit_id: Int64,
     session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
+    direct: Annotated[
+        bool,
+        Query(description="Only return sections directly linked to the unit"),
+    ] = False,
 ) -> Sequence[int]:
     with tracer.start_as_current_span("get_unit_sections") as span:
         span.set_attribute("unit_id", unit_id)
-        results = (await session.exec(get_parent_from_unit(unit_id))).all()
+        span.set_attribute("direct", direct)
+        if direct:
+            results = (
+                await session.exec(
+                    select(UnitSectionLink.section_id)
+                    .where(UnitSectionLink.unit_id == unit_id)
+                    .distinct()
+                )
+            ).all()
+        else:
+            results = [
+                sec.id
+                for sec in (await session.exec(get_parent_from_unit(unit_id))).all()
+            ]
         span.set_attribute("result_count", len(results))
-        return [sec.id for sec in results]
+        return results
 
 
 @router.get("/{unit_id}/lecturers", response_model=Sequence[int])
