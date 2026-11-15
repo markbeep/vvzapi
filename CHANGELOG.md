@@ -1,5 +1,50 @@
 # Changelog
 
+## [2.1.0](https://github.com/markbeep/vvzapi/compare/v2.0.0...v2.1.0) (2026-11-15)
+
+
+### Features
+
+* **api:** add depth alias to section list ([fd60fe1](https://github.com/markbeep/vvzapi/commit/fd60fe1e571fdfc06110aa768f254fe1101f7a87))
+* **api:** add direct section filter to unit sections ([e306db2](https://github.com/markbeep/vvzapi/commit/e306db2751a73a385a89833f1042d7e7d76aceae))
+* **search:** support semkez filter ([aa07b47](https://github.com/markbeep/vvzapi/commit/aa07b4775fec027e4ae443cbc5cbec3a9b1a8539))
+
+
+### Bug Fixes
+
+* **api:** correct misc metrics counts ([43441b1](https://github.com/markbeep/vvzapi/commit/43441b18f96e76b812aa69ee3fb9447bbd11842c))
+* **api:** deduplicate unit and section results ([3636ece](https://github.com/markbeep/vvzapi/commit/3636ece47b3a718e411d484ba4ffbe1b7dbe35eb))
+* **api:** filter units by exact department ([05e536d](https://github.com/markbeep/vvzapi/commit/05e536d1296ba0e39a8fc28979c25454514c15fa))
+* **api:** filter units by lecturer first name ([e3d2edc](https://github.com/markbeep/vvzapi/commit/e3d2edc9c6ea6c5f5c19e28dbc803edaba57b918))
+* **api:** search unit titles in both languages ([570e7fb](https://github.com/markbeep/vvzapi/commit/570e7fbd8064fa6c1d4db5cf8b448be5b2e888b6))
+* **search:** make order_by year sort by year ([5c0e05c](https://github.com/markbeep/vvzapi/commit/5c0e05c226612987090939db718193e54a85d3c3))
+* **search:** reject invalid filter values ([51cc754](https://github.com/markbeep/vvzapi/commit/51cc754318bd38042a5b2be5a7dc4f863c145498))
+* **search:** reject unknown filter keys ([b115669](https://github.com/markbeep/vvzapi/commit/b115669c63eed1e6c1cd02d57b790c41be901256))
+* **search:** render query errors in frontend ([0f8dc02](https://github.com/markbeep/vvzapi/commit/0f8dc02560b24d83f2a40a906e5f9b21af44e493))
+* **search:** sort full search units newest first ([6115af5](https://github.com/markbeep/vvzapi/commit/6115af5fbae086aee787a6858c4bbf45d9eac9e3))
+
+
+### Dependencies
+
+* update dependencies ([22097d0](https://github.com/markbeep/vvzapi/commit/22097d006865cce544317fcc8b1d592f5a67f8ef))
+* update ruff typing changes ([22097d0](https://github.com/markbeep/vvzapi/commit/22097d006865cce544317fcc8b1d592f5a67f8ef))
+
+
+### Documentation
+
+* document API quirks and parameters ([e880979](https://github.com/markbeep/vvzapi/commit/e88097972b8ef8780bdfc0bcaafe4cd73fc692bd))
+
+
+### Styles
+
+* **search:** reformat templates with djlint ([22097d0](https://github.com/markbeep/vvzapi/commit/22097d006865cce544317fcc8b1d592f5a67f8ef))
+
+
+### Code Refactoring
+
+* **api:** mark 404 responses non-nullable ([30ac25d](https://github.com/markbeep/vvzapi/commit/30ac25d7266af751ca5fd3460138a964df34c326))
+* **api:** mark unit lookup non-nullable ([b566024](https://github.com/markbeep/vvzapi/commit/b5660247add43cabfe2fcb3d5eae8788bb750034))
+
 ## [2.0.0](https://github.com/markbeep/vvzapi/compare/v1.13.3...v2.0.0) (2026-10-23)
 
 
