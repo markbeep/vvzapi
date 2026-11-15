@@ -114,13 +114,13 @@ class SectionUnitResponse(SectionBase):
 
 @router.get(
     "/{section_id}/get",
-    response_model=SectionUnitResponse | None,
+    response_model=SectionUnitResponse,
     responses={404: {"description": "Section not found"}},
 )
 async def get_section(
     session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
     section_id: Int64,
-) -> SectionUnitResponse | None:
+) -> SectionUnitResponse:
     with tracer.start_as_current_span("get_section") as span:
         span.set_attribute("section_id", section_id)
         child_sections = await get_child_sections(session, section_id)

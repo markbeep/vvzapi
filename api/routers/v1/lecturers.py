@@ -18,13 +18,13 @@ router = APIRouter(prefix="/lecturer", tags=["Lecturers"])
 
 @router.get(
     "/get/{lecturer_id}",
-    response_model=Lecturer | None,
+    response_model=Lecturer,
     responses={404: {"description": "Lecturer not found"}},
 )
 async def get_lecturer(
     session: Annotated[AsyncSession, Depends(aget_session, scope="function")],
     lecturer_id: Int64,
-) -> Lecturer | None:
+) -> Lecturer:
     with tracer.start_as_current_span("get_lecturer") as span:
         span.set_attribute("lecturer_id", lecturer_id)
         lecturer = await session.get(Lecturer, lecturer_id)
