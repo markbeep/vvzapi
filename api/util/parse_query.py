@@ -10,6 +10,7 @@ from pyparsing import (
     Literal,
     NotAny,
     Optional,
+    ParseException,
     QuotedString,
     Regex,
     Word,
@@ -296,6 +297,8 @@ def _build_ops(parsed: ParsedType) -> AND | OR:
             unparsed = _parse_operator(item)
             if unparsed:
                 ops.append(unparsed)
+            elif isinstance(item, str):
+                raise ParseException("", 0, f"Unknown or invalid search term: {item}")
             else:
                 ops.append(_build_ops(item))
         return OR(ops=ops) if ored else AND(ops=ops)
