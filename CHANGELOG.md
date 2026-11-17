@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.1](https://github.com/markbeep/vvzapi/compare/v2.2.0...v2.2.1) (2026-11-17)
+
+
+### Code Refactoring
+
+* restructure files into feature-oriented structure ([09bfbb9](https://github.com/markbeep/vvzapi/commit/09bfbb91a371e115cf4a6440b6b5f6d452523d85))
+
 ## [2.2.0](https://github.com/markbeep/vvzapi/compare/v2.1.0...v2.2.0) (2026-11-17)
 
 
