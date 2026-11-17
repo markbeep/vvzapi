@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from opentelemetry import trace
 from pydantic import BaseModel, Field
 from pyparsing import ParseException
-from sqlalchemy.orm import load_only
+from sqlalchemy.orm import aliased, load_only
 from sqlalchemy.sql.elements import BinaryExpression, ColumnElement
 from sqlmodel import (
     Integer,
@@ -805,11 +805,6 @@ async def match_filters(
         # Order #
         #########
         order_by_clauses = []
-        default_order_clauses = [
-            col(LearningUnit.title_english).asc(),
-            col(LearningUnit.title).asc(),
-            year.desc(),
-        ]
         match order_by:
             case "title" | "title_english":
                 order_by_clauses = [col(LearningUnit.title_english)]
@@ -847,16 +842,38 @@ async def match_filters(
                 | "primary_target_group"
             ):
                 pass
-        if descending:
-            query = query.order_by(
-                *(x.desc() for x in order_by_clauses),
-                *(x for x in default_order_clauses),
-            )
+
+        # Grouped results are one card per course number, showing its newest unit. Sort
+        # those groups by that newest title and year, so identical titles resolve to
+        # the newer course first.
+        latest = aliased(LearningUnit)
+        latest_title = (
+            select(latest.title if order_by == "title_german" else latest.title_english)
+            .where(col(latest.number) == col(LearningUnit.number))
+            .order_by(col(latest.semkez).desc())
+            .limit(1)
+            .correlate(LearningUnit)
+            .scalar_subquery()
+        )
+        latest_semkez = (
+            select(latest.semkez)
+            .where(col(latest.number) == col(LearningUnit.number))
+            .order_by(col(latest.semkez).desc())
+            .limit(1)
+            .correlate(LearningUnit)
+            .scalar_subquery()
+        )
+        if order_by in ("title", "title_english", "title_german"):
+            number_order_clauses = [
+                latest_title.desc() if descending else latest_title.asc(),
+                latest_semkez.desc(),
+            ]
         else:
-            query = query.order_by(
-                *(x.asc() for x in order_by_clauses),
-                *(x for x in default_order_clauses),
-            )
+            number_order_clauses = [
+                *(x.desc() if descending else x.asc() for x in order_by_clauses),
+                latest_title.asc(),
+                latest_semkez.desc(),
+            ]
 
         # The final_query finds all relevant course numbers of any matched units, so that all units can be grouped by
         # number and be returned. Basically, if a unit is filtered out, but another unit of the same course number is still in the results, we want to return all units of that course number.
@@ -866,6 +883,7 @@ async def match_filters(
         valid_numbers = (
             query.with_only_columns(col(LearningUnit.number))
             .distinct()
+            .order_by(*number_order_clauses)
             .offset(offset)
             .limit(limit)
         )
@@ -873,17 +891,6 @@ async def match_filters(
         final_query = final_query.where(
             col(LearningUnit.number).in_(valid_numbers)
         ).distinct()
-
-        if descending:
-            final_query = final_query.order_by(
-                *(x.desc() for x in order_by_clauses),
-                *(x for x in default_order_clauses),
-            )
-        else:
-            final_query = final_query.order_by(
-                *(x.asc() for x in order_by_clauses),
-                *(x for x in default_order_clauses),
-            )
 
         async def _count() -> int:
             async with AsyncSession(aengine) as session:
@@ -1054,30 +1061,37 @@ async def match_filters(
                 )
 
             case SearchResultView.full:
-                count, (results, ratings) = await asyncio.gather(
-                    _count(), _full_results()
+                count, numbers_page, (results, ratings) = await asyncio.gather(
+                    _count(), _numbers_page(), _full_results()
                 )
                 numbered_units: dict[str, list[LearningUnit]] = defaultdict(list)
                 for unit in results:
                     if unit.number:
                         numbered_units[unit.number].append(unit)
+
+                full: dict[str, GroupedLearningUnits] = {}
+                # Iterate the numbers page so groups follow the `order_by` sort even
+                # when a non-matching unit of the same number would sort earlier.
+                for number in numbers_page:
+                    units = numbered_units.get(number)
+                    if not units:
+                        continue
+                    full[number] = GroupedLearningUnits(
+                        number=number,
+                        units=sorted(
+                            units,
+                            key=lambda unit: semkez_to_comparable(unit.semkez),
+                            reverse=True,
+                        ),
+                        rating=ratings.get(number),
+                    )
+
                 span.set_attribute("total_count", count)
-                span.set_attribute("result_count", len(numbered_units))
+                span.set_attribute("result_count", len(full))
                 return SearchMatch(
                     count=count,
                     filters_used=filters_used,
-                    full={
-                        number: GroupedLearningUnits(
-                            number=number,
-                            units=sorted(
-                                units,
-                                key=lambda unit: semkez_to_comparable(unit.semkez),
-                                reverse=True,
-                            ),
-                            rating=ratings.get(number),
-                        )
-                        for number, units in numbered_units.items()
-                    },
+                    full=full,
                 )
 
 
