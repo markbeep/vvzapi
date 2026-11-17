@@ -5,9 +5,9 @@ from sqlalchemy import Connection, MetaData
 from sqlmodel import SQLModel
 
 from alembic import context
-from api.env import Settings
-from api.models import BaseModel, MetadataModel
-from api.util.db import engine, meta_engine
+from api.catalog.models import BaseModel, MetadataModel
+from api.core.db import engine, meta_engine
+from api.core.env import Settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

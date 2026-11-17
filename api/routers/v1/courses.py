@@ -6,9 +6,9 @@ from opentelemetry import trace
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from api.models import Course
-from api.util.db import aget_session
-from api.util.pydantic_type import Int64
+from api.catalog.models import Course
+from api.core.db import aget_session
+from api.core.pydantic_type import Int64
 
 tracer = trace.get_tracer(__name__)
 

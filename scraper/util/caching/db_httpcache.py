@@ -12,8 +12,8 @@ from scrapy.responsetypes import responsetypes
 from scrapy.settings import BaseSettings
 from sqlmodel import Session
 
-from api.models import HTTPCache
-from api.util.db import meta_engine
+from api.catalog.models import HTTPCache
+from api.core.db import meta_engine
 from scraper.util.caching.rescrape import should_rescrape
 from scraper.util.url import normalized_url
 

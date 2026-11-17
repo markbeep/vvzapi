@@ -10,8 +10,8 @@ from rapidfuzz import fuzz, process, utils
 from sqlalchemy import Index
 from sqlmodel import INTEGER, JSON, Column, Field, SQLModel
 
-from api.util.pydantic_type import EnumList, PydanticType
-from api.util.vvz_types import CourseTypeEnum, Group, TimeSlot
+from api.catalog.types import CourseTypeEnum, Group, TimeSlot
+from api.core.pydantic_type import EnumList, PydanticType
 
 
 class BaseModel(SQLModel):
@@ -638,21 +638,3 @@ Metadata tables (`HTTPCache`, `LastCleanup`) are deliberately absent to not be a
 
 
 """
-
-
-DUMP_TABLES: tuple[type[BaseModel], ...] = (
-    UnitExaminerLink,
-    UnitLecturerLink,
-    CourseLecturerLink,
-    UnitSectionLink,
-    LearningUnit,
-    Section,
-    UnitTypeLegends,
-    Course,
-    Lecturer,
-    FinishedScrapingSemester,
-    Rating,
-    LatestSemkez,
-    SectionPathView,
-    UnitDepartmentView,
-)

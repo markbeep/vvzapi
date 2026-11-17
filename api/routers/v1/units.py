@@ -7,7 +7,7 @@ from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette.status import HTTP_404_NOT_FOUND
 
-from api.models import (
+from api.catalog.models import (
     Department,
     LearningUnit,
     Level,
@@ -16,10 +16,10 @@ from api.models import (
     UnitLecturerLink,
     UnitSectionLink,
 )
-from api.util.db import aget_session
-from api.util.pydantic_type import Int64, Nullable
-from api.util.sections import get_parent_from_unit
-from api.util.unit_filter import VVZFilters, build_vvz_filter
+from api.catalog.sections import get_parent_from_unit
+from api.core.db import aget_session
+from api.core.pydantic_type import Int64, Nullable
+from api.search.filters import VVZFilters, build_vvz_filter
 
 tracer = trace.get_tracer(__name__)
 

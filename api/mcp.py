@@ -24,13 +24,13 @@ from pydantic import Field, JsonValue
 from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette.routing import Route
 
-from api.env import Settings
-from api.models import Department, Level, Periodicity
-from api.routers.v0.search import SearchResultView, run_search
+from api.catalog.models import Department, Level, Periodicity
+from api.core.db import aget_session
+from api.core.env import Settings
+from api.core.logs import KeywordLoggerAdapter
+from api.core.version import get_api_version
 from api.routers.v1 import courses, lecturers, misc, sections, units
-from api.util.db import aget_session
-from api.util.logs import KeywordLoggerAdapter
-from api.util.version import get_api_version
+from api.search.router import SearchResultView, run_search
 
 logger = KeywordLoggerAdapter(logging.getLogger(__name__), {})
 

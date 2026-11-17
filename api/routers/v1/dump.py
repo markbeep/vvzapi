@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from api.env import Settings
+from api.core.env import Settings
 
 tracer = trace.get_tracer(__name__)
 
@@ -34,7 +34,7 @@ def get_data_dump(request: Request):  # limiter requires request parameter
     ## Data Dump Endpoint
     This downloads a ZIP file containing a trimmed copy of the course-data tables; metadata/cache tables as well as as any constraints are excluded.
 
-    Table structure, definition, and reasonings can be found in [models.py](https://github.com/markbeep/vvzapi/blob/main/api/models.py).
+    Table structure, definition, and reasonings can be found in [models.py](https://github.com/markbeep/vvzapi/blob/main/api/catalog/models.py).
 
     **Note:** Access the `/api/v1/dump/metadata` endpoint to get the size and last modified value of the database dump
     to avoid downloading it unnecessarily.

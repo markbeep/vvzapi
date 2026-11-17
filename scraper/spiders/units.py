@@ -14,7 +14,7 @@ from scrapy.http import Response
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import Rule
 
-from api.models import (
+from api.catalog.models import (
     Course,
     CourseHourEnum,
     CourseLecturerLink,
@@ -32,7 +32,7 @@ from api.models import (
     UnitType,
     UnitTypeLegends,
 )
-from api.util.vvz_types import (
+from api.catalog.types import (
     CourseTypeEnum,
     Group,
     GroupSignupEnd,

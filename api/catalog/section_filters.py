@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from sqlmodel import col, func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from api.models import Section
-from api.util.db import aengine
+from api.catalog.models import Section
+from api.core.db import aengine
 
 
 @dataclass(frozen=True)

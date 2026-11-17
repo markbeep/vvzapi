@@ -1,6 +1,6 @@
 import httpx
 
-from api.env import Settings
+from api.core.env import Settings
 
 
 async def send_flagged_webhook(*, unit_id: int):

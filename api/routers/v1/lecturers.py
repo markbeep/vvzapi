@@ -7,9 +7,9 @@ from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette.status import HTTP_404_NOT_FOUND
 
-from api.models import Lecturer
-from api.util.db import aget_session
-from api.util.pydantic_type import Int64
+from api.catalog.models import Lecturer
+from api.core.db import aget_session
+from api.core.pydantic_type import Int64
 
 tracer = trace.get_tracer(__name__)
 

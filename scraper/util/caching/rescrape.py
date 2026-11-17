@@ -13,8 +13,8 @@ from time import time
 
 from sqlmodel import col, func, not_, or_, select
 
-from api.models import HTTPCache
-from api.util.db import get_meta_session
+from api.catalog.models import HTTPCache
+from api.core.db import get_meta_session
 from scraper.env import Settings
 
 settings = Settings()

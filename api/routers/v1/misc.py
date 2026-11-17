@@ -7,9 +7,9 @@ from sqlalchemy.sql.functions import count
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from api.models import BaseModel, Course, LearningUnit, Lecturer, Section
-from api.util.db import aget_session
-from api.util.version import get_api_version
+from api.catalog.models import BaseModel, Course, LearningUnit, Lecturer, Section
+from api.core.db import aget_session
+from api.core.version import get_api_version
 
 tracer = trace.get_tracer(__name__)
 

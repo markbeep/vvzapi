@@ -5,9 +5,8 @@ from sqlalchemy.ext.asyncio.engine import create_async_engine
 from sqlmodel import Session, text
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from api.env import Settings
-from api.models import DUMP_TABLES
-from api.util.pydantic_type import json_serializer
+from api.core.env import Settings
+from api.core.pydantic_type import json_serializer
 
 # SQLite allows a single writer at a time. A busy timeout makes a connection wait for
 # the lock instead of immediately raising "database is locked", which is what the
@@ -78,14 +77,3 @@ async def aget_meta_session():
         await session.execute(text("pragma mmap_size=30000000000"))
         await session.execute(text("PRAGMA foreign_keys=ON"))
         yield session
-
-
-def get_dump_table_names() -> list[str]:
-    """Table names served by the /dump export, see DUMP_TABLES."""
-    # getattr: SQLModel declares __tablename__ as an InstrumentedAttribute, while the
-    # runtime value of a `table=True` model is always the declared name string.
-    return sorted(
-        table_name
-        for cls in DUMP_TABLES
-        if isinstance(table_name := getattr(cls, "__tablename__", None), str)
-    )

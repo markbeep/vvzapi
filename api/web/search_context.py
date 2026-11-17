@@ -5,10 +5,10 @@ from urllib.parse import urlencode
 
 from fastapi import Request
 
-from api.models import Department, Level
-from api.routers.v0.search import SearchResponse
-from api.util.parse_query import QueryKey, offered_in_query
-from api.util.section_filters import SectionFilterData, get_section_filter_data
+from api.catalog.models import Department, Level
+from api.catalog.section_filters import SectionFilterData, get_section_filter_data
+from api.search.query import QueryKey, offered_in_query
+from api.search.schemas import SearchResponse
 
 type SortKey = Literal["title", "number", "credits", "latest", "coursereview"]
 type SortDirection = Literal["asc", "desc"]
