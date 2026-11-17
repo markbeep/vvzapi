@@ -1,0 +1,86 @@
+{#def
+    grouped: GroupedLearningUnits,
+    query: str,
+#}
+
+{% set unit = grouped.latest_unit() %}
+
+{% if unit %}
+    <tr class="ns-row">
+        <td class="ns-course">
+            <div class="ns-course-line">
+                <span class="ns-number">{{ unit.number }}</span>
+                <a class="ns-title"
+                   href="/unit/{{ unit.id }}#q={{ query|urlquote }}"
+                   title="{{ unit.title_english|e if unit.title_english else unit.title|e }}">
+                    {{- unit.title_english if unit.title_english else unit.title -}}
+                </a>
+            </div>
+            {% if unit.abstract_english or unit.abstract %}
+                <p class="ns-abstract">{{ unit.abstract_english if unit.abstract_english else unit.abstract }}</p>
+            {% endif %}
+            <div class="ns-row-meta">
+                {% if unit.credits %}
+                    <span class="ns-meta-strong">{{ unit.credits|trim_float }} ECTS</span>
+                {% endif %}
+                {% if unit.levels %}
+                    <span>{{ unit.levels|join(", ") }}</span>
+                {% endif %}
+                {% if unit.departments %}
+                    <span title="{{ unit.departments|join(", ") }}">
+                        {% for dept in unit.departments %}
+                            {{ dept.short() }}{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </span>
+                {% endif %}
+                {% if grouped.rating is not none %}
+                    <span>CR {{ grouped.rating }}</span>
+                {% endif %}
+            </div>
+        </td>
+        <td class="ns-dept">
+            <span title="{{ unit.departments|join(", ") }}">
+                {% if unit.departments %}
+                    {% for dept in unit.departments[:2] %}
+                        {{ dept.short() }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                    {% if unit.departments|length > 2 %}+{{ unit.departments|length - 2 }}{% endif %}
+                {% else %}
+                    —
+                {% endif %}
+            </span>
+        </td>
+        <td class="ns-level">
+            {% if unit.levels %}
+                {{ unit.levels|join(", ") }}
+            {% else %}
+                —
+            {% endif %}
+        </td>
+        <td class="ns-ects">
+            {% if unit.credits %}
+                {{ unit.credits|trim_float }}
+            {% else %}
+                <span class="ns-dash">—</span>
+            {% endif %}
+        </td>
+        <td class="ns-latest">{{ unit.semkez[:4] }} {{ unit.semkez[4:] }}</td>
+        <td class="ns-cr">
+            {% if grouped.rating is not none %}
+                {{ grouped.rating }}
+            {% else %}
+                <span class="ns-dash">—</span>
+            {% endif %}
+        </td>
+        <td class="ns-actions">
+            <a href="{{ unit.vvz_url }}"
+               target="_blank"
+               rel="noopener"
+               title="Open in VVZ">VVZ</a>
+            <a href="https://coursereview.ch/course/{{ unit.number }}"
+               target="_blank"
+               rel="noopener"
+               title="Open in CourseReview">CR</a>
+        </td>
+    </tr>
+{% endif %}

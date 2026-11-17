@@ -4,7 +4,6 @@
     limit: int,
     order_by: QueryKey,
     order: str,
-    view: Literal["big", "compact"],
     results: SearchResponse,
     prefetch_next_page: bool = False,
 #}
@@ -25,16 +24,14 @@
     </label>
 
     {% set q_order_by = '&order_by=' + order_by if order_by != 'title_english' else '' %}
-    {% set default_limit = 50 if view == 'compact' else 20 %}
-    {% set q_limit = '&limit=%d' % limit if limit != default_limit else '' %}
+    {% set q_limit = '&limit=%d' % limit if limit != 20 else '' %}
     {% set q_order = '&order=' + order if order != 'asc' else '' %}
-    {% set q_view = '&view=' + view if view != 'big' else '' %}
 
     <div class="join grid grid-cols-2 w-full max-w-xs mx-auto">
         {% if page > 1 %}
-            <a href="/?q={{ query|e }}{% if page > 2 %}&page={{ page - 1 }}{% endif %}{{ q_order_by }}{{ q_limit }}{{ q_order }}{{ q_view }}"
+            <a href="/?q={{ query|e }}{% if page > 2 %}&page={{ page - 1 }}{% endif %}{{ q_order_by }}{{ q_limit }}{{ q_order }}"
                class="join-item btn btn-outline"
-               fx-action="/?q={{ query|e }}{% if page > 2 %}&page={{ page - 1 }}{% endif %}{{ q_order_by }}{{ q_limit }}{{ q_order }}{{ q_view }}"
+               fx-action="/?q={{ query|e }}{% if page > 2 %}&page={{ page - 1 }}{% endif %}{{ q_order_by }}{{ q_limit }}{{ q_order }}"
                fx-trigger="click"
                fx-target="#results"
                fx-swap="innerHTML"
@@ -48,9 +45,9 @@
         {% endif %}
 
         {% if page * limit < results.total %}
-            <a href="/?q={{ query|e }}&page={{ page + 1 }}{{ q_order_by }}{{ q_limit }}{{ q_order }}{{ q_view }}"
+            <a href="/?q={{ query|e }}&page={{ page + 1 }}{{ q_order_by }}{{ q_limit }}{{ q_order }}"
                class="join-item btn btn-outline next-page-button"
-               fx-action="/?q={{ query|e }}&page={{ page + 1 }}{{ q_order_by }}{{ q_limit }}{{ q_order }}{{ q_view }}"
+               fx-action="/?q={{ query|e }}&page={{ page + 1 }}{{ q_order_by }}{{ q_limit }}{{ q_order }}"
                fx-trigger="click"
                fx-target="#results"
                fx-swap="innerHTML"

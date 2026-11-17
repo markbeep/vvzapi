@@ -721,7 +721,7 @@ async def match_filters(
         # query to perform the initial filtering
         query = select(
             LearningUnit,
-            year := sql_cast(func.substr(LearningUnit.semkez, 1, 4), Integer),
+            sql_cast(func.substr(LearningUnit.semkez, 1, 4), Integer),
             semester := sql_cast(func.substr(LearningUnit.semkez, 5, 1), String),
         )
         # secondary query that will be used to return the sorted values
@@ -779,7 +779,9 @@ async def match_filters(
                 q: T,
             ) -> T:
                 return q.join(
-                    Rating, onclause=col(LearningUnit.number) == Rating.course_number
+                    Rating,
+                    onclause=col(LearningUnit.number) == Rating.course_number,
+                    isouter=True,
                 )
 
             query = join_rating(query)
@@ -815,7 +817,8 @@ async def match_filters(
             case "credits":
                 order_by_clauses = [col(LearningUnit.credits)]
             case "year":
-                order_by_clauses = [year, semester]
+                # Grouped year ordering is handled below, see latest_semkez.
+                pass
             case "semester":
                 order_by_clauses = [semester]
             case "semkez":
@@ -867,6 +870,20 @@ async def match_filters(
             number_order_clauses = [
                 latest_title.desc() if descending else latest_title.asc(),
                 latest_semkez.desc(),
+            ]
+        elif order_by == "year":
+            # A group is represented by its newest unit, so year ordering must use
+            # that unit's semester rather than the semester of whichever unit matched.
+            number_order_clauses = [
+                latest_semkez.desc() if descending else latest_semkez.asc(),
+                latest_title.asc(),
+            ]
+        elif order_by == "coursereview" and average_rating is not None:
+            # Keep unrated courses in the result set; only their rating is missing.
+            number_order_clauses = [
+                average_rating.is_(None),
+                average_rating.desc() if descending else average_rating.asc(),
+                latest_title.asc(),
             ]
         else:
             number_order_clauses = [

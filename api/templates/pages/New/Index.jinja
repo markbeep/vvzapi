@@ -1,0 +1,390 @@
+{#def
+    q: str = "",
+    results: SearchResponse | None = None,
+    error: str | None = None,
+    page: int = 1,
+    limit: int = 20,
+    total: int = 0,
+    result_from: int = 0,
+    to: int = 0,
+    pages: int = 1,
+    exec_time_ms: float = 0.0,
+    section_data: SectionFilterData,
+    latest_semester: str | None = None,
+    selected_programme: int | None = None,
+    selected_section: int | None = None,
+    newest: bool = False,
+    selected_semesters: Sequence[str] = (),
+    selected_levels: Sequence[str] = (),
+    selected_depts: Sequence[str] = (),
+    min_credits: int | None = None,
+    min_rating: float | None = None,
+    sort: str = "title",
+    order: str = "asc",
+    direction_label: str = "",
+    sort_links: dict[str, dict[str, object]] = {},
+    toggle_order_url: str = "/new",
+    limits: Sequence[int] = (20, 40, 60, 80, 100),
+    sort_options: Sequence[tuple[str, str]] = (),
+    levels: Sequence[str] = (),
+    departments: Sequence[tuple[str, str, str]] = (),
+    semesters: Sequence[tuple[str, str]] = (),
+    chips: Sequence[dict[str, str]] = (),
+    active_count: int = 0,
+    clear_url: str = "/new",
+    prev_url: str | None = None,
+    next_url: str | None = None,
+#}
+
+{# djlint:off #}
+<SearchLayout query={{ q }} title={{ (q + " - VVZ API") if q else "New search - VVZ API" }} description={{ ("New search results for " + q) if q else "Preview of the new VVZ API course search." }} action="/new" links={{ {"/static/new-search.css?v=" ~ version: "stylesheet"} }}>
+{# djlint:on #}
+
+<main class="grow p-4 sm:p-8">
+    <div class="new-search max-w-5xl mx-auto">
+        <div class="ns-preview">
+            <strong>Preview.</strong>
+            This is the new filter-first results view.
+            <a href="/?q={{ q|urlquote }}">Use classic search</a>
+            ·
+            <a href="https://github.com/markbeep/vvzapi/issues/82"
+               target="_blank"
+               rel="noopener">Leave feedback on GitHub</a>
+        </div>
+
+        {% if error %}
+            <div class="ns-error" role="alert">
+                <p>{{ error|e }}</p>
+                <p>
+                    Check the <a href="/guide">search syntax guide</a> or
+                    <a href="/?q={{ q|urlquote }}">use classic search</a>.
+                </p>
+            </div>
+        {% else %}
+            <form id="new-filters" method="get" action="/new" class="ns-form">
+                <input type="hidden" name="q" value="{{ q|e }}" />
+                <input type="hidden" name="order" id="ns-order" value="{{ order }}" />
+
+                <div class="ns-toolbar">
+                    <button type="button"
+                            class="ns-filters-toggle"
+                            id="ns-filters-toggle"
+                            aria-expanded="false"
+                            aria-controls="filter-panel"
+                            title="Show filters">
+                        Filters
+                        {% if active_count %}
+                            <span class="ns-count">{{ active_count }}</span>
+                        {% endif %}
+                        <svg class="ns-filters-chevron"
+                             viewBox="0 0 12 12"
+                             fill="none"
+                             stroke="currentColor"
+                             stroke-width="1.6"
+                             aria-hidden="true">
+                            <path d="m2.5 4.5 3.5 3.5 3.5-3.5" />
+                        </svg>
+                    </button>
+
+                    <div class="ns-toolbar-right">
+                        <label class="ns-control" for="ns-sort">
+                            Sort
+                            <select id="ns-sort" name="sort" data-autosubmit>
+                                {% for value, label in sort_options %}
+                                    <option value="{{ value }}"
+                                            {% if sort == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <a class="ns-dir"
+                           href="{{ toggle_order_url }}"
+                           title="Reverse sort order">
+                            {% if order == "asc" %}
+                                <svg viewBox="0 0 12 12"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     stroke-width="1.6"
+                                     aria-hidden="true">
+                                    <path d="M6 10V2M3 5l3-3 3 3" />
+                                </svg>
+                            {% else %}
+                                <svg viewBox="0 0 12 12"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     stroke-width="1.6"
+                                     aria-hidden="true">
+                                    <path d="M6 2v8M3 7l3 3 3-3" />
+                                </svg>
+                            {% endif %}
+                            {{ direction_label }}
+                        </a>
+                        <label class="ns-control" for="ns-limit">
+                            Show
+                            <select id="ns-limit" name="limit" data-autosubmit>
+                                {% for option in limits %}
+                                    <option value="{{ option }}"
+                                            {% if limit == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="ns-offered" role="group" aria-labelledby="ns-offered-label">
+                    <span class="ns-offered-label" id="ns-offered-label">Offered in</span>
+                    <div class="ns-offered-fields">
+                        <label class="ns-field" for="ns-program">
+                            Programme
+                            <select id="ns-program" name="program" data-autosubmit>
+                                <option value="0"
+                                        title="All programmes"
+                                        {% if not selected_programme %}selected{% endif %}>All programmes</option>
+                                {% for option in section_data.programmes %}
+                                    <option value="{{ option.id }}"
+                                            title="{{ option.label|e }}"
+                                            {% if selected_programme == option.id %}selected{% endif %}>{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <label class="ns-field" for="ns-section">
+                            Section
+                            <select id="ns-section"
+                                    name="section"
+                                    data-autosubmit
+                                    title="{% if section_data.selected_section %}{{ section_data.selected_section.path|join(" › ")|e }}{% elif selected_programme %}Any section in {{ section_data.selected_programme.label|e }}{% else %}Choose a programme first{% endif %}"
+                                    {% if not selected_programme %}disabled{% endif %}>
+                                {% if selected_programme %}
+                                    <option value="0"
+                                            title="Any section in {{ section_data.selected_programme.label|e }}"
+                                            {% if not selected_section %}selected{% endif %}>Any section</option>
+                                    {% for option in section_data.sections %}
+                                        <option value="{{ option.id }}"
+                                                title="{{ option.path|join(" › ")|e }}"
+                                                {% if selected_section == option.id %}selected{% endif %}>{{ option.label }}</option>
+                                    {% endfor %}
+                                {% else %}
+                                    <option value="0" selected>Choose a programme first</option>
+                                {% endif %}
+                            </select>
+                        </label>
+                    </div>
+                    {% if not selected_programme %}
+                        <p class="ns-hint">Choose a programme to see its sections.</p>
+                    {% elif not section_data.sections %}
+                        <p class="ns-hint">No subsections in this programme.</p>
+                    {% endif %}
+                </div>
+
+                <section class="ns-filter-panel"
+                         id="filter-panel"
+                         aria-labelledby="ns-filter-heading"
+                         hidden>
+                    <div class="ns-panel-head">
+                        <h2 id="ns-filter-heading">Filters</h2>
+                        <button type="button" id="ns-filters-close">Close</button>
+                    </div>
+
+                    <div class="ns-filter-grid">
+                        <fieldset class="ns-facet">
+                            <legend>Offering</legend>
+                            {% if latest_semester %}
+                                <label class="ns-check">
+                                    <input type="checkbox"
+                                           name="newest"
+                                           value="1"
+                                           {% if newest %}checked{% endif %} />
+                                    Newest offering ({{ latest_semester[:4] }} {{ latest_semester[4:] }})
+                                </label>
+                            {% endif %}
+                        </fieldset>
+
+                        <fieldset class="ns-facet">
+                            <legend>Semester</legend>
+                            {% for value, label in semesters %}
+                                <label class="ns-check">
+                                    <input type="checkbox"
+                                           name="semester"
+                                           value="{{ value }}"
+                                           {% if value in selected_semesters %}checked{% endif %} />
+                                    {{ label }}
+                                </label>
+                            {% endfor %}
+                        </fieldset>
+
+                        <fieldset class="ns-facet">
+                            <legend>Level</legend>
+                            {% for level in levels %}
+                                <label class="ns-check">
+                                    <input type="checkbox"
+                                           name="level"
+                                           value="{{ level }}"
+                                           {% if level in selected_levels %}checked{% endif %} />
+                                    {{ level }}
+                                </label>
+                            {% endfor %}
+                        </fieldset>
+
+                        <fieldset class="ns-facet">
+                            <legend>Department</legend>
+                            {% for dept_id, dept_name, dept_short in departments %}
+                                <label class="ns-check" title="{{ dept_name|e }}">
+                                    <input type="checkbox"
+                                           name="dept"
+                                           value="{{ dept_id }}"
+                                           {% if dept_id in selected_depts %}checked{% endif %} />
+                                    {{ dept_short }}
+                                </label>
+                            {% endfor %}
+                        </fieldset>
+
+                        <fieldset class="ns-facet">
+                            <legend>ECTS at least</legend>
+                            <select name="min_credits" class="ns-select">
+                                <option value="0" {% if min_credits is none %}selected{% endif %}>Any</option>
+                                {% for value in (2, 4, 6, 8) %}
+                                    <option value="{{ value }}"
+                                            {% if min_credits == value %}selected{% endif %}>{{ value }}+ ECTS</option>
+                                {% endfor %}
+                            </select>
+                        </fieldset>
+
+                        <fieldset class="ns-facet">
+                            <legend>CourseReview at least</legend>
+                            <select name="min_rating" class="ns-select">
+                                <option value="0" {% if min_rating is none %}selected{% endif %}>Any</option>
+                                {% for value in (3.5, 4.0, 4.5) %}
+                                    <option value="{{ value }}"
+                                            {% if min_rating == value %}selected{% endif %}>{{ '%.1f' % value }}+</option>
+                                {% endfor %}
+                            </select>
+                        </fieldset>
+                    </div>
+
+                    <div class="ns-panel-foot">
+                        <a href="{{ clear_url }}" class="ns-clear">Clear all</a>
+                        <button type="submit" class="ns-apply">Apply filters</button>
+                    </div>
+                </section>
+            </form>
+
+            <noscript>
+                <style>
+                    #filter-panel {
+                        display: block !important;
+                    }
+                </style>
+            </noscript>
+
+            {% if chips %}
+                <div class="ns-chips">
+                    {% for chip in chips %}
+                        <a class="ns-chip" href="{{ chip.href }}" title="{{ chip.label|e }}">
+                            <span>{{ chip.label }}</span>
+                            <span aria-hidden="true">×</span>
+                        </a>
+                    {% endfor %}
+                    <a class="ns-chip-clear" href="{{ clear_url }}">Clear all</a>
+                </div>
+            {% endif %}
+
+            {% if results %}
+                <p class="ns-found">
+                    Found {{ total }} relevant result{{ total|pluralize }}
+                    in {{ '%0.2f' % (exec_time_ms/1000) }}s where
+                    <span class="ns-query">{{ results.parsed_query|e }}</span>
+                </p>
+
+                {% if total %}
+                    <div class="ns-table-wrap">
+                        <table class="ns-table">
+                            <caption class="sr-only">Search results</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col"
+                                        class="ns-course"
+                                        {% if sort_links.title.active %}aria-sort="{{ sort_links.title.aria }}"{% endif %}>
+                                        {# djlint:off #}
+                                        <a class="ns-sort" href="{{ sort_links.title.href }}" title="Sort by course title">Course <SortArrow direction={{ sort_links.title.arrow }} /></a>
+                                        {# djlint:on #}
+                                    </th>
+                                    <th scope="col" class="ns-dept">Department</th>
+                                    <th scope="col" class="ns-level">Level</th>
+                                    <th scope="col"
+                                        class="ns-ects"
+                                        {% if sort_links.credits.active %}aria-sort="{{ sort_links.credits.aria }}"{% endif %}>
+                                        {# djlint:off #}
+                                        <a class="ns-sort" href="{{ sort_links.credits.href }}" title="Sort by ECTS">ECTS <SortArrow direction={{ sort_links.credits.arrow }} /></a>
+                                        {# djlint:on #}
+                                    </th>
+                                    <th scope="col"
+                                        class="ns-latest"
+                                        {% if sort_links.latest.active %}aria-sort="{{ sort_links.latest.aria }}"{% endif %}>
+                                        {# djlint:off #}
+                                        <a class="ns-sort" href="{{ sort_links.latest.href }}" title="Sort by latest offering">Latest <SortArrow direction={{ sort_links.latest.arrow }} /></a>
+                                        {# djlint:on #}
+                                    </th>
+                                    <th scope="col"
+                                        class="ns-cr"
+                                        {% if sort_links.coursereview.active %}aria-sort="{{ sort_links.coursereview.aria }}"{% endif %}>
+                                        {# djlint:off #}
+                                        <a class="ns-sort" href="{{ sort_links.coursereview.href }}" title="Sort by CourseReview rating">CR <SortArrow direction={{ sort_links.coursereview.arrow }} /></a>
+                                        {# djlint:on #}
+                                    </th>
+                                    <th scope="col" class="ns-actions"><span class="sr-only">Links</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for _, grouped in results %}
+                                    {# djlint:off #}
+                                    <NewResult grouped={{ grouped }} query={{ q }} />
+                                    {# djlint:on #}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if pages > 1 %}
+                        <nav class="ns-pager" aria-label="Pagination">
+                            <span>{{ result_from }}–{{ to }} of {{ total }}</span>
+                            <div class="ns-pager-btns">
+                                {% if prev_url %}
+                                    <a class="ns-page-link" href="{{ prev_url }}">Previous</a>
+                                {% else %}
+                                    <span class="ns-page-disabled">Previous</span>
+                                {% endif %}
+                                <span>Page {{ page }} of {{ pages }}</span>
+                                {% if next_url %}
+                                    <a class="ns-page-link" href="{{ next_url }}">Next</a>
+                                {% else %}
+                                    <span class="ns-page-disabled">Next</span>
+                                {% endif %}
+                            </div>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="ns-empty">
+                        <h2>No courses found</h2>
+                        <p>
+                            Nothing matched
+                            <span class="ns-query">{{ results.parsed_query|e }}</span>.
+                            Remove a filter or broaden the query.
+                        </p>
+                        <a href="{{ clear_url }}" class="ns-clear">Clear filters</a>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="ns-empty">
+                    <h2>Search the catalogue</h2>
+                    <p>
+                        Search by title, number or lecturer, or choose a programme and section under
+                        <strong>Filters</strong>.
+                    </p>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</main>
+
+<script src="/static/new-search.js?v={{ version }}" defer></script>
+
+</SearchLayout>

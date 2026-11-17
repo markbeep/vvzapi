@@ -64,6 +64,11 @@ from api.routers.v0_router import router as v0_router
 from api.routers.v1.units import get_unit
 from api.routers.v1_router import router as v1_router
 from api.util.db import aget_meta_session, aget_session
+from api.util.new_search import (
+    build_new_search_context,
+    build_new_search_state,
+    compose_query,
+)
 from api.util.parse_query import QueryKey, offered_in_query
 from api.util.sections import get_parent_from_unit
 from api.util.semkez import semkez_to_comparable
@@ -241,16 +246,17 @@ async def root(
     page: Annotated[int, Query(ge=1)] = 1,
     limit: Annotated[int | None, Query(ge=1, le=100)] = None,
     order_by: QueryKey = "title_english",
-    order: str = "asc",
-    view: Literal["big", "compact"] = "big",
+    order: str | None = None,
 ):
+    if order is None:
+        order = "desc" if order_by in ("year", "coursereview") else "asc"
+
     with tracer.start_as_current_span("root_search") as span:
         span.set_attribute("query", query or "")
         span.set_attribute("page", page)
         span.set_attribute("limit", limit or "default")
         span.set_attribute("order_by", order_by)
         span.set_attribute("order", order)
-        span.set_attribute("view", view)
 
         if not query:
             INDEX_VIEWS.labels(
@@ -270,7 +276,7 @@ async def root(
             )
 
         if limit is None:
-            limit = 20 if view == "big" else 50
+            limit = 20
 
         # swap out results with fixijs if available, else handle request as normal
         layout_name = "Index.WithLayout"
@@ -285,7 +291,7 @@ async def root(
                 order_by=order_by,
                 order=order,
                 source="web",
-                view=view,
+                view="big",  # keep the existing analytics series for the single web layout
                 page=page,
                 request=request,
             )
@@ -302,7 +308,6 @@ async def root(
                 order=order,
                 results=None,
                 error=str(exc.detail),
-                view=view,
                 headers={"Vary": "FX-Request"},
             )
 
@@ -328,11 +333,108 @@ async def root(
             order_by=order_by,
             order=order,
             results=results,
-            view=view,
             headers={
                 "Vary": "FX-Request",
             },
         )
+
+
+@app.get("/new", include_in_schema=False)
+async def new_search(
+    request: Request,
+    q: Annotated[str, Query(description="Raw search query.")] = "",
+    program: Annotated[
+        int,
+        Query(ge=0, description="Root programme section id; 0 means any."),
+    ] = 0,
+    section: Annotated[
+        int,
+        Query(ge=0, description="Section id below the programme; 0 means any."),
+    ] = 0,
+    newest: Annotated[
+        bool,
+        Query(description="Only the newest semester in the catalogue."),
+    ] = False,
+    semester: Annotated[
+        list[str] | None,
+        Query(description="Semester type filter: W (Autumn) or S (Spring)."),
+    ] = None,
+    level: Annotated[
+        list[str] | None,
+        Query(description="Degree-program level filter, e.g. BSC or MSC."),
+    ] = None,
+    dept: Annotated[
+        list[str] | None,
+        Query(description="Department id filter."),
+    ] = None,
+    min_credits: Annotated[
+        int,
+        Query(ge=0, le=20, description="Minimum ECTS; 0 means any."),
+    ] = 0,
+    min_rating: Annotated[
+        float,
+        Query(ge=0, le=5, description="Minimum CourseReview average; 0 means any."),
+    ] = 0,
+    sort: Annotated[
+        Literal["title", "number", "credits", "latest", "coursereview"],
+        Query(description="Sort key."),
+    ] = "title",
+    order: Annotated[
+        Literal["asc", "desc"] | None,
+        Query(description="Sort direction; defaults per sort key."),
+    ] = None,
+    limit: Annotated[
+        int,
+        Query(ge=20, le=100, description="Results per page (20, 40, 60, 80 or 100)."),
+    ] = 20,
+    page: Annotated[int, Query(ge=1, description="Page number.")] = 1,
+):
+    state = await build_new_search_state(
+        q=q,
+        program=program,
+        section=section,
+        newest=newest,
+        semesters=semester or (),
+        levels=level or (),
+        depts=dept or (),
+        min_credits=min_credits,
+        min_rating=min_rating,
+        sort=sort,
+        order=order,
+        limit=limit,
+        page=page,
+    )
+    query = compose_query(state)
+    results = None
+    error = None
+    if query:
+        try:
+            results = await run_search(
+                query,
+                offset=(state.page - 1) * state.limit,
+                limit=state.limit,
+                order_by=state.order_by,
+                order=state.order,
+                source="web",
+                view="new",
+                page=state.page,
+                request=request,
+            )
+        except HTTPException as exc:
+            if exc.status_code != 400:
+                raise
+            error = str(exc.detail)
+    context = build_new_search_context(
+        state,
+        request,
+        results=results,
+        error=error,
+    )
+    return catalog_response(
+        "New.Index",
+        **context,
+        headers={"X-Robots-Tag": "noindex"},
+    )
 
 
 class RecursiveSection(BaseModel):

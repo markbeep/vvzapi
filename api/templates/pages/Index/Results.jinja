@@ -6,8 +6,19 @@
     order: str,
     results: SearchResponse | None = None,
     error: str | None = None,
-    view: Literal["big", "compact"],
 #}
+
+<div class="card bg-base-100 shadow-sm p-3 text-sm">
+    <div class="flex flex-wrap items-center gap-2">
+        <span class="font-bold">New results view</span>
+        <span class="text-base-content/70">Compact table with plain-language filters.</span>
+        <a href="/new?q={{ query|urlquote }}" class="btn btn-sm btn-outline">Try the new view</a>
+        <a href="https://github.com/markbeep/vvzapi/issues/82"
+           target="_blank"
+           rel="noopener"
+           class="btn btn-sm btn-ghost">Feedback</a>
+    </div>
+</div>
 
 {% if error %}
     <div role="alert" class="text-center text-gray-500 mt-10">
@@ -33,17 +44,19 @@
                     <select name="limit"
                             class="select select-ghost select-sm max-w-fit"
                             aria-label="Number of results to show">
-                        <option value="20">20</option>
-                        <option value="40">40</option>
-                        <option value="60">60</option>
-                        <option value="80">80</option>
-                        <option value="100">100</option>
+                        <option value="20" {% if limit == 20 %}selected{% endif %}>20</option>
+                        <option value="40" {% if limit == 40 %}selected{% endif %}>40</option>
+                        <option value="60" {% if limit == 60 %}selected{% endif %}>60</option>
+                        <option value="80" {% if limit == 80 %}selected{% endif %}>80</option>
+                        <option value="100" {% if limit == 100 %}selected{% endif %}>100</option>
                     </select>
                     results ordered by
                     <select name="order_by"
                             class="select select-ghost select-sm max-w-fit"
                             aria-label="Order results by">
-                        <option selected value="title">English title</option>
+                        <option value="year" {% if order_by == "year" %}selected{% endif %}>newest offering</option>
+                        <option value="title"
+                                {% if order_by in ("title", "title_english") %}selected{% endif %}>English title</option>
                         <option value="title_german">German title</option>
                         <option value="number">number</option>
                         <option value="semester">semester</option>
@@ -56,24 +69,20 @@
                     <select name="order"
                             class="select select-ghost select-sm max-w-fit"
                             aria-label="Order direction">
-                        <option selected value="asc">ascending</option>
-                        <option value="desc">descending</option>
-                    </select>
-                </div>
-
-                <div>
-                    Results view
-                    <select name="view"
-                            class="select select-ghost select-sm max-w-fit"
-                            aria-label="Result view">
-                        <option value="big" {% if view == "big" %}selected{% endif %}>big</option>
-                        <option value="compact" {% if view == "compact" %}selected{% endif %}>compact</option>
+                        <option value="asc" {% if order != "desc" %}selected{% endif %}>ascending</option>
+                        <option value="desc" {% if order == "desc" %}selected{% endif %}>descending</option>
                     </select>
                 </div>
 
                 <script>
+                    // Descending is the useful default for "newest" and ratings; the
+                    // other keys read better ascending.
+                    const orderDefaults = {
+                        year: 'desc',
+                        coursereview: 'desc'
+                    };
                     const setOpts = () => {
-                        const inputs = document.querySelectorAll('select[name="limit"], select[name="order_by"], select[name="order"], select[name="view"]');
+                        const inputs = document.querySelectorAll('select[name="limit"], select[name="order_by"], select[name="order"]');
                         const currentUrl = new URL(window.location);
                         const params = currentUrl.searchParams;
                         inputs.forEach(input => {
@@ -84,6 +93,12 @@
                             input.addEventListener('change', (event) => {
                                 const url = new URL(window.location);
                                 url.searchParams.set(event.target.name, event.target.value);
+                                if (event.target.name === 'order_by') {
+                                    const orderInput = document.querySelector('select[name="order"]');
+                                    const nextOrder = orderDefaults[event.target.value] ?? 'asc';
+                                    orderInput.value = nextOrder;
+                                    url.searchParams.set('order', nextOrder);
+                                }
                                 url.searchParams.set('page', '1');
                                 window.location.href = url.toString();
                             });
@@ -99,25 +114,19 @@
 
     {% if results.total > results.results|length %}
         {# djlint:off #}
-        <Pagination query={{ query }} page={{ page }} limit={{ limit }} order_by={{ order_by }} order={{ order }} results={{ results }} view={{ view }} prefetch_next_page={{ True }} />
+        <Pagination query={{ query }} page={{ page }} limit={{ limit }} order_by={{ order_by }} order={{ order }} results={{ results }} prefetch_next_page={{ True }} />
         {# djlint:on #}
     {% endif %}
 
     {% for _, grouped in results %}
-        {% if view == "compact" %}
-            {# djlint:off #}
-            <CompactResult grouped={{ grouped }} query={{ query }} />
-            {# djlint:on #}
-        {% else %}
-            {# djlint:off #}
-            <BigResult grouped={{ grouped }}  query={{ query }} />
-            {# djlint:on #}
-        {% endif %}
+        {# djlint:off #}
+        <BigResult grouped={{ grouped }}  query={{ query }} />
+        {# djlint:on #}
     {% endfor %}
 
     {% if results.total > results.results|length %}
         {# djlint:off #}
-        <Pagination query={{ query }} page={{ page }} limit={{ limit }} order_by={{ order_by }} order={{ order }} results={{ results }} view={{ view }} />
+        <Pagination query={{ query }} page={{ page }} limit={{ limit }} order_by={{ order_by }} order={{ order }} results={{ results }} />
         {# djlint:on #}
     {% endif %}
 

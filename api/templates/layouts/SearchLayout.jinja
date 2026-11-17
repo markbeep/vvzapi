@@ -5,6 +5,7 @@
     keywords: str = "VVZ, ETH, ETHZ, API, course, lecture, schedule, catalogue",
     og_description: str | None = None,
     links: dict[str, str] = {}, # href:rel mapping
+    action: str = "/",
 #}
 
 {% set og_description = og_description or description %}
@@ -42,7 +43,7 @@
             <a href="/" class="btn btn-ghost text-xl p-1">VVZ API</a>
         </div>
         <form id="search-form"
-              action="/"
+              action="{{ action }}"
               method="get"
               class="flex-1 join"
               aria-label="Search form">

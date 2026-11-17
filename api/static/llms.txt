@@ -28,7 +28,7 @@ Parameters:
 - `q` (required): the search query string using the syntax described below
 - `offset`: pagination offset (default 0)
 - `limit`: number of results per page (default 20)
-- `order_by`: field to sort by — one of: title, title_german, title_english, number, credits, year, semester, semkez, lecturer, department, level, language, coursereview. `year` sorts chronologically.
+- `order_by`: field to sort by — one of: title, title_german, title_english, number, credits, year, semester, semkez, lecturer, department, level, language, coursereview. `year` sorts groups by the newest unit in each course group.
 - `order`: "desc" (default) or "asc"
 
 The full response JSON contains:
