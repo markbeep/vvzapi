@@ -13,7 +13,7 @@ from jinjax.jinjax import JinjaX
 from opentelemetry import trace
 from starlette.background import BackgroundTask
 
-from api.util.version import get_api_version
+from api.core.version import get_api_version
 
 tracer = trace.get_tracer(__name__)
 

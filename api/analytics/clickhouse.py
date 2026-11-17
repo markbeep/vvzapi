@@ -16,8 +16,8 @@ import logging
 
 import httpx
 
-from api.env import Settings
-from api.util.logs import quiet_httpx_request_logs
+from api.core.env import Settings
+from api.core.logs import quiet_httpx_request_logs
 
 logger = logging.getLogger(__name__)
 

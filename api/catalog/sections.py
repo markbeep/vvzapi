@@ -7,7 +7,7 @@ from sqlalchemy.orm import aliased
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from api.models import Section, UnitSectionLink
+from api.catalog.models import Section, UnitSectionLink
 
 tracer = trace.get_tracer(__name__)
 

@@ -4,7 +4,7 @@ from urllib.parse import parse_qs, urlparse
 from pydantic import BaseModel, TypeAdapter
 from scrapy.http import Request, Response
 
-from api.models import Rating
+from api.catalog.models import Rating
 from scraper.util.logging import KeywordLoggerSpider
 
 

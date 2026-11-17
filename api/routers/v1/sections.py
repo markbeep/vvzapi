@@ -8,10 +8,14 @@ from sqlmodel import case, col, func, or_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette.status import HTTP_404_NOT_FOUND
 
-from api.models import Section, SectionBase, UnitSectionLink
-from api.util.db import aget_session
-from api.util.pydantic_type import Int64, Nullable
-from api.util.sections import SectionLevel, get_child_sections, get_parent_sections
+from api.catalog.models import Section, SectionBase, UnitSectionLink
+from api.catalog.sections import (
+    SectionLevel,
+    get_child_sections,
+    get_parent_sections,
+)
+from api.core.db import aget_session
+from api.core.pydantic_type import Int64, Nullable
 
 tracer = trace.get_tracer(__name__)
 

@@ -23,7 +23,7 @@ from typing import cast
 from sqlalchemy import Connection, create_engine, inspect, text
 
 from alembic import op
-from api.env import Settings
+from api.core.env import Settings
 
 # revision identifiers, used by Alembic.
 revision: str = "51ea83d2f050"

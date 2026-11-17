@@ -3,7 +3,7 @@ from typing import Any, Literal, override
 
 from scrapy.http import Response
 
-from api.models import Lecturer
+from api.catalog.models import Lecturer
 from scraper.env import Settings
 from scraper.util.caching.rescrape import RESCRAPE_SEMKEZS
 from scraper.util.logging import KeywordLoggerSpider

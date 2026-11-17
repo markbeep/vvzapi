@@ -10,9 +10,10 @@ from scrapy.settings import Settings
 from scrapy.utils.project import get_project_settings
 from sqlmodel import text
 
-from api.env import Settings as APISettings
-from api.util.db import engine, get_dump_table_names, get_session
-from api.util.materialize import update_materialized_views
+from api.catalog.dump import get_dump_table_names
+from api.catalog.materialize import update_materialized_views
+from api.core.db import engine, get_session
+from api.core.env import Settings as APISettings
 from scraper.analytics import record_scrape_run
 from scraper.spiders.lecturers import LecturersSpider
 from scraper.spiders.ratings import RatingsSpider

@@ -6,9 +6,9 @@ from pathlib import Path
 from opentelemetry import trace
 from sqlmodel import col, select
 
-from api.env import Settings
-from api.models import LearningUnit
-from api.util.db import get_session
+from api.catalog.models import LearningUnit
+from api.core.db import get_session
+from api.core.env import Settings
 
 tracer = trace.get_tracer(__name__)
 

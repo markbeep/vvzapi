@@ -1,9 +1,14 @@
 from sqlalchemy import tuple_
 from sqlmodel import Integer, Session, cast, col, delete, func, insert, select, text
 
-from api.models import LearningUnit, Section, SectionPathView, UnitDepartmentView
-from api.util.db import get_session
-from api.util.sections import concatenate_section_names
+from api.catalog.models import (
+    LearningUnit,
+    Section,
+    SectionPathView,
+    UnitDepartmentView,
+)
+from api.catalog.sections import concatenate_section_names
+from api.core.db import get_session
 
 
 def _update_section_path_view(session: Session):

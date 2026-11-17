@@ -5,7 +5,7 @@ to, for example, add to the LearningUnit model
 
 from pydantic import BaseModel
 
-from api.models import Department, Level
+from api.catalog.models import Department, Level
 
 
 class UnitDepartmentMapping(BaseModel):

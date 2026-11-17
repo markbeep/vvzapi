@@ -7,7 +7,7 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-from api.util.version import get_api_version
+from api.core.version import get_api_version
 from scraper.env import Settings
 
 BOT_NAME = "vvz-scraper"

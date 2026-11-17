@@ -9,7 +9,7 @@ from scrapy import Spider
 from scrapy.utils.log import SpiderLoggerAdapter
 from sqlmodel import Session, select
 
-from api.models import (
+from api.catalog.models import (
     Course,
     CourseLecturerLink,
     Department,
@@ -26,7 +26,7 @@ from api.models import (
     UnitSectionLink,
     UnitTypeLegends,
 )
-from api.util import db
+from api.core import db
 from scraper.spiders.units import UnitsSpider
 from scraper.types.mappings import UnitDepartmentMapping, UnitLevelMapping
 from scraper.util.scrapercache import CACHE_PATH

@@ -7,7 +7,7 @@ from sqlmodel import and_, col, or_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql._expression_select_cls import Select, SelectOfScalar
 
-from api.models import (
+from api.catalog.models import (
     Department,
     LearningUnit,
     Lecturer,
@@ -18,7 +18,7 @@ from api.models import (
     UnitLecturerLink,
     UnitSectionLink,
 )
-from api.util.sections import get_child_sections
+from api.catalog.sections import get_child_sections
 
 tracer = trace.get_tracer(__name__)
 

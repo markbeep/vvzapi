@@ -1,10 +1,9 @@
 import asyncio
 from collections import defaultdict
-from collections.abc import Generator
 from dataclasses import dataclass
 from enum import StrEnum
 from timeit import default_timer
-from typing import Annotated, Any, Literal, overload, override
+from typing import Annotated, Any, Literal, overload
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from opentelemetry import trace
@@ -46,7 +45,7 @@ from api.analytics.prometheus import (
     SEARCH_RESULT_COUNT,
     SEARCH_ZERO_RESULTS,
 )
-from api.models import (
+from api.catalog.models import (
     Department,
     LearningUnit,
     Lecturer,
@@ -58,8 +57,10 @@ from api.models import (
     UnitLecturerLink,
     UnitSectionLink,
 )
-from api.util.db import aengine
-from api.util.parse_query import (
+from api.catalog.semkez import semkez_to_comparable
+from api.core.db import aengine
+from api.core.pydantic_type import Int64
+from api.search.query import (
     AND,
     OR,
     FilterOperator,
@@ -67,42 +68,11 @@ from api.util.parse_query import (
     QueryKey,
     build_search_operators,
 )
-from api.util.pydantic_type import Int64
-from api.util.semkez import semkez_to_comparable
+from api.search.schemas import GroupedLearningUnits, SearchResponse
 
 router = APIRouter(prefix="/search", tags=["Search"])
 
 tracer = trace.get_tracer(__name__)
-
-
-class GroupedLearningUnits(BaseModel):
-    number: str
-    units: list[LearningUnit]
-    rating: float | None = None
-
-    @property
-    def semkezs(self) -> list[str]:
-        return sorted({unit.semkez for unit in self.units if unit.semkez})
-
-    def latest_unit(self) -> LearningUnit | None:
-        if not self.units:
-            return None
-        return max(self.units, key=lambda unit: semkez_to_comparable(unit.semkez))
-
-    def with_semkez(self, semkez: str) -> LearningUnit | None:
-        for unit in self.units:
-            if unit.semkez == semkez:
-                return unit
-        return None
-
-    @override
-    def __iter__(self):
-        for unit in sorted(
-            self.units,
-            key=lambda u: semkez_to_comparable(u.semkez),
-            reverse=True,
-        ):
-            yield unit.semkez, unit
 
 
 class SearchResultView(StrEnum):
@@ -144,21 +114,6 @@ class CompactLearningUnit(BaseModel):
             "`/api/v1/unit/{unit_id}/get` for the full record."
         ),
     )
-
-
-class SearchResponse(BaseModel):
-    total: int = Field(
-        description="Total amount of matching course numbers, not just those on this page."
-    )
-    results: dict[str, GroupedLearningUnits] = Field(
-        description="Course number to all of its learning units across semesters."
-    )
-    parsed_query: str = Field(description="How the query was interpreted.")
-    exec_time_ms: float = Field(description="Time spent executing the search.")
-
-    @override
-    def __iter__(self) -> Generator[tuple[str, GroupedLearningUnits]]:
-        yield from self.results.items()
 
 
 class CompactSearchResponse(BaseModel):
