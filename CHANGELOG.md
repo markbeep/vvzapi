@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.2.0](https://github.com/markbeep/vvzapi/compare/v2.1.0...v2.2.0) (2026-11-17)
+
+
+### Features
+
+* **search:** add new preview search frontend with filters (under /new) ([5305ff5](https://github.com/markbeep/vvzapi/commit/5305ff5e750400a43389c2daf89a2034daf5a3c4))
+* **search:** add order by "newest" ordering ([5305ff5](https://github.com/markbeep/vvzapi/commit/5305ff5e750400a43389c2daf89a2034daf5a3c4))
+
+
+### Bug Fixes
+
+* **search:** fix search results not being sorted by shown Title (asc) + Year (desc) correctly ([49c3020](https://github.com/markbeep/vvzapi/commit/49c302042cea8e51b7d51decb3b827afff166354))
+
+
+### Code Refactoring
+
+* **search:** remove compact results view from original search frontend ([5305ff5](https://github.com/markbeep/vvzapi/commit/5305ff5e750400a43389c2daf89a2034daf5a3c4))
+
 ## [2.1.0](https://github.com/markbeep/vvzapi/compare/v2.0.0...v2.1.0) (2026-11-15)
 
 
